@@ -1,0 +1,14 @@
+name: 'tagged-release'
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: 'Release'
+    uses: ./.github/workflows/release.yml
+
+    with:
+      prerelease: false

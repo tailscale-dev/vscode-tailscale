@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# This script acts like the "go" command, but uses Tailscale's
+# currently-desired version. If it's not installed, it will error
+# out and tell you to run ./tool/go from oss or corp to install it.
+
+set -eu
+
+if [ "${CI:-}" = "true" ]; then
+    set -x
+fi
+
+GO="$HOME/.cache/tailscale-go/bin/go"
+
+if [ ! -e "$GO" ]; then
+    echo "go tool is not installed. Run './tool/go' from https://github.com/tailscale/tailscale to install it." >&2
+    exit 1
+fi
+
+unset GOROOT
+exec "$GO" "$@"

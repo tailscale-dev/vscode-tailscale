@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import '~@vscode/codicons/dist/codicon.css';
+
+.tailscale-serve input {
+  background-color: var(--vscode-editor-background);
+}
+
+.tailscale-serve vscode-data-grid-row:hover input {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+vscode-data-grid-cell {
+  line-height: calc(var(--input-height) * 1px);
+}

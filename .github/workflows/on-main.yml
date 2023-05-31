@@ -1,0 +1,19 @@
+name: on-main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    uses: './.github/workflows/test.yml'
+
+  pre-release:
+    name: 'Pre Release'
+    uses: ./.github/workflows/release.yml
+    needs: test
+
+    with:
+      prerelease: true
+      title: 'Development'
+      release_name: 'latest'

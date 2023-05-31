@@ -1,0 +1,13 @@
+#!/bin/sh
+# Run a command with our local yarn install, rather than any globally installed
+# instance.
+
+set -eu
+
+cd $(dirname "$0")/..
+./do yarn.cmd node.cmd
+read -r YARN < yarn.cmd
+read -r NODE < node.cmd
+cd - > /dev/null
+
+exec /usr/bin/env PATH="$(dirname $NODE):$PATH" "$YARN" "$@"

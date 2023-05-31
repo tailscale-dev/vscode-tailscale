@@ -1,0 +1,11 @@
+*
+*/**
+**/.DS_Store
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE.txt
+!resources/**/*
+!bin/**/vscode-tailscale*
+!dist/*.js
+!dist/*.ttf

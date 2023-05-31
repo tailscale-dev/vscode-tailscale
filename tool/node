@@ -1,0 +1,12 @@
+#!/bin/sh
+# Run a command with our local node install, rather than any globally installed
+# instance.
+
+set -eu
+
+cd $(dirname "$0")/..
+./do node.cmd
+read -r NODE < node.cmd
+cd - > /dev/null
+
+exec /usr/bin/env PATH="$(dirname $NODE):$PATH" "$NODE" "$@"

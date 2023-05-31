@@ -1,0 +1,284 @@
+{
+  "name": "vscode-tailscale",
+  "publisher": "Tailscale",
+  "displayName": "Tailscale",
+  "description": "Share a port over the internet with Tailscale Funnel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tailscale-dev/vscode-tailscale.git"
+  },
+  "version": "0.3.0",
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "categories": [
+    "Other",
+    "Testing"
+  ],
+  "keywords": [
+    "vpn",
+    "remote",
+    "dev server",
+    "web development",
+    "webhook"
+  ],
+  "icon": "resources/images/icon_256x256.png",
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "walkthroughs": [
+      {
+        "id": "tailscale",
+        "title": "Tailscale",
+        "description": "Use Tailscale in VS Code",
+        "steps": [
+          {
+            "id": "about",
+            "title": "About",
+            "media": {
+              "markdown": "resources/walkthrough/about.md"
+            }
+          },
+          {
+            "id": "intallLiunux",
+            "title": "Install: Linux",
+            "when": "isLinux",
+            "media": {
+              "markdown": "resources/walkthrough/install/linux.md"
+            },
+            "completionEvents": [
+              "onContext:tailscale.walkthroughs.installed"
+            ]
+          },
+          {
+            "id": "intallWindows",
+            "title": "Install: Windows",
+            "when": "isWindows",
+            "media": {
+              "markdown": "resources/walkthrough/install/windows.md"
+            },
+            "completionEvents": [
+              "onContext:tailscale.walkthroughs.installed"
+            ]
+          },
+          {
+            "id": "intallMac",
+            "title": "Install: macOS",
+            "when": "isMac",
+            "media": {
+              "markdown": "resources/walkthrough/install/macos.md"
+            },
+            "completionEvents": [
+              "onContext:tailscale.walkthroughs.installed"
+            ]
+          },
+          {
+            "id": "enableHTTPS",
+            "title": "Enable HTTPS",
+            "media": {
+              "markdown": "resources/walkthrough/enable-https.md"
+            },
+            "completionEvents": [
+              "onContext:tailscale.walkthroughs.httpsOn"
+            ]
+          },
+          {
+            "id": "enableFunnel",
+            "title": "Enable Funnel",
+            "media": {
+              "markdown": "resources/walkthrough/enable-funnel.md"
+            },
+            "completionEvents": [
+              "onContext:tailscale.walkthroughs.funnelOn"
+            ]
+          },
+          {
+            "id": "sharePort",
+            "title": "Share Port",
+            "media": {
+              "markdown": "resources/walkthrough/share-port.md"
+            },
+            "completionEvents": [
+              "onContext:tailscale.walkthroughs.sharedPort"
+            ]
+          }
+        ]
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "tailscale.refreshServe",
+          "group": "overflow"
+        },
+        {
+          "command": "tailscale.resetServe",
+          "group": "overflow"
+        },
+        {
+          "command": "tailscale.openAdminConsole",
+          "group": "overflow"
+        },
+        {
+          "command": "tailscale.advancedServeView",
+          "group": "overflow",
+          "when": "tailscale.viewType == 'simple' && tailscale.env == 'development'"
+        },
+        {
+          "command": "tailscale.simpleServeView",
+          "group": "overflow",
+          "when": "tailscale.viewType == 'advanced'"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "tailscale.sharePortOverTunnel",
+        "title": "Share port publicly using Funnel",
+        "category": "Tailscale"
+      },
+      {
+        "command": "tailscale.openAdminConsole",
+        "title": "Admin Console",
+        "category": "Tailscale"
+      },
+      {
+        "command": "tailscale.resetServe",
+        "title": "Reset",
+        "category": "Tailscale"
+      },
+      {
+        "command": "tailscale.refreshServe",
+        "title": "Refresh",
+        "category": "Tailscale"
+      },
+      {
+        "command": "tailscale.openFunnelPanel",
+        "title": "Open Funnel Panel",
+        "category": "Tailscale"
+      },
+      {
+        "command": "tailscale.reloadServePanel",
+        "category": "tsdev",
+        "title": "Reload Serve Panel"
+      },
+      {
+        "command": "tailscale.advancedServeView",
+        "title": "Advanced View",
+        "category": "tsdev"
+      },
+      {
+        "command": "tailscale.simpleServeView",
+        "title": "Simple View",
+        "category": "tsdev"
+      }
+    ],
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "tailscale-serve-panel",
+          "title": "Tailscale",
+          "icon": "images/tailscale.svg"
+        }
+      ]
+    },
+    "views": {
+      "tailscale-serve-panel": [
+        {
+          "id": "tailscale-serve-view",
+          "name": "Funnel",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "type": "object",
+        "title": "Tailscale",
+        "properties": {
+          "tailscale.path": {
+            "type": "string",
+            "default": null,
+            "markdownDescription": "An absolute path to the `tailscale` CLI executable. By default, the extension looks for `tailscale` in the `PATH`, but if set, will use the path specified instead.",
+            "scope": "window",
+            "examples": [
+              "/usr/bin/tailscale",
+              "C:\\Program Files\\Tailscale\\tailscale.exe"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "compile-tests": "tsc -p . --outDir out",
+    "compile": "webpack",
+    "lint": "eslint src --ext ts",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "precommit": "lint-staged",
+    "prepare": "husky install",
+    "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
+    "test": "tool/node ./out/test/run-test.js",
+    "vscode:prepublish": "yarn run package",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "watch": "webpack serve"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/react": "^18.0.37",
+    "@types/react-dom": "^18.0.11",
+    "@types/vscode": "^1.76.0",
+    "@types/vscode-webview": "^1.57.1",
+    "@types/webpack-env": "^1.18.0",
+    "@typescript-eslint/eslint-plugin": "^5.53.0",
+    "@typescript-eslint/parser": "^5.53.0",
+    "@vscode/codicons": "^0.0.32",
+    "@vscode/test-electron": "^2.2.3",
+    "@vscode/vsce": "^2.18.0",
+    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "autoprefixer": "^10.4.14",
+    "bufferutil": "^4.0.7",
+    "css-loader": "^6.7.3",
+    "eslint": "^8.34.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-unicorn": "^46.0.0",
+    "glob": "^8.1.0",
+    "husky": "^8.0.3",
+    "immer": "^9.0.21",
+    "lint-staged": "^13.0.0",
+    "mocha": "^10.2.0",
+    "node-fetch": "^3.3.1",
+    "postcss": "^8.4.22",
+    "postcss-loader": "^7.2.4",
+    "prettier": "^2.8.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "style-loader": "^3.3.2",
+    "swr": "^2.1.5",
+    "tailwindcss": "^3.3.1",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "utf-8-validate": "^6.0.3",
+    "vscode-jsonrpc": "^8.1.0",
+    "webpack": "^5.79.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.13.3",
+    "webpack-env": "^0.8.0",
+    "ws": "^8.13.0",
+    "zustand": "^3.3.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint",
+      "prettier --write"
+    ],
+    "*.{json,md,yml}": [
+      "prettier --write"
+    ]
+  }
+}
