@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/tailscale-dev/vscode-tailscale.git"
   },
-  "version": "0.3.0",
+  "version": "0.5.0",
   "engines": {
     "vscode": "^1.76.0"
   },
