@@ -1,0 +1,77 @@
+[
+  {
+    "name": "vscode-tailscale",
+    "path": "dist/vscode-tailscale_darwin_arm64/vscode-tailscale",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": "", "ID": "vscode-tailscale" }
+  },
+  {
+    "name": "vscode-tailscale",
+    "path": "dist/vscode-tailscale_darwin_amd64_v1/vscode-tailscale",
+    "goos": "darwin",
+    "goarch": "amd64",
+    "goamd64": "v1",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": "", "ID": "vscode-tailscale" }
+  },
+  {
+    "name": "vscode-tailscale",
+    "path": "dist/vscode-tailscale_linux_amd64_v1/vscode-tailscale",
+    "goos": "linux",
+    "goarch": "amd64",
+    "goamd64": "v1",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": "", "ID": "vscode-tailscale" }
+  },
+  {
+    "name": "vscode-tailscale",
+    "path": "dist/vscode-tailscale_linux_arm64/vscode-tailscale",
+    "goos": "linux",
+    "goarch": "arm64",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": "", "ID": "vscode-tailscale" }
+  },
+  {
+    "name": "vscode-tailscale.exe",
+    "path": "dist/vscode-tailscale_windows_arm64/vscode-tailscale.exe",
+    "goos": "windows",
+    "goarch": "arm64",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": ".exe", "ID": "vscode-tailscale" }
+  },
+  {
+    "name": "vscode-tailscale.exe",
+    "path": "dist/vscode-tailscale_windows_amd64_v1/vscode-tailscale.exe",
+    "goos": "windows",
+    "goarch": "amd64",
+    "goamd64": "v1",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": ".exe", "ID": "vscode-tailscale" }
+  },
+  {
+    "name": "vscode-tailscale",
+    "path": "dist/vscode-tailscale_linux_386/vscode-tailscale",
+    "goos": "linux",
+    "goarch": "386",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": "", "ID": "vscode-tailscale" }
+  },
+  {
+    "name": "vscode-tailscale.exe",
+    "path": "dist/vscode-tailscale_windows_386/vscode-tailscale.exe",
+    "goos": "windows",
+    "goarch": "386",
+    "internal_type": 4,
+    "type": "Binary",
+    "extra": { "Binary": "vscode-tailscale", "Ext": ".exe", "ID": "vscode-tailscale" }
+  }
+]

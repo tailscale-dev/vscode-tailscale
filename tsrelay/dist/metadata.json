@@ -1,0 +1,9 @@
+{
+  "project_name": "vscode-tailscale",
+  "tag": "v0.4.0",
+  "previous_tag": "latest",
+  "version": "0.4.0-SNAPSHOT-3e0e2c5",
+  "commit": "3e0e2c5f543ee96844d0e2aec562825cc3753a80",
+  "date": "2023-05-26T09:22:16.184978-07:00",
+  "runtime": { "goos": "darwin", "goarch": "arm64" }
+}
