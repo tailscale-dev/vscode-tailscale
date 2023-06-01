@@ -33,6 +33,22 @@ var (
 	verbose = flag.Bool("v", false, "verbose logging")
 	port    = flag.Int("port", 0, "port for http server. If 0, one will be chosen")
 	nonce   = flag.String("nonce", "", "nonce for the http server")
+	socket  = flag.String("socket", "", "alternative path for local api socket")
+)
+
+// ErrorTypes for signaling
+// invalid states to the VSCode
+// extension.
+const (
+	// FunnelOff means the user does not have
+	// funnel in their ACLs.
+	FunnelOff = "FUNNEL_OFF"
+	// HTTPSOff means the user has not enabled
+	// https in the DNS section of the UI
+	HTTPSOff = "HTTPS_OFF"
+	// Offline can mean a user is not logged in
+	// or is logged in but their key has expired.
+	Offline = "OFFLINE"
 )
 
 func main() {
@@ -76,6 +92,9 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 	fmt.Fprintf(os.Stdout, "http://127.0.0.1:%s\n", u.Port())
 	s := &http.Server{
 		Handler: &httpHandler{
+			lc: tailscale.LocalClient{
+				Socket: *socket,
+			},
 			nonce:        nonce,
 			l:            lggr,
 			pids:         make(map[int]struct{}),
@@ -217,17 +236,17 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||
 					!slices.Contains(capabilities, tailcfg.NodeAttrFunnel) {
 					s.Errors = append(s.Errors, Error{
-						Type: "FUNNEL_OFF",
+						Type: FunnelOff,
 					})
 				}
 				if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoHTTPS) {
 					s.Errors = append(s.Errors, Error{
-						Type: "HTTPS_OFF",
+						Type: HTTPSOff,
 					})
 				}
-				if !st.Self.Online {
+				if !st.Self.Online || s.BackendState == "NeedsLogin" {
 					s.Errors = append(s.Errors, Error{
-						Type: "OFFLINE",
+						Type: Offline,
 					})
 				}
 			}
