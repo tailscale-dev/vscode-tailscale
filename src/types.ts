@@ -22,6 +22,9 @@ export interface Handlers {
 export interface ServeStatus {
   ServeConfig?: ServeConfig;
   FunnelPorts?: number[];
+  Services: {
+    [port: number]: string;
+  };
   BackendState: string;
   Self: PeerStatus;
   Errors?: RelayError[];
