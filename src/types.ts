@@ -19,14 +19,9 @@ export interface Handlers {
   Proxy: string;
 }
 
-export interface ServeStatus extends RelayStatus {
+export interface ServeStatus {
   ServeConfig?: ServeConfig;
-  FunnelOff?: boolean;
-  NeedsHTTPs?: boolean;
   FunnelPorts?: number[];
-}
-
-interface RelayStatus {
   BackendState: string;
   Self: PeerStatus;
   Errors?: RelayError[];

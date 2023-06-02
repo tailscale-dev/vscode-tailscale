@@ -124,8 +124,6 @@ type serveStatus struct {
 	ServeConfig  *ipn.ServeConfig
 	BackendState string
 	Self         *peerStatus
-	FunnelOff    bool
-	NeedsHTTPs   bool
 	FunnelPorts  []int
 	Errors       []Error `json:",omitempty"`
 }
