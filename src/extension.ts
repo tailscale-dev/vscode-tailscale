@@ -141,7 +141,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
 
       const status = await tailscaleInstance.serveStatus();
-      if (status?.Errors && status.Errors.length > 0) {
+      if (status?.Errors?.length) {
         status.Errors.map((err) => {
           const e = errorForType(err.Type);
 
@@ -161,8 +161,6 @@ export async function activate(context: vscode.ExtensionContext) {
               }
             });
         });
-
-        return status;
       } else {
         tailscaleInstance.runFunnel(parseInt(port));
       }
