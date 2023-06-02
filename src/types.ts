@@ -31,11 +31,6 @@ interface RelayError {
   Type: string;
 }
 
-interface RelayErrorLink {
-  title: string;
-  url: string;
-}
-
 interface PeerStatus {
   DNSName: string;
   Online: boolean;
