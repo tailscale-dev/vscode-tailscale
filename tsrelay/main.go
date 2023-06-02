@@ -122,6 +122,7 @@ type httpHandler struct {
 // to some helper fields for the typescript frontend
 type serveStatus struct {
 	ServeConfig  *ipn.ServeConfig
+	Services     map[uint16]string
 	BackendState string
 	Self         *peerStatus
 	FunnelPorts  []int
@@ -201,6 +202,29 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case http.MethodGet:
+			var wg sync.WaitGroup
+			wg.Add(1)
+			portMap := map[uint16]string{}
+			go func() {
+				defer wg.Done()
+				p := &portlist.Poller{
+					Interval:         10 * time.Second,
+					IncludeLocalhost: true,
+				}
+				defer p.Close()
+				ctx, cancel := context.WithTimeout(ctx, time.Second)
+				defer cancel()
+				ch, err := p.Run(ctx)
+				if err != nil {
+					h.l.Printf("error polling for serve: %v", err)
+					return
+				}
+				update := <-ch
+				for _, p := range update.List {
+					portMap[p.Port] = p.Process
+				}
+			}()
+
 			st, sc, err := h.getConfigs(ctx)
 			if err != nil {
 				var oe *net.OpError
@@ -221,8 +245,34 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			s := serveStatus{
 				ServeConfig:  sc,
+				Services:     make(map[uint16]string),
 				BackendState: st.BackendState,
 				FunnelPorts:  []int{},
+			}
+
+			wg.Wait()
+			if sc != nil {
+				for _, webCfg := range sc.Web {
+					for _, addr := range webCfg.Handlers {
+						if addr.Proxy == "" {
+							continue
+						}
+						u, err := url.Parse(addr.Proxy)
+						if err != nil {
+							h.l.Printf("error parsing address proxy %q: %v", addr.Proxy, err)
+							continue
+						}
+						portInt, err := strconv.Atoi(u.Port())
+						if err != nil {
+							h.l.Printf("error parsing port %q of proxy %q: %v", u.Port(), addr.Proxy, err)
+							continue
+						}
+						port := uint16(portInt)
+						if process, ok := portMap[port]; ok {
+							s.Services[port] = process
+						}
+					}
+				}
 			}
 
 			if st.Self != nil {
