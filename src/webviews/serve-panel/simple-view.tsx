@@ -171,8 +171,8 @@ export const SimpleView = () => {
             </div>
           ) : (
             <div className="text-errorForeground">
-              It doesn't appear anything is currently service port {port}. be sure to start a local
-              service bound to port {3000}
+              It seems there's no service currently utilizing port {port}. Please ensure you start a
+              local service that is bound to port {port}.
             </div>
           )}
         </div>
