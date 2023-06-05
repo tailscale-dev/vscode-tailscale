@@ -164,6 +164,18 @@ export const SimpleView = () => {
             </Tooltip>
           )}
         </div>
+        <div className="pt-4">
+          {data?.Services[port] ? (
+            <div className="italic">
+              Port {port} is currently started by "{data?.Services[port]}"
+            </div>
+          ) : (
+            <div className="text-errorForeground">
+              It doesn't appear anything is currently service port {port}. be sure to start a local
+              service bound to port {3000}
+            </div>
+          )}
+        </div>
       </form>
     );
   }
