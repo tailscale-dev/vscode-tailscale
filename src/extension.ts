@@ -90,20 +90,6 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.advancedServeView', () => {
-      Logger.info('called tailscale.advancedServeView', 'command');
-      servePanelProvider.showAdvancedView();
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.simpleServeView', () => {
-      Logger.info('called tailscale.simpleServeView', 'command');
-      servePanelProvider.showSimpleView();
-    })
-  );
-
-  context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openFunnelPanel', () => {
       vscode.commands.executeCommand('tailscale-serve-view.focus');
     })

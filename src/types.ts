@@ -94,13 +94,6 @@ interface SetFunnel {
   };
 }
 
-interface SetViewType {
-  type: 'setViewType';
-  params: {
-    type: 'simple' | 'advanced';
-  };
-}
-
 interface WriteToClipboard {
   type: 'writeToClipboard';
   params: {
@@ -121,7 +114,6 @@ export type Message =
   | AddServe
   | ResetServe
   | SetFunnel
-  | SetViewType
   | WriteToClipboard
   | OpenLink;
 
@@ -150,22 +142,7 @@ interface WebpackStillOk {
   type: 'webpackStillOk';
 }
 
-interface ShowAdvancedView {
-  type: 'showAdvancedView';
-}
-
-interface ShowSimpleView {
-  type: 'showSimpleView';
-}
-
-export type WebviewData =
-  | UpdateState
-  | RefreshState
-  | ShowAdvancedView
-  | ShowSimpleView
-  | WebpackOk
-  | WebpackInvalid
-  | WebpackStillOk;
+export type WebviewData = UpdateState | RefreshState | WebpackOk | WebpackInvalid | WebpackStillOk;
 export type WebviewEvent = Event & { data: WebviewData };
 
 export interface NewPortNotification {
