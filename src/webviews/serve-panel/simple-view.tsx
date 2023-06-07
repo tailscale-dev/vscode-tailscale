@@ -164,19 +164,25 @@ export const SimpleView = () => {
             </Tooltip>
           )}
         </div>
-        <div className="pt-4">
-          {data?.Services[port] ? (
-            <div className="italic">
-              Port {port} is currently started by "{data?.Services[port]}"
-            </div>
-          ) : (
-            <div className="text-errorForeground">
-              It seems there's no service currently utilizing port {port}. Please ensure you start a
-              local service that is bound to port {port}.
-            </div>
-          )}
-        </div>
+        <div className="pt-4">{persistedPort && port === persistedPort ? renderService() : ''}</div>
       </form>
+    );
+  }
+
+  function renderService(): JSX.Element {
+    if (data?.Services[persistedPort]) {
+      return (
+        <div className="italic">
+          Port {persistedPort} is currently started by "{data?.Services[persistedPort]}"
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-errorForeground">
+        It seems there's no service currently utilizing port {persistedPort}. Please ensure you
+        start a local service that is bound to port {persistedPort}.
+      </div>
     );
   }
 
