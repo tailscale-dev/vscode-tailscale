@@ -120,16 +120,6 @@
         {
           "command": "tailscale.openAdminConsole",
           "group": "overflow"
-        },
-        {
-          "command": "tailscale.advancedServeView",
-          "group": "overflow",
-          "when": "tailscale.viewType == 'simple' && tailscale.env == 'development'"
-        },
-        {
-          "command": "tailscale.simpleServeView",
-          "group": "overflow",
-          "when": "tailscale.viewType == 'advanced'"
         }
       ]
     },
@@ -163,11 +153,6 @@
         "command": "tailscale.reloadServePanel",
         "category": "tsdev",
         "title": "Reload Serve Panel"
-      },
-      {
-        "command": "tailscale.advancedServeView",
-        "title": "Advanced View",
-        "category": "tsdev"
       },
       {
         "command": "tailscale.simpleServeView",
