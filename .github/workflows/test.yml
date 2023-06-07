@@ -34,5 +34,7 @@ jobs:
       #   if: runner.os != 'Linux'
       - name: Lint
         run: tool/yarn lint
+      - name: Typescript
+        run: tool/yarn tsc --noEmit
       - name: Prettier
         run: tool/yarn prettier --check .
