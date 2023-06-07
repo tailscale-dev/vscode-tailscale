@@ -5,7 +5,7 @@
   "targetBranchChoices": ["release-branch/v0.4"],
 
   "branchLabelMapping": {
-    "^v(\\d+).(\\d+).\\d+$": "release-branch/v$1.$2"
+    "^v(\\d+).(\\d+)": "release-branch/v$1.$2"
   },
 
   "fork": false,
