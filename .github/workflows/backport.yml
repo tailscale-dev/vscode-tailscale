@@ -1,4 +1,7 @@
+name: backport
+
 on:
+  workflow_dispatch:
   pull_request_target:
     branches: ['main']
     types: ['labeled', 'closed']
@@ -18,7 +21,7 @@ jobs:
       - name: Backport Action
         uses: sqren/backport-github-action@e325a2d70df7264afa24c92b1d5feb2278ff63af
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.BACKPORT_TOKEN }}
 
       - name: Info log
         if: ${{ success() }}
