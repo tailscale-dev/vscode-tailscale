@@ -1,0 +1,29 @@
+on:
+  pull_request_target:
+    branches: ['main']
+    types: ['labeled', 'closed']
+
+jobs:
+  backport:
+    name: Backport PR
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.merged == true
+      && contains(github.event.pull_request.labels.*.name, 'auto-backport')
+      && (
+        (github.event.action == 'labeled' && github.event.label.name == 'auto-backport')
+        || (github.event.action == 'closed')
+      )
+    steps:
+      - name: Backport Action
+        uses: sqren/backport-github-action@e325a2d70df7264afa24c92b1d5feb2278ff63af
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Info log
+        if: ${{ success() }}
+        run: cat ~/.backport/backport.info.log
+
+      - name: Debug log
+        if: ${{ failure() }}
+        run: cat ~/.backport/backport.debug.log
