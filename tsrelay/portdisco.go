@@ -34,15 +34,6 @@ type wsMessage struct {
 func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error {
 	defer c.Close()
 
-	p := &portlist.Poller{
-		Interval:         3 * time.Second,
-		IncludeLocalhost: true,
-	}
-	ch, err := p.Run(ctx)
-	if err != nil {
-		return fmt.Errorf("error running poller: %w", err)
-	}
-
 	go func() {
 		for {
 			if ctx.Err() != nil {
@@ -71,29 +62,40 @@ func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error
 		}
 	}()
 
-	isFirst := true
+	p := &portlist.Poller{
+		IncludeLocalhost: true,
+	}
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	// eagerly load already open ports to avoid spam notifications
+	ports, _, err := p.Poll()
+	if err != nil {
+		return fmt.Errorf("error running initial poll: %w", err)
+	}
+	for _, p := range ports {
+		if p.Proto != "tcp" {
+			continue
+		}
+		h.l.VPrintln("pre-setting", p.Port, p.Pid, p.Process)
+		h.prev[p.Port] = p
+	}
+	h.l.Println("initial ports are set")
+
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case up := <-ch:
-			if up.Error != nil {
+		case <-ticker.C:
+			ports, changed, err := p.Poll()
+			if err != nil {
 				h.l.Printf("error receiving portlist update: %v", err)
 				continue
 			}
-			if isFirst {
-				isFirst = false
-				for _, p := range up.List {
-					if p.Proto != "tcp" {
-						continue
-					}
-					h.l.VPrintln("pre-setting", p.Port, p.Pid, p.Process)
-					h.prev[p.Port] = p
-				}
-				h.l.Println("initial ports are set")
+			if !changed {
 				continue
 			}
-			err := h.handlePortUpdates(c, up.List)
+			err = h.handlePortUpdates(c, ports)
 			if err != nil {
 				return fmt.Errorf("error handling port updates: %w", err)
 			}
@@ -101,7 +103,7 @@ func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error
 	}
 }
 
-func (h *httpHandler) handlePortUpdates(c *websocket.Conn, up portlist.List) error {
+func (h *httpHandler) handlePortUpdates(c *websocket.Conn, up []portlist.Port) error {
 	h.l.VPrintln("ports were updated")
 	h.Lock()
 	h.l.VPrintln("up is", len(up))
