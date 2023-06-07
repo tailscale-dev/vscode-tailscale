@@ -24,18 +24,6 @@ export class ServePanelProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  public async showAdvancedView() {
-    this.postMessage({
-      type: 'showAdvancedView',
-    });
-  }
-
-  public async showSimpleView() {
-    this.postMessage({
-      type: 'showSimpleView',
-    });
-  }
-
   resolveWebviewView(webviewView: vscode.WebviewView) {
     this._view = webviewView;
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
@@ -69,12 +57,6 @@ export class ServePanelProvider implements vscode.WebviewViewProvider {
           Logger.info('Called addServe', 'serve-panel');
           await this.ts.serveAdd(m.params);
           await this.refreshState();
-          break;
-        }
-
-        case 'setViewType': {
-          Logger.info('Called setViewType', 'serve-panel');
-          vscode.commands.executeCommand('setContext', 'tailscale.viewType', m.params.type);
           break;
         }
 
