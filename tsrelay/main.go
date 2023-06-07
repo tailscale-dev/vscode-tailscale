@@ -207,20 +207,14 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			portMap := map[uint16]string{}
 			go func() {
 				defer wg.Done()
-				p := &portlist.Poller{
-					Interval:         10 * time.Second,
-					IncludeLocalhost: true,
-				}
+				p := &portlist.Poller{IncludeLocalhost: true}
 				defer p.Close()
-				ctx, cancel := context.WithTimeout(ctx, time.Second)
-				defer cancel()
-				ch, err := p.Run(ctx)
+				ports, _, err := p.Poll()
 				if err != nil {
 					h.l.Printf("error polling for serve: %v", err)
 					return
 				}
-				update := <-ch
-				for _, p := range update.List {
+				for _, p := range ports {
 					portMap[p.Port] = p.Process
 				}
 			}()
