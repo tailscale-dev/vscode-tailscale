@@ -51,14 +51,19 @@ export async function activate(context: vscode.ExtensionContext) {
     // assume if we have any BackendState we are installed
     vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.installed', !!commandPath);
 
-    if (status?.FunnelOff === false) {
-      vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.funnelOn', true);
-    }
+    // Funnel check
+    const isFunnelOn = !status?.Errors?.some((e) => e.Type === 'FUNNEL_OFF');
+    Logger.info(`Funnel is ${isFunnelOn ? 'on' : 'off'}`, 'serve-status');
+    vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.funnelOn', isFunnelOn);
 
-    // we only get an NeedsHTTPs value if Funnel is enabled
-    if (status?.FunnelOff === false && status?.NeedsHTTPs === false) {
-      vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.httpsOn', true);
-    }
+    // HTTPS check
+    const isHTTPSOn = !status?.Errors?.some((e) => e.Type === 'HTTPS_OFF');
+    Logger.info(`HTTPS is ${isFunnelOn && isHTTPSOn ? 'on' : 'off'}`, 'serve-status');
+    vscode.commands.executeCommand(
+      'setContext',
+      'tailscale.walkthroughs.httpsOn',
+      isFunnelOn && isHTTPSOn
+    );
 
     if (status?.ServeConfig && Object.keys(status.ServeConfig).length === 0) {
       vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.sharedPort', true);
