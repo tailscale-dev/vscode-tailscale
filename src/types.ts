@@ -152,3 +152,8 @@ export interface NewPortNotification {
   message: string;
   port: number;
 }
+
+export interface TSRelayDetails {
+  address: string;
+  nonce: string;
+}
