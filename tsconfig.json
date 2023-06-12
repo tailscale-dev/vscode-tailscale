@@ -10,8 +10,7 @@
     "skipLibCheck": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "noUnusedParameters": true,
-    "types": ["webpack-env"]
+    "noUnusedParameters": true
   },
   "exclude": ["node_modules", ".vscode-test", "src/webviews"]
 }
