@@ -49,6 +49,9 @@ const (
 	// Offline can mean a user is not logged in
 	// or is logged in but their key has expired.
 	Offline = "OFFLINE"
+	// RequiredSudo for when LocalBackend is run
+	// with sudo but tsrelay is not
+	RequiredSudo = "REQUIRES_SUDO"
 )
 
 func main() {
@@ -131,13 +134,22 @@ type serveStatus struct {
 
 // RelayError is a wrapper for Error
 type RelayError struct {
-	Errors []Error
+	statusCode int
+	Errors     []Error
+}
+
+// Error implements error. It returns a
+// static string as it is only needed to be
+// used for programatic type assertion.
+func (RelayError) Error() string {
+	return "relay error"
 }
 
 // Error is a programmable error returned
 // to the typescript client
 type Error struct {
-	Type string `json:",omitempty"`
+	Type    string `json:",omitempty"`
+	Command string `json:",omitempty"`
 }
 
 type peerStatus struct {
@@ -191,6 +203,12 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			if err := h.createServe(r.Context(), r.Body); err != nil {
+				var re RelayError
+				if errors.As(err, &re) {
+					w.WriteHeader(re.statusCode)
+					json.NewEncoder(w).Encode(re)
+					return
+				}
 				h.l.Println("error creating serve:", err)
 				http.Error(w, err.Error(), 500)
 				return
@@ -424,6 +442,8 @@ func (h *httpHandler) deleteServe(ctx context.Context, body io.Reader) error {
 	return nil
 }
 
+// createServe is the programtic equivalent of "tailscale serve --set-raw"
+// it returns the config as json in case of an error.
 func (h *httpHandler) createServe(ctx context.Context, body io.Reader) error {
 	var req serveRequest
 	err := json.NewDecoder(body).Decode(&req)
@@ -449,6 +469,23 @@ func (h *httpHandler) createServe(ctx context.Context, body io.Reader) error {
 	}
 	err = h.lc.SetServeConfig(ctx, sc)
 	if err != nil {
+		if tailscale.IsAccessDeniedError(err) {
+			cfgJSON, err := json.Marshal(sc)
+			if err != nil {
+				return fmt.Errorf("error marshaling own config: %w", err)
+			}
+			re := RelayError{
+				statusCode: http.StatusForbidden,
+				Errors: []Error{{
+					Type:    RequiredSudo,
+					Command: fmt.Sprintf(`echo %s | sudo tailscale serve --set-raw`, cfgJSON),
+				}},
+			}
+			return re
+		}
+		if err != nil {
+			return fmt.Errorf("error marshaling config: %w", err)
+		}
 		return fmt.Errorf("error setting serve config: %w", err)
 	}
 	return nil
