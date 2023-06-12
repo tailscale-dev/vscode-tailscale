@@ -234,7 +234,7 @@
     "eslint-plugin-unicorn": "^46.0.0",
     "glob": "^8.1.0",
     "husky": "^8.0.3",
-    "immer": "^9.0.21",
+    "immer": "^10.0.2",
     "lint-staged": "^13.0.0",
     "mocha": "^10.2.0",
     "node-fetch": "^3.3.1",
