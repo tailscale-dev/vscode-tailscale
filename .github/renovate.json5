@@ -9,7 +9,7 @@
   packageRules: [
     {
       groupName: 'react',
-      matchPackagePatterns: ['^react', '.*react$'],
+      matchPackagePatterns: ['^react', '^@types/react', '.*react$'],
     },
     {
       groupName: 'eslint',
