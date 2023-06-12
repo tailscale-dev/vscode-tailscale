@@ -254,7 +254,7 @@
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.0",
     "ws": "^8.13.0",
-    "zustand": "^3.3.3"
+    "zustand": "^3.7.2"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
