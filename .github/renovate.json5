@@ -1,0 +1,35 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:base'],
+  enabledManagers: ['npm'],
+  baseBranches: ['main'],
+  prConcurrentLimit: 0,
+  rangeStrategy: 'bump',
+  prHourlyLimit: 0,
+  packageRules: [
+    {
+      groupName: 'react',
+      matchPackagePatterns: ['^react', '.*react$'],
+    },
+    {
+      groupName: 'eslint',
+      matchPackagePatterns: ['^eslint', '^@typescript-eslint'],
+    },
+    {
+      groupName: 'typescript',
+      matchPackagePatterns: ['^typescript', '^@typescript'],
+    },
+    {
+      groupName: 'tailwindcss',
+      matchPackagePatterns: ['^tailwindcss', '^@tailwindcss', '.*tailwindcss$'],
+    },
+    {
+      groupName: 'webpack',
+      matchPackagePatterns: ['^webpack', '-loader$'],
+    },
+    {
+      groupName: 'vscode',
+      matchPackagePatterns: ['^@vscode', '^@types/vscode', '^vscode'],
+    },
+  ],
+}
