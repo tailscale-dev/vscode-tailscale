@@ -18,12 +18,6 @@ export class ServePanelProvider implements vscode.WebviewViewProvider {
     this._view.webview.postMessage(message);
   }
 
-  public async refreshState() {
-    this.postMessage({
-      type: 'refreshState',
-    });
-  }
-
   resolveWebviewView(webviewView: vscode.WebviewView) {
     this._view = webviewView;
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
@@ -33,69 +27,40 @@ export class ServePanelProvider implements vscode.WebviewViewProvider {
     };
 
     webviewView.webview.onDidReceiveMessage(async (m: Message) => {
-      switch (m.type) {
-        case 'refreshState': {
-          Logger.info('Called refreshState', 'serve-panel');
-          await this.refreshState();
-          break;
-        }
+      const { type } = m;
+      Logger.info(`called ${type}`, 'serve-panel');
 
-        case 'deleteServe': {
-          Logger.info('Called deleteServe', 'serve-panel');
+      let response;
+
+      switch (type) {
+        case 'relayRequest': {
+          const { id, endpoint, method } = m;
+          Logger.info(`${id}, ${endpoint}, ${method}`, 'serve-panel');
           try {
-            await this.ts.serveDelete(m.params);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (e: any) {
-            vscode.window.showErrorMessage('Unable to delete serve', e.message);
+            response = await this.ts.performFetch(endpoint, method, m.data);
+            Logger.info(`response: ${JSON.stringify(response)}`, 'serve-panel');
+            this.postMessage({
+              id,
+              endpoint,
+              method,
+              type: 'relayResponse',
+              data: response,
+            });
+          } catch (e) {
+            vscode.window.showErrorMessage(`${e}`);
           }
 
-          await this.refreshState();
-          break;
-        }
-
-        case 'addServe': {
-          Logger.info('Called addServe', 'serve-panel');
-          await this.ts.serveAdd(m.params);
-          await this.refreshState();
-          break;
-        }
-
-        case 'setFunnel': {
-          Logger.info('Called setFunnel', 'serve-panel');
-          try {
-            await this.ts.setFunnel(parseInt(m.params.port), m.params.allow);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (e: any) {
-            vscode.window.showErrorMessage('Unable to toggle funnel', e.message);
-          }
-
-          await this.refreshState();
-          break;
-        }
-
-        case 'resetServe': {
-          Logger.info('Called resetServe', 'serve-panel');
-          try {
-            await this.ts.serveDelete();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (e: any) {
-            vscode.window.showErrorMessage('Unable to delete serve', e.message);
-          }
-
-          await this.refreshState();
           break;
         }
 
         case 'writeToClipboard': {
-          Logger.info('Called writeToClipboard', 'serve-panel');
-          vscode.env.clipboard.writeText(m.params.text);
+          vscode.env.clipboard.writeText(m.data.text);
           vscode.window.showInformationMessage('Copied to clipboard');
           break;
         }
 
         case 'openLink': {
-          Logger.info(`Called openLink: ${m.params.url}`, 'serve-panel');
-          vscode.env.openExternal(vscode.Uri.parse(m.params.url));
+          vscode.env.openExternal(vscode.Uri.parse(m.data.url));
           break;
         }
 

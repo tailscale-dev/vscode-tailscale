@@ -80,73 +80,69 @@ export interface Version {
  * Messages sent from the webview to the extension.
  */
 
-interface RefreshState {
-  type: 'refreshState';
+interface RequestBase {
+  id?: number;
+  type: string;
+  data?: unknown;
 }
 
-interface DeleteServe {
-  type: 'deleteServe';
-  params: ServeParams;
+interface RelayRequestBase extends RequestBase {
+  type: 'relayRequest';
+  endpoint: string;
+  method: string;
 }
 
-interface AddServe {
-  type: 'addServe';
-  params: ServeParams;
+interface RelayServeRequest extends RelayRequestBase {
+  endpoint: '/serve';
+  method: 'GET' | 'POST' | 'DELETE';
 }
 
-interface ResetServe {
-  type: 'resetServe';
-}
-
-interface SetFunnel {
-  type: 'setFunnel';
-  params: {
-    port: string;
-    allow: boolean;
-  };
-}
-
-interface WriteToClipboard {
+interface WriteToClipboard extends RequestBase {
   type: 'writeToClipboard';
-  params: {
+  data: {
     text: string;
   };
 }
 
-interface OpenLink {
+interface OpenLink extends RequestBase {
   type: 'openLink';
-  params: {
+  data: {
     url: string;
   };
 }
 
-export type Message =
-  | RefreshState
-  | DeleteServe
-  | AddServe
-  | ResetServe
-  | SetFunnel
-  | WriteToClipboard
-  | OpenLink
-  | SudoPrompt;
-
 interface SudoPrompt {
+  id?: number;
   type: 'sudoPrompt';
   operation: 'add' | 'delete';
   params?: ServeParams;
 }
 
+export type Message = RelayServeRequest | WriteToClipboard | OpenLink | SudoPrompt;
+export type MessageWithId = Omit<Message, 'id'> & { id: number };
+
 /**
  * Messages sent from the extension to the webview.
  */
 
-interface UpdateState {
-  type: 'updateState';
-  state: ServeConfig;
+interface ResponseBase {
+  id?: number;
+  type: string;
+  data?: unknown;
+  error?: string;
 }
 
-interface RefreshState {
-  type: 'refreshState';
+interface RelayResponseBase extends Omit<RelayRequestBase, 'type'>, Omit<ResponseBase, 'type'> {
+  id?: number;
+  endpoint: string;
+  method: string;
+  body?: unknown;
+  error?: string;
+}
+
+export interface RelayServeResponse extends RelayResponseBase {
+  type: 'relayResponse';
+  body?: ServeStatus;
 }
 
 interface WebpackOk {
@@ -161,7 +157,8 @@ interface WebpackStillOk {
   type: 'webpackStillOk';
 }
 
-export type WebviewData = UpdateState | RefreshState | WebpackOk | WebpackInvalid | WebpackStillOk;
+export type Responses = RelayServeResponse;
+export type WebviewData = Responses | WebpackOk | WebpackInvalid | WebpackStillOk;
 export type WebviewEvent = Event & { data: WebviewData };
 
 export interface NewPortNotification {

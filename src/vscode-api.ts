@@ -11,7 +11,7 @@ class VSCodeWrapper {
   public writeToClipboard(text: string): void {
     this.postMessage({
       type: 'writeToClipboard',
-      params: {
+      data: {
         text,
       },
     });
@@ -20,7 +20,7 @@ class VSCodeWrapper {
   public openLink(url: string): void {
     this.postMessage({
       type: 'openLink',
-      params: {
+      data: {
         url,
       },
     });

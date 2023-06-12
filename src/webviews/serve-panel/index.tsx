@@ -8,19 +8,6 @@ provideVSCodeDesignSystem().register(vsCodeButton());
 
 import './index.css';
 
-window.addEventListener('message', (m: WebviewEvent) => {
-  switch (m.data.type) {
-    // ignored dev messages
-    case 'webpackOk':
-    case 'webpackInvalid':
-    case 'webpackStillOk':
-      break;
-
-    default:
-      console.log('Unknown message type', m);
-  }
-});
-
 if (module.hot) {
   module.hot.accept();
 }
