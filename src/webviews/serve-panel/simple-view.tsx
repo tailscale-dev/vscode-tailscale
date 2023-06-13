@@ -61,6 +61,31 @@ export const SimpleView = () => {
   const textDisabledStyle = 'text-foreground bg-background';
   const hasServeTextStyle = persistedPort ? textStyle : textDisabledStyle;
 
+  // sorry Linux
+  if (window.tailscale.platform === 'linux') {
+    return (
+      <div className="flex mt-2 bg-bannerBackground p-3 text-bannerForeground">
+        <div className="pr-2 codicon codicon-terminal-linux !text-xl"></div>
+        <div className=" text-2lg">
+          <div className="font-bold ">Notice for Linux users</div>
+          <div>
+            We're working to resolve an issue preventing this extension from being used on Linux.
+            <br />
+            However, you can still use Funnel from the CLI.
+          </div>
+          <div className="mt-4">
+            <VSCodeButton
+              appearance="primary"
+              onClick={() => vsCodeAPI.openLink('https://tailscale.com/kb/1223/tailscale-funnel')}
+            >
+              See CLI docs
+            </VSCodeButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {data?.Errors?.map((error, index) => (
