@@ -25,7 +25,7 @@
     },
     {
       groupName: 'webpack',
-      matchPackagePatterns: ['^webpack', '-loader$'],
+      matchPackagePatterns: ['^webpack', '-loader$', 'postcss'],
     },
     {
       groupName: 'vscode',
