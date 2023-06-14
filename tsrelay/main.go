@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -74,10 +75,12 @@ func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	if *nonce == "" {
-		return errors.New("missing nonce as first argument")
-	}
 	return runHTTPServer(ctx, lggr, *port, *nonce)
+}
+
+type serverDetails struct {
+	Address string `json:"address,omitempty"`
+	Nonce   string `json:"nonce,omitempty"`
 }
 
 func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) error {
@@ -89,7 +92,12 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 	if err != nil {
 		return fmt.Errorf("error parsing addr %q: %w", l.Addr().String(), err)
 	}
-	fmt.Fprintf(os.Stdout, "http://127.0.0.1:%s\n", u.Port())
+	sd := serverDetails{Address: fmt.Sprintf("http://127.0.0.1:%s", u.Port())}
+	if nonce == "" {
+		nonce = getNonce()
+		sd.Nonce = nonce // only print it out if not set by flag
+	}
+	json.NewEncoder(os.Stdout).Encode(sd)
 	s := &http.Server{
 		Handler: &httpHandler{
 			lc: tailscale.LocalClient{
@@ -103,6 +111,15 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 		},
 	}
 	return serveTLS(ctx, l, s, time.Second)
+}
+
+func getNonce() string {
+	const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	var b strings.Builder
+	for i := 0; i < 32; i++ {
+		b.WriteByte(possible[rand.Intn(len(possible))])
+	}
+	return b.String()
 }
 
 type httpHandler struct {

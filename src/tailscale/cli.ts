@@ -1,9 +1,8 @@
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
-import { getNonce } from '../get-nonce';
 import * as WebSocket from 'ws';
-import type { ServeParams, ServeConfig, ServeStatus } from '../types';
+import type { ServeParams, ServeStatus, TSRelayDetails } from '../types';
 import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
@@ -26,14 +25,13 @@ interface vscodeModule {
 
 export class Tailscale {
   private _vscode: vscodeModule;
-  private nonce: string;
+  private nonce?: string;
   public url?: string;
   public authkey?: string;
   private childProcess?: cp.ChildProcess;
 
   constructor(vscode: vscodeModule) {
     this._vscode = vscode;
-    this.nonce = getNonce();
   }
 
   static async withInit(vscode: vscodeModule): Promise<Tailscale> {
@@ -58,7 +56,7 @@ export class Tailscale {
         __dirname,
         `../bin/vscode-tailscale_${platform}_${arch}/vscode-tailscale`
       );
-      let args = [`-nonce=${this.nonce}`];
+      let args = [];
       if (this._vscode.env.logLevel === LogLevel.Debug) {
         args.push('-v');
       }
@@ -82,7 +80,9 @@ export class Tailscale {
 
       if (this.childProcess.stdout) {
         this.childProcess.stdout.on('data', (data: Buffer) => {
-          this.url = data.toString().trim();
+          const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
+          this.url = details.address;
+          this.nonce = details.nonce;
           this.authkey = Buffer.from(`${this.nonce}:`).toString('base64');
           Logger.info(`url: ${this.url}`, LOG_COMPONENT);
 
