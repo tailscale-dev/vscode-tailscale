@@ -1,3 +1,5 @@
+import { ErrorType } from '../types';
+
 interface TailscaleError {
   title: string;
   message: string;
@@ -9,20 +11,20 @@ interface Link {
   title: string;
 }
 
-export function errorForType(type: string): TailscaleError {
+export function errorForType(type: ErrorType): TailscaleError {
   switch (type) {
-    case 'OFFLINE':
+    case ErrorType.OFFLINE:
       return {
         title: 'Tailscale offline',
         message: 'Please log in and try again',
       };
-    case 'NOT_RUNNING':
+    case ErrorType.NOT_RUNNING:
       return {
         title: 'Tailscale not running',
         message: 'Tailscale is either uninstalled or not running',
         links: [{ url: 'https://tailscale.com/download', title: 'Install' }],
       };
-    case 'FUNNEL_OFF':
+    case ErrorType.FUNNEL_OFF:
       return {
         title: 'Funnel is disabled',
         message:
@@ -31,7 +33,7 @@ export function errorForType(type: string): TailscaleError {
           { url: 'https://tailscale.com/kb/1223/tailscale-funnel/#setup', title: 'Enable Funnel' },
         ],
       };
-    case 'HTTPS_OFF':
+    case ErrorType.HTTPS_OFF:
       return {
         title: 'HTTPS disabled',
         message:

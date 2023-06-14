@@ -53,6 +53,9 @@ const (
 	// RequiredSudo for when LocalBackend is run
 	// with sudo but tsrelay is not
 	RequiredSudo = "REQUIRES_SUDO"
+	// NotRunning indicates tailscaled is
+	// not running
+	NotRunning = "NOT_RUNNING"
 )
 
 func main() {
@@ -84,6 +87,7 @@ func run() error {
 type serverDetails struct {
 	Address string `json:"address,omitempty"`
 	Nonce   string `json:"nonce,omitempty"`
+	Port    string `json:"port,omitempty"`
 }
 
 func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) error {
@@ -95,7 +99,10 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 	if err != nil {
 		return fmt.Errorf("error parsing addr %q: %w", l.Addr().String(), err)
 	}
-	sd := serverDetails{Address: fmt.Sprintf("http://127.0.0.1:%s", u.Port())}
+	sd := serverDetails{
+		Address: fmt.Sprintf("http://127.0.0.1:%s", u.Port()),
+		Port:    u.Port(),
+	}
 	if nonce == "" {
 		nonce = getNonce()
 		sd.Nonce = nonce // only print it out if not set by flag
@@ -260,11 +267,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if errors.As(err, &oe) && oe.Op == "dial" {
 					w.WriteHeader(http.StatusServiceUnavailable)
 					json.NewEncoder(w).Encode(RelayError{
-						Errors: []Error{
-							{
-								Type: "NOT_RUNNING",
-							},
-						},
+						Errors: []Error{{Type: NotRunning}},
 					})
 				} else {
 					http.Error(w, err.Error(), 500)

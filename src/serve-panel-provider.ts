@@ -99,6 +99,11 @@ export class ServePanelProvider implements vscode.WebviewViewProvider {
           break;
         }
 
+        case 'sudoPrompt': {
+          await this.ts.initSudo();
+          break;
+        }
+
         default: {
           console.log('Unknown type for message', m);
         }

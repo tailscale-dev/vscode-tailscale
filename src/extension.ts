@@ -8,6 +8,7 @@ import { fileExists } from './utils';
 import { EXTENSION_ID } from './constants';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
+import { ErrorType } from './types';
 
 let tailscaleInstance: Tailscale;
 
@@ -52,12 +53,12 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.installed', !!commandPath);
 
     // Funnel check
-    const isFunnelOn = !status?.Errors?.some((e) => e.Type === 'FUNNEL_OFF');
+    const isFunnelOn = !status?.Errors?.some((e) => e.Type === ErrorType.FUNNEL_OFF);
     Logger.info(`Funnel is ${isFunnelOn ? 'on' : 'off'}`, 'serve-status');
     vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.funnelOn', isFunnelOn);
 
     // HTTPS check
-    const isHTTPSOn = !status?.Errors?.some((e) => e.Type === 'HTTPS_OFF');
+    const isHTTPSOn = !status?.Errors?.some((e) => e.Type === ErrorType.HTTPS_OFF);
     Logger.info(`HTTPS is ${isFunnelOn && isHTTPSOn ? 'on' : 'off'}`, 'serve-status');
     vscode.commands.executeCommand(
       'setContext',

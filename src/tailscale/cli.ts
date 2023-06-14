@@ -7,6 +7,7 @@ import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
 import { trimSuffix } from '../utils';
+import sudo = require('sudo-prompt');
 
 const LOG_COMPONENT = 'tsrelay';
 
@@ -27,8 +28,10 @@ export class Tailscale {
   private _vscode: vscodeModule;
   private nonce?: string;
   public url?: string;
+  private port?: string;
   public authkey?: string;
   private childProcess?: cp.ChildProcess;
+  private notifyExit?: () => void;
 
   constructor(vscode: vscodeModule) {
     this._vscode = vscode;
@@ -42,20 +45,7 @@ export class Tailscale {
 
   async init() {
     return new Promise<null>((resolve) => {
-      let arch = process.arch;
-      let platform: string = process.platform;
-      // See:
-      // https://goreleaser.com/customization/builds/#why-is-there-a-_v1-suffix-on-amd64-builds
-      if (process.arch === 'x64') {
-        arch = 'amd64_v1';
-      }
-      if (platform === 'win32') {
-        platform = 'windows';
-      }
-      let binPath = path.join(
-        __dirname,
-        `../bin/vscode-tailscale_${platform}_${arch}/vscode-tailscale`
-      );
+      let binPath = this.tsrelayPath();
       let args = [];
       if (this._vscode.env.logLevel === LogLevel.Debug) {
         args.push('-v');
@@ -72,6 +62,9 @@ export class Tailscale {
 
       this.childProcess.on('exit', (code) => {
         Logger.warn(`child process exited with code ${code}`, LOG_COMPONENT);
+        if (this.notifyExit) {
+          this.notifyExit();
+        }
       });
 
       this.childProcess.on('error', (err) => {
@@ -83,6 +76,7 @@ export class Tailscale {
           const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
           this.url = details.address;
           this.nonce = details.nonce;
+          this.port = details.port;
           this.authkey = Buffer.from(`${this.nonce}:`).toString('base64');
           Logger.info(`url: ${this.url}`, LOG_COMPONENT);
 
@@ -130,6 +124,44 @@ export class Tailscale {
         throw new Error('childProcess.stderr is null');
       }
     });
+  }
+
+  async initSudo() {
+    return new Promise<null>((resolve) => {
+      const binPath = this.tsrelayPath();
+      const args = [`-nonce=${this.nonce}`, `-port=${this.port}`];
+      if (this._vscode.env.logLevel === LogLevel.Debug) {
+        args.push('-v');
+      }
+      Logger.info(`path: ${binPath}`, LOG_COMPONENT);
+      this.notifyExit = () => {
+        sudo.exec(`${binPath} ${args.join(' ')}`, { name: 'Tailscale' }, (err, stdout, stderr) => {
+          if (err) {
+            Logger.info(`error running tsrelay in sudo: ${err}`);
+            return;
+          }
+          Logger.info('stdout: ' + stdout);
+          Logger.info('stderr: ' + stderr);
+        });
+      };
+      this.childProcess?.kill('SIGINT');
+      // TODO(marwan): actually wait for sudo to succeed.
+      resolve(null);
+    });
+  }
+
+  tsrelayPath(): string {
+    let arch = process.arch;
+    let platform: string = process.platform;
+    // See:
+    // https://goreleaser.com/customization/builds/#why-is-there-a-_v1-suffix-on-amd64-builds
+    if (process.arch === 'x64') {
+      arch = 'amd64_v1';
+    }
+    if (platform === 'win32') {
+      platform = 'windows';
+    }
+    return path.join(__dirname, `../bin/vscode-tailscale_${platform}_${arch}/vscode-tailscale`);
   }
 
   dispose() {

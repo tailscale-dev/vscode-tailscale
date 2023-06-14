@@ -19,7 +19,7 @@ export interface Handlers {
   Proxy: string;
 }
 
-export interface ServeStatus {
+export interface ServeStatus extends WithErrors {
   ServeConfig?: ServeConfig;
   FunnelPorts?: number[];
   Services: {
@@ -27,11 +27,22 @@ export interface ServeStatus {
   };
   BackendState: string;
   Self: PeerStatus;
+}
+
+export interface WithErrors {
   Errors?: RelayError[];
 }
 
 interface RelayError {
-  Type: string;
+  Type: ErrorType;
+}
+
+export enum ErrorType {
+  FUNNEL_OFF,
+  HTTPS_OFF,
+  OFFLINE,
+  REQUIRES_SUDO,
+  NOT_RUNNING,
 }
 
 interface PeerStatus {
@@ -118,7 +129,12 @@ export type Message =
   | ResetServe
   | SetFunnel
   | WriteToClipboard
-  | OpenLink;
+  | OpenLink
+  | SudoPrompt;
+
+interface SudoPrompt {
+  type: 'sudoPrompt';
+}
 
 /**
  * Messages sent from the extension to the webview.
@@ -156,4 +172,5 @@ export interface NewPortNotification {
 export interface TSRelayDetails {
   address: string;
   nonce: string;
+  port: string;
 }

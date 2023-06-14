@@ -8,6 +8,7 @@ import { KB_FUNNEL_USE_CASES } from '../../utils/url';
 import { useServe, useServeMutation, fetchWithUser } from './data';
 import { Tooltip } from './components/tooltip';
 import { errorForType } from '../../tailscale/error';
+import { ErrorType, WithErrors } from '../../types';
 
 export const SimpleView = () => {
   const { data, mutate, isLoading } = useServe();
@@ -111,7 +112,6 @@ export const SimpleView = () => {
 
     return (
       <form onSubmit={handleSubmit}>
-        <div></div>
         <div className="w-full flex flex-col md:flex-row">
           <div className={`p-3 flex items-center flex-0 ${hasServeTextStyle}`}>
             <span
@@ -240,12 +240,19 @@ export const SimpleView = () => {
       return;
     }
 
-    await trigger({
+    const resp = (await trigger({
       protocol: 'https',
       port: 443,
       mountPoint: '/',
       source: `http://127.0.0.1:${port}`,
       funnel: true,
-    });
+    })) as WithErrors;
+    if (resp.Errors && resp.Errors.length) {
+      if (resp.Errors[0].Type == ErrorType.REQUIRES_SUDO) {
+        vsCodeAPI.postMessage({
+          type: 'sudoPrompt',
+        });
+      }
+    }
   }
 };

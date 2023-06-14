@@ -261,5 +261,8 @@
     "*.{json,md,yml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "sudo-prompt": "^9.2.1"
   }
 }
