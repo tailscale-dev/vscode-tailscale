@@ -13,7 +13,7 @@
     },
     {
       groupName: 'eslint',
-      matchPackagePatterns: ['^eslint', '^@typescript-eslint'],
+      matchPackagePatterns: ['^eslint', '^@typescript-eslint', 'prettier'],
     },
     {
       groupName: 'typescript',
