@@ -148,7 +148,7 @@ export class Tailscale {
           binPath,
           ...args,
         ]);
-        childProcess.on('exit', (code) => {
+        childProcess.on('exit', async (code) => {
           Logger.warn(`sudo child process exited with code ${code}`, LOG_COMPONENT);
           if (code === 0) {
             return;
@@ -160,19 +160,21 @@ export class Tailscale {
           } else {
             this._vscode.window.showErrorMessage('Could not run authenticator, please check logs');
           }
+          await this.init();
           err('unauthenticated');
-          this.init();
         });
         childProcess.on('error', (err) => {
           Logger.error(`sudo child process error ${err}`, LOG_COMPONENT);
         });
         childProcess.stdout.on('data', (data: Buffer) => {
+          Logger.debug('received data from sudo');
           const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
           if (this.url !== details.address) {
             Logger.error(`expected url to be ${this.url} but got ${details.address}`);
             return;
           }
           this.runPortDisco();
+          Logger.debug('resolving');
           resolve(null);
         });
         this.processStderr(childProcess);
@@ -289,7 +291,7 @@ export class Tailscale {
 
     const ws = new WebSocket(`ws://${this.url.slice('http://'.length)}/portdisco`, {
       headers: {
-        Authorization: 'Basic ' + Buffer.from(`${this.nonce}:`).toString('base64'),
+        Authorization: 'Basic ' + this.authkey!,
       },
     });
     ws.on('error', (e) => {
