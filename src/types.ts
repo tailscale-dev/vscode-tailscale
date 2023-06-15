@@ -126,7 +126,8 @@ export type Message =
 
 interface SudoPrompt {
   type: 'sudoPrompt';
-  params: ServeParams;
+  operation: 'add' | 'delete';
+  params?: ServeParams;
 }
 
 /**

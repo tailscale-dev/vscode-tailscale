@@ -7,7 +7,6 @@ import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
 import { trimSuffix } from '../utils';
-import sudo = require('sudo-prompt');
 
 const LOG_COMPONENT = 'tsrelay';
 
@@ -56,6 +55,9 @@ export class Tailscale {
         args = ['run', '.', ...args];
         cwd = path.join(cwd, '../tsrelay');
       }
+      if (this.port && this.nonce) {
+        args.push(`-nonce=${this.nonce}`, `-port=${this.port}`);
+      }
       Logger.info(`path: ${binPath}`, LOG_COMPONENT);
       Logger.info(`args: ${args.join(' ')}`, LOG_COMPONENT);
 
@@ -95,40 +97,44 @@ export class Tailscale {
         throw new Error('childProcess.stdout is null');
       }
 
-      if (this.childProcess.stderr) {
-        let buffer = '';
-        this.childProcess.stderr.on('data', (data: Buffer) => {
-          buffer += data.toString(); // Append the data to the buffer
-
-          const lines = buffer.split('\n'); // Split the buffer into lines
-
-          // Process all complete lines except the last one
-          for (let i = 0; i < lines.length - 1; i++) {
-            const line = lines[i].trim();
-            if (line.length > 0) {
-              Logger.info(line, LOG_COMPONENT);
-            }
-          }
-
-          buffer = lines[lines.length - 1];
-        });
-
-        this.childProcess.stderr.on('end', () => {
-          // Process the remaining data in the buffer after the stream ends
-          const line = buffer.trim();
-          if (line.length > 0) {
-            Logger.info(line, LOG_COMPONENT);
-          }
-        });
-      } else {
-        Logger.error('childProcess.stderr is null', LOG_COMPONENT);
-        throw new Error('childProcess.stderr is null');
-      }
+      this.processStderr(this.childProcess);
     });
   }
 
-  async initSudo(_: ServeParams) {
-    return new Promise<null>((resolve) => {
+  processStderr(childProcess: cp.ChildProcess) {
+    if (childProcess.stderr) {
+      let buffer = '';
+      childProcess.stderr.on('data', (data: Buffer) => {
+        buffer += data.toString(); // Append the data to the buffer
+
+        const lines = buffer.split('\n'); // Split the buffer into lines
+
+        // Process all complete lines except the last one
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i].trim();
+          if (line.length > 0) {
+            Logger.info(line, LOG_COMPONENT);
+          }
+        }
+
+        buffer = lines[lines.length - 1];
+      });
+
+      childProcess.stderr.on('end', () => {
+        // Process the remaining data in the buffer after the stream ends
+        const line = buffer.trim();
+        if (line.length > 0) {
+          Logger.info(line, LOG_COMPONENT);
+        }
+      });
+    } else {
+      Logger.error('childProcess.stderr is null', LOG_COMPONENT);
+      throw new Error('childProcess.stderr is null');
+    }
+  }
+
+  async initSudo() {
+    return new Promise<null>((resolve, err) => {
       const binPath = this.tsrelayPath();
       const args = [`-nonce=${this.nonce}`, `-port=${this.port}`];
       if (this._vscode.env.logLevel === LogLevel.Debug) {
@@ -137,19 +143,42 @@ export class Tailscale {
       Logger.info(`path: ${binPath}`, LOG_COMPONENT);
       this.notifyExit = () => {
         Logger.info('starting sudo tsrelay');
-        sudo.exec(`${binPath} ${args.join(' ')}`, { name: 'Tailscale' }, (err, stdout, stderr) => {
-          if (err) {
-            Logger.info(`error running tsrelay in sudo: ${err}`);
+        const childProcess = cp.spawn(`/usr/bin/pkexec`, [
+          '--disable-internal-agent',
+          binPath,
+          ...args,
+        ]);
+        childProcess.on('exit', (code) => {
+          Logger.warn(`sudo child process exited with code ${code}`, LOG_COMPONENT);
+          if (code === 0) {
+            return;
+          } else if (code === 126) {
+            // authentication not successful
+            this._vscode.window.showErrorMessage(
+              'Creating funnels must only be done by an administrator'
+            );
+          } else {
+            this._vscode.window.showErrorMessage('Could not run authenticator, please check logs');
+          }
+          err('unauthenticated');
+          this.init();
+        });
+        childProcess.on('error', (err) => {
+          Logger.error(`sudo child process error ${err}`, LOG_COMPONENT);
+        });
+        childProcess.stdout.on('data', (data: Buffer) => {
+          const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
+          if (this.url !== details.address) {
+            Logger.error(`expected url to be ${this.url} but got ${details.address}`);
             return;
           }
-          Logger.info('stdout: ' + stdout);
-          Logger.info('stderr: ' + stderr);
+          this.runPortDisco();
+          resolve(null);
         });
+        this.processStderr(childProcess);
       };
       Logger.info('shutting down tsrelay');
       this.childProcess!.kill('SIGINT');
-      // TODO(marwan): actually wait for sudo to succeed then serveAdd/Remove.
-      resolve(null);
     });
   }
 
@@ -281,6 +310,9 @@ export class Tailscale {
           })
         );
       });
+    });
+    ws.on('close', () => {
+      Logger.info('websocket is closed');
     });
     ws.on('message', async (data) => {
       Logger.info('got message');

@@ -262,7 +262,5 @@
       "prettier --write"
     ]
   },
-  "dependencies": {
-    "sudo-prompt": "^9.2.1"
-  }
+  "dependencies": {}
 }

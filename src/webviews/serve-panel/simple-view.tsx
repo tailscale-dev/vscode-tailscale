@@ -191,10 +191,16 @@ export const SimpleView = () => {
 
     setIsDeleting(true);
 
-    await fetchWithUser('/serve', {
+    const resp = (await fetchWithUser('/serve', {
       method: 'DELETE',
       body: '{}',
-    });
+    })) as WithErrors;
+    if (resp.Errors?.length && resp.Errors[0].Type === 'REQUIRES_SUDO') {
+      vsCodeAPI.postMessage({
+        type: 'sudoPrompt',
+        operation: 'delete',
+      });
+    }
 
     setIsDeleting(false);
     setPreviousPort(port);
@@ -225,6 +231,7 @@ export const SimpleView = () => {
     if (resp.Errors?.length && resp.Errors[0].Type === 'REQUIRES_SUDO') {
       vsCodeAPI.postMessage({
         type: 'sudoPrompt',
+        operation: 'add',
         params,
       });
     }
