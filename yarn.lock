@@ -590,10 +590,10 @@
   resolved "https://registry.npmjs.org/@types/vscode-webview/-/vscode-webview-1.57.1.tgz"
   integrity sha512-ghW5SfuDmsGDS2A4xkvGsLwDRNc3Vj5rS6rPOyPm/IryZuf3wceZKxgYaUoW+k9f0f/CB7y2c1rRsdOWZWn0PQ==
 
-"@types/vscode@^1.76.0":
-  version "1.76.0"
-  resolved "https://registry.npmjs.org/@types/vscode/-/vscode-1.76.0.tgz"
-  integrity sha512-CQcY3+Fe5hNewHnOEAVYj4dd1do/QHliXaknAEYSXx2KEHUzFibDZSKptCon+HPgK55xx20pR+PBJjf0MomnBA==
+"@types/vscode@^1.79.1":
+  version "1.79.1"
+  resolved "https://registry.yarnpkg.com/@types/vscode/-/vscode-1.79.1.tgz#ab568315f9c844a8f4fa8f168b2d6dbf1f58dd02"
+  integrity sha512-Ikwc4YbHABzqthrWfeAvItaAIfX9mdjMWxqNgTpGjhgOu0TMRq9LzyZ2yBK0JhYqoSjEubEPawf6zJgnl6Egtw==
 
 "@types/ws@^8.5.5":
   version "8.5.5"
@@ -686,25 +686,25 @@
     "@typescript-eslint/types" "5.59.11"
     eslint-visitor-keys "^3.3.0"
 
-"@vscode/codicons@^0.0.32":
-  version "0.0.32"
-  resolved "https://registry.npmjs.org/@vscode/codicons/-/codicons-0.0.32.tgz"
-  integrity sha512-3lgSTWhAzzWN/EPURoY4ZDBEA80OPmnaknNujA3qnI4Iu7AONWd9xF3iE4L+4prIe8E3TUnLQ4pxoaFTEEZNwg==
+"@vscode/codicons@^0.0.33":
+  version "0.0.33"
+  resolved "https://registry.yarnpkg.com/@vscode/codicons/-/codicons-0.0.33.tgz#a56243ab5492801fff04e53c0aab0d18a6521751"
+  integrity sha512-VdgpnD75swH9hpXjd34VBgQ2w2quK63WljodlUcOoJDPKiV+rPjHrcUc2sjLCNKxhl6oKqmsZgwOWcDAY2GKKQ==
 
-"@vscode/test-electron@^2.2.3":
-  version "2.3.0"
-  resolved "https://registry.npmjs.org/@vscode/test-electron/-/test-electron-2.3.0.tgz"
-  integrity sha512-fwzA9RtazH1GT/sckYlbxu6t5e4VaMXwCVtyLv4UAG0hP6NTfnMaaG25XCfWqlVwFhBMcQXHBCy5dmz2eLUnkw==
+"@vscode/test-electron@^2.3.3":
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/@vscode/test-electron/-/test-electron-2.3.3.tgz#e648700d5848eccfda99efa5d839356cfbe8cd4e"
+  integrity sha512-hgXCkDP0ibboF1K6seqQYyHAzCURgTwHS/6QU7slhwznDLwsRwg9bhfw1CZdyUEw8vvCmlrKWnd7BlQnI0BC4w==
   dependencies:
     http-proxy-agent "^4.0.1"
     https-proxy-agent "^5.0.0"
     jszip "^3.10.1"
     semver "^7.3.8"
 
-"@vscode/vsce@^2.18.0":
-  version "2.18.0"
-  resolved "https://registry.npmjs.org/@vscode/vsce/-/vsce-2.18.0.tgz"
-  integrity sha512-tUA3XoKx5xjoi3EDcngk0VUYMhvfXLhS4s7CntpLPh1qtLYtgSCexTIMUHkCy6MqyozRW98bdW3a2yHPEADRnQ==
+"@vscode/vsce@^2.19.0":
+  version "2.19.0"
+  resolved "https://registry.yarnpkg.com/@vscode/vsce/-/vsce-2.19.0.tgz#342225662811245bc40d855636d000147c394b11"
+  integrity sha512-dAlILxC5ggOutcvJY24jxz913wimGiUrHaPkk16Gm9/PGFbz1YezWtrXsTKUtJws4fIlpX2UIlVlVESWq8lkfQ==
   dependencies:
     azure-devops-node-api "^11.0.1"
     chalk "^2.4.2"
@@ -723,7 +723,7 @@
     tmp "^0.2.1"
     typed-rest-client "^1.8.4"
     url-join "^4.0.1"
-    xml2js "^0.4.23"
+    xml2js "^0.5.0"
     yauzl "^2.3.1"
     yazl "^2.2.2"
   optionalDependencies:
@@ -5988,10 +5988,10 @@ ws@^8.13.0:
   resolved "https://registry.npmjs.org/ws/-/ws-8.13.0.tgz"
   integrity sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==
 
-xml2js@^0.4.23:
-  version "0.4.23"
-  resolved "https://registry.npmjs.org/xml2js/-/xml2js-0.4.23.tgz"
-  integrity sha512-ySPiMjM0+pLDftHgXY4By0uswI3SPKLDw/i3UXbnO8M/p28zqexCUoPmQFrYD+/1BzhGJSs2i1ERWKJAtiLrug==
+xml2js@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/xml2js/-/xml2js-0.5.0.tgz#d9440631fbb2ed800203fad106f2724f62c493b7"
+  integrity sha512-drPFnkQJik/O+uPKpqSgr22mpuFHqKdbS835iAQrUC73L2F5WkboIRd63ai/2Yg6I1jzifPFKH2NTK+cfglkIA==
   dependencies:
     sax ">=0.6.0"
     xmlbuilder "~11.0.0"
