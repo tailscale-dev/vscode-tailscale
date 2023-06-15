@@ -34,15 +34,7 @@ export interface WithErrors {
 }
 
 interface RelayError {
-  Type: ErrorType;
-}
-
-export enum ErrorType {
-  FUNNEL_OFF,
-  HTTPS_OFF,
-  OFFLINE,
-  REQUIRES_SUDO,
-  NOT_RUNNING,
+  Type: 'FUNNEL_OFF' | 'HTTPS_OFF' | 'OFFLINE' | 'REQUIRES_SUDO' | 'NOT_RUNNING';
 }
 
 interface PeerStatus {
@@ -134,6 +126,7 @@ export type Message =
 
 interface SudoPrompt {
   type: 'sudoPrompt';
+  params: ServeParams;
 }
 
 /**

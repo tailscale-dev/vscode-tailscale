@@ -50,9 +50,9 @@ const (
 	// Offline can mean a user is not logged in
 	// or is logged in but their key has expired.
 	Offline = "OFFLINE"
-	// RequiredSudo for when LocalBackend is run
+	// RequiresSudo for when LocalBackend is run
 	// with sudo but tsrelay is not
-	RequiredSudo = "REQUIRES_SUDO"
+	RequiresSudo = "REQUIRES_SUDO"
 	// NotRunning indicates tailscaled is
 	// not running
 	NotRunning = "NOT_RUNNING"
@@ -120,7 +120,7 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 			onPortUpdate: func() {},
 		},
 	}
-	return serveTLS(ctx, l, s, time.Second)
+	return serve(ctx, lggr, l, s, time.Second)
 }
 
 func getNonce() string {
@@ -237,6 +237,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), 500)
 				return
 			}
+			w.Write([]byte(`{}`))
 		case http.MethodDelete:
 			if err := h.deleteServe(r.Context(), r.Body); err != nil {
 				h.l.Println("error deleting serve:", err)
@@ -497,7 +498,7 @@ func (h *httpHandler) createServe(ctx context.Context, body io.Reader) error {
 			re := RelayError{
 				statusCode: http.StatusForbidden,
 				Errors: []Error{{
-					Type:    RequiredSudo,
+					Type:    RequiresSudo,
 					Command: fmt.Sprintf(`echo %s | sudo tailscale serve --set-raw`, cfgJSON),
 				}},
 			}
@@ -604,8 +605,7 @@ func must(err error) {
 	}
 }
 
-// serveTLS is like Serve but calls serveTLS instead.
-func serveTLS(ctx context.Context, l net.Listener, s *http.Server, timeout time.Duration) error {
+func serve(ctx context.Context, lggr *logger, l net.Listener, s *http.Server, timeout time.Duration) error {
 	serverErr := make(chan error, 1)
 	go func() {
 		// Capture ListenAndServe errors such as "port already in use".
@@ -617,6 +617,7 @@ func serveTLS(ctx context.Context, l net.Listener, s *http.Server, timeout time.
 	var err error
 	select {
 	case <-ctx.Done():
+		lggr.Println("received interrupt signal")
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		err = s.Shutdown(ctx)

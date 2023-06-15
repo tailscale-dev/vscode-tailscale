@@ -100,7 +100,8 @@ export class ServePanelProvider implements vscode.WebviewViewProvider {
         }
 
         case 'sudoPrompt': {
-          await this.ts.initSudo();
+          Logger.info('running tsrelay in sudo');
+          await this.ts.initSudo(m.params);
           break;
         }
 

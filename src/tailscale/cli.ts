@@ -57,6 +57,7 @@ export class Tailscale {
         cwd = path.join(cwd, '../tsrelay');
       }
       Logger.info(`path: ${binPath}`, LOG_COMPONENT);
+      Logger.info(`args: ${args.join(' ')}`, LOG_COMPONENT);
 
       this.childProcess = cp.spawn(binPath, args, { cwd: cwd });
 
@@ -126,7 +127,7 @@ export class Tailscale {
     });
   }
 
-  async initSudo() {
+  async initSudo(p: ServeParams) {
     return new Promise<null>((resolve) => {
       const binPath = this.tsrelayPath();
       const args = [`-nonce=${this.nonce}`, `-port=${this.port}`];
@@ -135,6 +136,7 @@ export class Tailscale {
       }
       Logger.info(`path: ${binPath}`, LOG_COMPONENT);
       this.notifyExit = () => {
+        Logger.info('starting sudo tsrelay');
         sudo.exec(`${binPath} ${args.join(' ')}`, { name: 'Tailscale' }, (err, stdout, stderr) => {
           if (err) {
             Logger.info(`error running tsrelay in sudo: ${err}`);
@@ -144,8 +146,9 @@ export class Tailscale {
           Logger.info('stderr: ' + stderr);
         });
       };
-      this.childProcess?.kill('SIGINT');
-      // TODO(marwan): actually wait for sudo to succeed.
+      Logger.info('shutting down tsrelay');
+      this.childProcess!.kill('SIGINT');
+      // TODO(marwan): actually wait for sudo to succeed then serveAdd/Remove.
       resolve(null);
     });
   }
@@ -165,9 +168,7 @@ export class Tailscale {
   }
 
   dispose() {
-    if (this.childProcess) {
-      this.childProcess.kill();
-    }
+    this.childProcess?.kill();
   }
 
   async serveStatus(): Promise<ServeStatus> {
