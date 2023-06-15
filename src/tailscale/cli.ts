@@ -127,7 +127,7 @@ export class Tailscale {
     });
   }
 
-  async initSudo(p: ServeParams) {
+  async initSudo(_: ServeParams) {
     return new Promise<null>((resolve) => {
       const binPath = this.tsrelayPath();
       const args = [`-nonce=${this.nonce}`, `-port=${this.port}`];
