@@ -42,7 +42,7 @@ export class Tailscale {
     return ts;
   }
 
-  async init() {
+  async init(port?: string, nonce?: string) {
     return new Promise<null>((resolve) => {
       let binPath = this.tsrelayPath();
       let args = [];
@@ -55,8 +55,11 @@ export class Tailscale {
         args = ['run', '.', ...args];
         cwd = path.join(cwd, '../tsrelay');
       }
-      if (this.port && this.nonce) {
-        args.push(`-nonce=${this.nonce}`, `-port=${this.port}`);
+      if (port) {
+        args.push(`-port=${this.port}`);
+      }
+      if (nonce) {
+        args.push(`-nonce=${this.nonce}`);
       }
       Logger.info(`path: ${binPath}`, LOG_COMPONENT);
       Logger.info(`args: ${args.join(' ')}`, LOG_COMPONENT);
@@ -160,7 +163,7 @@ export class Tailscale {
           } else {
             this._vscode.window.showErrorMessage('Could not run authenticator, please check logs');
           }
-          await this.init();
+          await this.init(this.port, this.nonce);
           err('unauthenticated');
         });
         childProcess.on('error', (err) => {
