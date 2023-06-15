@@ -61,8 +61,8 @@ export class Tailscale {
       if (nonce) {
         args.push(`-nonce=${this.nonce}`);
       }
-      Logger.info(`path: ${binPath}`, LOG_COMPONENT);
-      Logger.info(`args: ${args.join(' ')}`, LOG_COMPONENT);
+      Logger.debug(`path: ${binPath}`, LOG_COMPONENT);
+      Logger.debug(`args: ${args.join(' ')}`, LOG_COMPONENT);
 
       this.childProcess = cp.spawn(binPath, args, { cwd: cwd });
 
