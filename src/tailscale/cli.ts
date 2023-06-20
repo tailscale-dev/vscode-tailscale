@@ -62,7 +62,7 @@ export class Tailscale {
       }
       let cwd = __dirname;
       if (process.env.NODE_ENV === 'development') {
-        binPath = 'go';
+        binPath = '../tool/go';
         args = ['run', '.', ...args];
         cwd = path.join(cwd, '../tsrelay');
       }
