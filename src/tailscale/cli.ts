@@ -105,35 +105,34 @@ export class Tailscale {
   }
 
   processStderr(childProcess: cp.ChildProcess) {
-    if (childProcess.stderr) {
-      let buffer = '';
-      childProcess.stderr.on('data', (data: Buffer) => {
-        buffer += data.toString(); // Append the data to the buffer
-
-        const lines = buffer.split('\n'); // Split the buffer into lines
-
-        // Process all complete lines except the last one
-        for (let i = 0; i < lines.length - 1; i++) {
-          const line = lines[i].trim();
-          if (line.length > 0) {
-            Logger.info(line, LOG_COMPONENT);
-          }
-        }
-
-        buffer = lines[lines.length - 1];
-      });
-
-      childProcess.stderr.on('end', () => {
-        // Process the remaining data in the buffer after the stream ends
-        const line = buffer.trim();
-        if (line.length > 0) {
-          Logger.info(line, LOG_COMPONENT);
-        }
-      });
-    } else {
+    if (!childProcess.stderr) {
       Logger.error('childProcess.stderr is null', LOG_COMPONENT);
       throw new Error('childProcess.stderr is null');
     }
+    let buffer = '';
+    childProcess.stderr.on('data', (data: Buffer) => {
+      buffer += data.toString(); // Append the data to the buffer
+
+      const lines = buffer.split('\n'); // Split the buffer into lines
+
+      // Process all complete lines except the last one
+      for (let i = 0; i < lines.length - 1; i++) {
+        const line = lines[i].trim();
+        if (line.length > 0) {
+          Logger.info(line, LOG_COMPONENT);
+        }
+      }
+
+      buffer = lines[lines.length - 1];
+    });
+
+    childProcess.stderr.on('end', () => {
+      // Process the remaining data in the buffer after the stream ends
+      const line = buffer.trim();
+      if (line.length > 0) {
+        Logger.info(line, LOG_COMPONENT);
+      }
+    });
   }
 
   async initSudo() {
@@ -158,7 +157,7 @@ export class Tailscale {
           } else if (code === 126) {
             // authentication not successful
             this._vscode.window.showErrorMessage(
-              'Creating funnels must only be done by an administrator'
+              'Creating a Funnel must be done by an administrator'
             );
           } else {
             this._vscode.window.showErrorMessage('Could not run authenticator, please check logs');
@@ -182,8 +181,7 @@ export class Tailscale {
         });
         this.processStderr(childProcess);
       };
-      Logger.info('shutting down tsrelay');
-      this.childProcess!.kill('SIGINT');
+      this.dispose();
     });
   }
 
@@ -202,7 +200,10 @@ export class Tailscale {
   }
 
   dispose() {
-    this.childProcess?.kill();
+    if (this.childProcess) {
+      Logger.info('shutting down tsrelay');
+      this.childProcess.kill();
+    }
   }
 
   async serveStatus(): Promise<ServeStatus> {
@@ -294,7 +295,7 @@ export class Tailscale {
 
     const ws = new WebSocket(`ws://${this.url.slice('http://'.length)}/portdisco`, {
       headers: {
-        Authorization: 'Basic ' + this.authkey!,
+        Authorization: 'Basic ' + this.authkey,
       },
     });
     ws.on('error', (e) => {
