@@ -99,13 +99,13 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 	if err != nil {
 		return fmt.Errorf("error parsing addr %q: %w", l.Addr().String(), err)
 	}
+	if nonce == "" {
+		nonce = getNonce()
+	}
 	sd := serverDetails{
 		Address: fmt.Sprintf("http://127.0.0.1:%s", u.Port()),
 		Port:    u.Port(),
 		Nonce:   nonce,
-	}
-	if sd.Nonce == "" {
-		sd.Nonce = getNonce()
 	}
 	json.NewEncoder(os.Stdout).Encode(sd)
 	s := &http.Server{
