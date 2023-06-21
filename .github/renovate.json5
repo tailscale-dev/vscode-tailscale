@@ -1,11 +1,11 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  extends: ['config:base'],
-  enabledManagers: ['npm'],
   baseBranches: ['main'],
+  enabledManagers: ['npm'],
+  extends: ['config:base'],
   prConcurrentLimit: 0,
-  rangeStrategy: 'bump',
   prHourlyLimit: 0,
+  rangeStrategy: 'bump',
   packageRules: [
     {
       groupName: 'react',
@@ -29,7 +29,19 @@
     },
     {
       groupName: 'vscode',
-      matchPackagePatterns: ['^@vscode', '^@types/vscode', '^vscode'],
+      matchPackagePatterns: ['^@vscode'],
+    },
+
+    // ignored
+    {
+      matchDepTypes: ['engines'],
+      matchPackageNames: ['vscode'],
+      enabled: false,
+    },
+    {
+      matchDepTypes: ['devDependencies'],
+      matchPackageNames: ['@types/vscode'],
+      enabled: false,
     },
   ],
 }
