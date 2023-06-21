@@ -27,8 +27,10 @@ export class Tailscale {
   private _vscode: vscodeModule;
   private nonce?: string;
   public url?: string;
+  private port?: string;
   public authkey?: string;
   private childProcess?: cp.ChildProcess;
+  private notifyExit?: () => void;
 
   constructor(vscode: vscodeModule) {
     this._vscode = vscode;
@@ -40,22 +42,9 @@ export class Tailscale {
     return ts;
   }
 
-  async init() {
+  async init(port?: string, nonce?: string) {
     return new Promise<null>((resolve) => {
-      let arch = process.arch;
-      let platform: string = process.platform;
-      // See:
-      // https://goreleaser.com/customization/builds/#why-is-there-a-_v1-suffix-on-amd64-builds
-      if (process.arch === 'x64') {
-        arch = 'amd64_v1';
-      }
-      if (platform === 'win32') {
-        platform = 'windows';
-      }
-      let binPath = path.join(
-        __dirname,
-        `../bin/vscode-tailscale_${platform}_${arch}/vscode-tailscale`
-      );
+      let binPath = this.tsrelayPath();
       let args = [];
       if (this._vscode.env.logLevel === LogLevel.Debug) {
         args.push('-v');
@@ -66,12 +55,22 @@ export class Tailscale {
         args = ['run', '.', ...args];
         cwd = path.join(cwd, '../tsrelay');
       }
-      Logger.info(`path: ${binPath}`, LOG_COMPONENT);
+      if (port) {
+        args.push(`-port=${this.port}`);
+      }
+      if (nonce) {
+        args.push(`-nonce=${this.nonce}`);
+      }
+      Logger.debug(`path: ${binPath}`, LOG_COMPONENT);
+      Logger.debug(`args: ${args.join(' ')}`, LOG_COMPONENT);
 
       this.childProcess = cp.spawn(binPath, args, { cwd: cwd });
 
       this.childProcess.on('exit', (code) => {
         Logger.warn(`child process exited with code ${code}`, LOG_COMPONENT);
+        if (this.notifyExit) {
+          this.notifyExit();
+        }
       });
 
       this.childProcess.on('error', (err) => {
@@ -83,6 +82,7 @@ export class Tailscale {
           const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
           this.url = details.address;
           this.nonce = details.nonce;
+          this.port = details.port;
           this.authkey = Buffer.from(`${this.nonce}:`).toString('base64');
           Logger.info(`url: ${this.url}`, LOG_COMPONENT);
 
@@ -100,40 +100,108 @@ export class Tailscale {
         throw new Error('childProcess.stdout is null');
       }
 
-      if (this.childProcess.stderr) {
-        let buffer = '';
-        this.childProcess.stderr.on('data', (data: Buffer) => {
-          buffer += data.toString(); // Append the data to the buffer
+      this.processStderr(this.childProcess);
+    });
+  }
 
-          const lines = buffer.split('\n'); // Split the buffer into lines
+  processStderr(childProcess: cp.ChildProcess) {
+    if (!childProcess.stderr) {
+      Logger.error('childProcess.stderr is null', LOG_COMPONENT);
+      throw new Error('childProcess.stderr is null');
+    }
+    let buffer = '';
+    childProcess.stderr.on('data', (data: Buffer) => {
+      buffer += data.toString(); // Append the data to the buffer
 
-          // Process all complete lines except the last one
-          for (let i = 0; i < lines.length - 1; i++) {
-            const line = lines[i].trim();
-            if (line.length > 0) {
-              Logger.info(line, LOG_COMPONENT);
-            }
-          }
+      const lines = buffer.split('\n'); // Split the buffer into lines
 
-          buffer = lines[lines.length - 1];
-        });
+      // Process all complete lines except the last one
+      for (let i = 0; i < lines.length - 1; i++) {
+        const line = lines[i].trim();
+        if (line.length > 0) {
+          Logger.info(line, LOG_COMPONENT);
+        }
+      }
 
-        this.childProcess.stderr.on('end', () => {
-          // Process the remaining data in the buffer after the stream ends
-          const line = buffer.trim();
-          if (line.length > 0) {
-            Logger.info(line, LOG_COMPONENT);
-          }
-        });
-      } else {
-        Logger.error('childProcess.stderr is null', LOG_COMPONENT);
-        throw new Error('childProcess.stderr is null');
+      buffer = lines[lines.length - 1];
+    });
+
+    childProcess.stderr.on('end', () => {
+      // Process the remaining data in the buffer after the stream ends
+      const line = buffer.trim();
+      if (line.length > 0) {
+        Logger.info(line, LOG_COMPONENT);
       }
     });
   }
 
+  async initSudo() {
+    return new Promise<null>((resolve, err) => {
+      const binPath = this.tsrelayPath();
+      const args = [`-nonce=${this.nonce}`, `-port=${this.port}`];
+      if (this._vscode.env.logLevel === LogLevel.Debug) {
+        args.push('-v');
+      }
+      Logger.info(`path: ${binPath}`, LOG_COMPONENT);
+      this.notifyExit = () => {
+        Logger.info('starting sudo tsrelay');
+        const childProcess = cp.spawn(`/usr/bin/pkexec`, [
+          '--disable-internal-agent',
+          binPath,
+          ...args,
+        ]);
+        childProcess.on('exit', async (code) => {
+          Logger.warn(`sudo child process exited with code ${code}`, LOG_COMPONENT);
+          if (code === 0) {
+            return;
+          } else if (code === 126) {
+            // authentication not successful
+            this._vscode.window.showErrorMessage(
+              'Creating a Funnel must be done by an administrator'
+            );
+          } else {
+            this._vscode.window.showErrorMessage('Could not run authenticator, please check logs');
+          }
+          await this.init(this.port, this.nonce);
+          err('unauthenticated');
+        });
+        childProcess.on('error', (err) => {
+          Logger.error(`sudo child process error ${err}`, LOG_COMPONENT);
+        });
+        childProcess.stdout.on('data', (data: Buffer) => {
+          Logger.debug('received data from sudo');
+          const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
+          if (this.url !== details.address) {
+            Logger.error(`expected url to be ${this.url} but got ${details.address}`);
+            return;
+          }
+          this.runPortDisco();
+          Logger.debug('resolving');
+          resolve(null);
+        });
+        this.processStderr(childProcess);
+      };
+      this.dispose();
+    });
+  }
+
+  tsrelayPath(): string {
+    let arch = process.arch;
+    let platform: string = process.platform;
+    // See:
+    // https://goreleaser.com/customization/builds/#why-is-there-a-_v1-suffix-on-amd64-builds
+    if (process.arch === 'x64') {
+      arch = 'amd64_v1';
+    }
+    if (platform === 'win32') {
+      platform = 'windows';
+    }
+    return path.join(__dirname, `../bin/vscode-tailscale_${platform}_${arch}/vscode-tailscale`);
+  }
+
   dispose() {
     if (this.childProcess) {
+      Logger.info('shutting down tsrelay');
       this.childProcess.kill();
     }
   }
@@ -227,7 +295,7 @@ export class Tailscale {
 
     const ws = new WebSocket(`ws://${this.url.slice('http://'.length)}/portdisco`, {
       headers: {
-        Authorization: 'Basic ' + Buffer.from(`${this.nonce}:`).toString('base64'),
+        Authorization: 'Basic ' + this.authkey,
       },
     });
     ws.on('error', (e) => {
@@ -248,6 +316,9 @@ export class Tailscale {
           })
         );
       });
+    });
+    ws.on('close', () => {
+      Logger.info('websocket is closed');
     });
     ws.on('message', async (data) => {
       Logger.info('got message');
