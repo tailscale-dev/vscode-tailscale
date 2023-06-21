@@ -43,5 +43,10 @@
       matchPackageNames: ['@types/vscode'],
       enabled: false,
     },
+    {
+      matchDepTypes: ['devDependencies'],
+      matchPackageNames: ['@types/node'],
+      enabled: false,
+    },
   ],
 }
