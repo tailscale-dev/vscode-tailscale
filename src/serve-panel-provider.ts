@@ -99,6 +99,26 @@ export class ServePanelProvider implements vscode.WebviewViewProvider {
           break;
         }
 
+        case 'sudoPrompt': {
+          Logger.info('running tsrelay in sudo');
+          try {
+            await this.ts.initSudo();
+            Logger.info(`re-applying ${m.operation}`);
+            if (m.operation == 'add') {
+              if (!m.params) {
+                Logger.error('params cannot be null for an add operation');
+                return;
+              }
+              await this.ts.serveAdd(m.params);
+            } else if (m.operation == 'delete') {
+              await this.ts.serveDelete();
+            }
+          } catch (e) {
+            Logger.error(`error running sudo prompt: ${e}`);
+          }
+          break;
+        }
+
         default: {
           console.log('Unknown type for message', m);
         }

@@ -50,9 +50,12 @@ const (
 	// Offline can mean a user is not logged in
 	// or is logged in but their key has expired.
 	Offline = "OFFLINE"
-	// RequiredSudo for when LocalBackend is run
+	// RequiresSudo for when LocalBackend is run
 	// with sudo but tsrelay is not
-	RequiredSudo = "REQUIRES_SUDO"
+	RequiresSudo = "REQUIRES_SUDO"
+	// NotRunning indicates tailscaled is
+	// not running
+	NotRunning = "NOT_RUNNING"
 )
 
 func main() {
@@ -84,6 +87,7 @@ func run() error {
 type serverDetails struct {
 	Address string `json:"address,omitempty"`
 	Nonce   string `json:"nonce,omitempty"`
+	Port    string `json:"port,omitempty"`
 }
 
 func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) error {
@@ -95,10 +99,13 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 	if err != nil {
 		return fmt.Errorf("error parsing addr %q: %w", l.Addr().String(), err)
 	}
-	sd := serverDetails{Address: fmt.Sprintf("http://127.0.0.1:%s", u.Port())}
 	if nonce == "" {
 		nonce = getNonce()
-		sd.Nonce = nonce // only print it out if not set by flag
+	}
+	sd := serverDetails{
+		Address: fmt.Sprintf("http://127.0.0.1:%s", u.Port()),
+		Port:    u.Port(),
+		Nonce:   nonce,
 	}
 	json.NewEncoder(os.Stdout).Encode(sd)
 	s := &http.Server{
@@ -113,7 +120,7 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 			onPortUpdate: func() {},
 		},
 	}
-	return serveTLS(ctx, l, s, time.Second)
+	return serve(ctx, lggr, l, s, time.Second)
 }
 
 func getNonce() string {
@@ -230,12 +237,20 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), 500)
 				return
 			}
+			w.Write([]byte(`{}`))
 		case http.MethodDelete:
 			if err := h.deleteServe(r.Context(), r.Body); err != nil {
+				var re RelayError
+				if errors.As(err, &re) {
+					w.WriteHeader(re.statusCode)
+					json.NewEncoder(w).Encode(re)
+					return
+				}
 				h.l.Println("error deleting serve:", err)
 				http.Error(w, err.Error(), 500)
 				return
 			}
+			w.Write([]byte(`{}`))
 		case http.MethodGet:
 			var wg sync.WaitGroup
 			wg.Add(1)
@@ -260,11 +275,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if errors.As(err, &oe) && oe.Op == "dial" {
 					w.WriteHeader(http.StatusServiceUnavailable)
 					json.NewEncoder(w).Encode(RelayError{
-						Errors: []Error{
-							{
-								Type: "NOT_RUNNING",
-							},
-						},
+						Errors: []Error{{Type: NotRunning}},
 					})
 				} else {
 					http.Error(w, err.Error(), 500)
@@ -361,10 +372,17 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		err := h.setFunnel(r.Context(), r.Body)
 		if err != nil {
+			var re RelayError
+			if errors.As(err, &re) {
+				w.WriteHeader(re.statusCode)
+				json.NewEncoder(w).Encode(re)
+				return
+			}
 			h.l.Println("error toggling funnel:", err)
 			http.Error(w, err.Error(), 500)
 			return
 		}
+		w.Write([]byte(`{}`))
 	case "/portdisco":
 		h.portDiscoHandler(w, r)
 	default:
@@ -419,20 +437,17 @@ func (h *httpHandler) getConfigs(ctx context.Context) (*ipnstate.Status, *ipn.Se
 }
 func (h *httpHandler) deleteServe(ctx context.Context, body io.Reader) error {
 	var req serveRequest
-
-	if body == nil || body == http.NoBody {
-		body = io.NopCloser(strings.NewReader("{}"))
-	}
-
-	err := json.NewDecoder(body).Decode(&req)
-	if err != nil {
-		return fmt.Errorf("error decoding request body: %w", err)
+	if body != nil && body != http.NoBody {
+		err := json.NewDecoder(body).Decode(&req)
+		if err != nil {
+			return fmt.Errorf("error decoding request body: %w", err)
+		}
 	}
 
 	// reset serve config if no request body
 	if (req == serveRequest{}) {
 		sc := &ipn.ServeConfig{}
-		err = h.lc.SetServeConfig(ctx, sc)
+		err := h.setServeCfg(ctx, sc)
 		if err != nil {
 			return fmt.Errorf("error setting serve config: %w", err)
 		}
@@ -452,7 +467,7 @@ func (h *httpHandler) deleteServe(ctx context.Context, body io.Reader) error {
 	if len(sc.AllowFunnel) == 0 {
 		sc.AllowFunnel = nil
 	}
-	err = h.lc.SetServeConfig(ctx, sc)
+	err = h.setServeCfg(ctx, sc)
 	if err != nil {
 		return fmt.Errorf("error setting serve config: %w", err)
 	}
@@ -484,7 +499,7 @@ func (h *httpHandler) createServe(ctx context.Context, body io.Reader) error {
 	} else {
 		delete(sc.AllowFunnel, hostPort)
 	}
-	err = h.lc.SetServeConfig(ctx, sc)
+	err = h.setServeCfg(ctx, sc)
 	if err != nil {
 		if tailscale.IsAccessDeniedError(err) {
 			cfgJSON, err := json.Marshal(sc)
@@ -494,7 +509,7 @@ func (h *httpHandler) createServe(ctx context.Context, body io.Reader) error {
 			re := RelayError{
 				statusCode: http.StatusForbidden,
 				Errors: []Error{{
-					Type:    RequiredSudo,
+					Type:    RequiresSudo,
 					Command: fmt.Sprintf(`echo %s | sudo tailscale serve --set-raw`, cfgJSON),
 				}},
 			}
@@ -535,8 +550,33 @@ func (h *httpHandler) setFunnel(ctx context.Context, body io.Reader) error {
 			sc.AllowFunnel = nil
 		}
 	}
-	err = h.lc.SetServeConfig(ctx, sc)
+	err = h.setServeCfg(ctx, sc)
 	if err != nil {
+		return fmt.Errorf("error setting serve config: %w", err)
+	}
+	return nil
+}
+
+func (h *httpHandler) setServeCfg(ctx context.Context, sc *ipn.ServeConfig) error {
+	err := h.lc.SetServeConfig(ctx, sc)
+	if err != nil {
+		if tailscale.IsAccessDeniedError(err) {
+			cfgJSON, err := json.Marshal(sc)
+			if err != nil {
+				return fmt.Errorf("error marshaling own config: %w", err)
+			}
+			re := RelayError{
+				statusCode: http.StatusForbidden,
+				Errors: []Error{{
+					Type:    RequiresSudo,
+					Command: fmt.Sprintf(`echo %s | sudo tailscale serve --set-raw`, cfgJSON),
+				}},
+			}
+			return re
+		}
+		if err != nil {
+			return fmt.Errorf("error marshaling config: %w", err)
+		}
 		return fmt.Errorf("error setting serve config: %w", err)
 	}
 	return nil
@@ -601,8 +641,7 @@ func must(err error) {
 	}
 }
 
-// serveTLS is like Serve but calls serveTLS instead.
-func serveTLS(ctx context.Context, l net.Listener, s *http.Server, timeout time.Duration) error {
+func serve(ctx context.Context, lggr *logger, l net.Listener, s *http.Server, timeout time.Duration) error {
 	serverErr := make(chan error, 1)
 	go func() {
 		// Capture ListenAndServe errors such as "port already in use".
@@ -614,6 +653,7 @@ func serveTLS(ctx context.Context, l net.Listener, s *http.Server, timeout time.
 	var err error
 	select {
 	case <-ctx.Done():
+		lggr.Println("received interrupt signal")
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		err = s.Shutdown(ctx)

@@ -28,8 +28,5 @@ export async function fetchWithUser(path: string, options: RequestInit = {}) {
   console.time(path);
   const res = await fetch(url + path, options);
   console.timeEnd(path);
-
-  if (options.method !== 'DELETE') {
-    return res.json();
-  }
+  return res.json();
 }
