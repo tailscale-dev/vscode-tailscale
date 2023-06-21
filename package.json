@@ -26,6 +26,9 @@
   "activationEvents": [
     "*"
   ],
+  "extensionKind": [
+    "ui"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "walkthroughs": [
