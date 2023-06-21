@@ -8,8 +8,6 @@
   <a title="Learn more about Tailscale" href="https://tailscale.com"><img width="476px" src="https://github.com/tailscale-dev/tailscale-dev/assets/40265/113339dc-fea6-4ccf-a284-22ecee62c7c9" alt="Tailscale Logo" /></a>
 </p>
 
-> Notice for Linux users: We're working to resolve an issue preventing this extension from being used on Linux. However, you can still use Funnel from the CLI ([docs](https://tailscale.com/kb/1223/tailscale-funnel)).
-
 > Tailscale is a free and open source service, based on WireGuard®, that helps users build no-hassle virtual private networks. With a Tailscale network (tailnet), you can securely access services and devices on that tailnet from anywhere in the world. Tailnets can include anything from a Digital Ocean droplet to a Raspberry Pi, home security camera, or even a Steam Deck. You can share nodes with friends or co-workers, or even expose ports to the public internet with Tailscale Funnel.
 
 # Tailscale for Visual Studio Code
