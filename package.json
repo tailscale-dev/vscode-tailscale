@@ -9,7 +9,7 @@
   },
   "version": "0.5.0",
   "engines": {
-    "vscode": "^1.79.2"
+    "vscode": "^1.76.0"
   },
   "categories": [
     "Other",
@@ -216,7 +216,7 @@
     "@types/node": "16.x",
     "@types/react": "^18.2.12",
     "@types/react-dom": "^18.2.5",
-    "@types/vscode": "^1.79.1",
+    "@types/vscode": "^1.76.0",
     "@types/vscode-webview": "^1.57.1",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
