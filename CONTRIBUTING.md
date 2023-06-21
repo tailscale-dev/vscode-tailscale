@@ -73,8 +73,6 @@ To backport a PR, add the `auto-backport` label to a PR and a corresponding vers
 
 ## Release Process
 
-### Create or update an existing release branch
-
 #### To make a new minor release. (e.g., `0.2` ⇒ `0.4`)
 
 From the `main` branch:
@@ -92,6 +90,17 @@ git checkout release-branch/0.2
 $ git cherry-pick -x <commit-id>
 ```
 
+### Update CHANGELOG.md
+
+Using the diff between the latest tag, and the release branch after cherry picking
+
+```
+git log --pretty=oneline v0.2.1..release-branch/v0.2
+```
+
+Group changes by `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, and `Security`
+Open a pull-request for the changes and cherry-pick into the release branch
+
 ### Update the version
 
 ```
@@ -99,6 +108,8 @@ $ npm version --no-git-tag-version 0.2.1
 $ git add package.json && git commit -sm 'version: v0.2.1'
 $ git tag -am "Relase 0.2.1" "v0.2.1"
 ```
+
+### Create or update an existing release branch
 
 ### Push the release branch and tag
 
