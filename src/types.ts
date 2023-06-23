@@ -19,6 +19,20 @@ export interface Handlers {
   Proxy: string;
 }
 
+export interface Peer {
+  ID: string;
+  HostName: string;
+  Active?: boolean;
+  Online?: boolean;
+  TailscaleIPs: string[];
+}
+
+export interface Status {
+  Peer: {
+    [key: string]: Peer;
+  };
+}
+
 export interface ServeStatus extends WithErrors {
   ServeConfig?: ServeConfig;
   FunnelPorts?: number[];

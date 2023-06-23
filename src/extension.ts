@@ -5,6 +5,7 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
+import { NodeExplorerProvider, PeerDetailTreeItem, PeerTree } from './node-explorer-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -45,6 +46,9 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
+  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance);
+  vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
+
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {
       Logger.info('called tailscale.refreshServe', 'command');
@@ -71,6 +75,36 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openAdminConsole', () => {
       vscode.env.openExternal(vscode.Uri.parse(ADMIN_CONSOLE));
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyIPv4', async (node: PeerTree) => {
+      const ip = node.TailscaleIPs[1];
+
+      if (!ip) {
+        vscode.window.showErrorMessage(`No IPv4 address found for ${node.HostName}.`);
+        return;
+      }
+
+      await vscode.env.clipboard.writeText(ip);
+      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyIPv6', async (node: PeerTree) => {
+      const ip = node.TailscaleIPs[0];
+      await vscode.env.clipboard.writeText(ip);
+      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyHostname', async (node: PeerTree) => {
+      const name = node.HostName;
+      await vscode.env.clipboard.writeText(name);
+      vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
     })
   );
 
