@@ -125,7 +125,24 @@
         {
           "command": "tailscale.openAdminConsole",
           "group": "overflow",
-          "when": "view == tailscale-serve-view"
+          "when": "view == tailscale-serve-view || view == tailscale-node-explorer-view"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "tailscale.copyIPv4",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "1_peer@1"
+        },
+        {
+          "command": "tailscale.copyIPv6",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "1_peer@1"
+        },
+        {
+          "command": "tailscale.copyTreeItemLabel",
+          "when": "view == tailscale-node-explorer-view && (viewItem == tailscale-peer-item-hostname || viewItem == tailscale-peer-item-ip)",
+          "group": "1_peer@1"
         }
       ]
     },
@@ -164,6 +181,18 @@
         "command": "tailscale.simpleServeView",
         "title": "Simple View",
         "category": "tsdev"
+      },
+      {
+        "command": "tailscale.copyIPv4",
+        "title": "Copy IPv4"
+      },
+      {
+        "command": "tailscale.copyIPv6",
+        "title": "Copy IPv6"
+      },
+      {
+        "command": "tailscale.copyTreeItemLabel",
+        "title": "Copy to clipboard"
       }
     ],
     "viewsContainers": {
@@ -173,6 +202,13 @@
           "title": "Tailscale",
           "icon": "images/tailscale.svg"
         }
+      ],
+      "activitybar": [
+        {
+          "icon": "resources/images/mark.svg",
+          "id": "tailscale-nodes-explorer",
+          "title": "Tailscale"
+        }
       ]
     },
     "views": {
@@ -181,6 +217,13 @@
           "id": "tailscale-serve-view",
           "name": "Funnel",
           "type": "webview"
+        }
+      ],
+      "tailscale-nodes-explorer": [
+        {
+          "id": "tailscale-node-explorer-view",
+          "name": "Nodes",
+          "when": "config.tailscale.nodeExplorer.enabled"
         }
       ]
     },
@@ -198,6 +241,11 @@
               "/usr/bin/tailscale",
               "C:\\Program Files\\Tailscale\\tailscale.exe"
             ]
+          },
+          "tailscale.nodeExplorer.enabled": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "(IN DEVELOPMENT) Enable the Tailscale Node Explorer view."
           }
         }
       }

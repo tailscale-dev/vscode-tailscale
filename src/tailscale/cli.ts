@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import * as WebSocket from 'ws';
-import type { ServeParams, ServeStatus, TSRelayDetails } from '../types';
+import type { ServeParams, ServeStatus, TSRelayDetails, Status } from '../types';
 import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
@@ -206,6 +206,25 @@ export class Tailscale {
     }
   }
 
+  async status() {
+    if (!this.url) {
+      throw new Error('uninitialized client');
+    }
+    try {
+      const resp = await fetch(`${this.url}/localapi/v0/status`, {
+        headers: {
+          Authorization: 'Basic ' + this.authkey,
+        },
+      });
+
+      const status = (await resp.json()) as Status;
+      return status;
+    } catch (e) {
+      Logger.error(`error calling status: ${JSON.stringify(e, null, 2)}`);
+      throw e;
+    }
+  }
+
   async serveStatus(): Promise<ServeStatus> {
     if (!this.url) {
       throw new Error('uninitialized client');
@@ -220,7 +239,7 @@ export class Tailscale {
       const status = (await resp.json()) as ServeStatus;
       return status;
     } catch (e) {
-      Logger.error(`error calling status: ${JSON.stringify(e, null, 2)}`);
+      Logger.error(`error calling serve: ${JSON.stringify(e, null, 2)}`);
       throw e;
     }
   }

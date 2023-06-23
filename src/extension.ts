@@ -8,6 +8,7 @@ import { fileExists } from './utils';
 import { EXTENSION_ID } from './constants';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
+import { NodeExplorerProvider, PeerDetailTreeItem, PeerTree } from './node-explorer-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -77,6 +78,9 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
+  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance);
+  vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
+
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {
       Logger.info('called tailscale.refreshServe', 'command');
@@ -103,6 +107,40 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openAdminConsole', () => {
       vscode.env.openExternal(vscode.Uri.parse(ADMIN_CONSOLE));
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'tailscale.copyTreeItemLabel',
+      async (node: vscode.TreeItem) => {
+        const text =
+          typeof node.label === vscode.TreeItemLabel ? node.label?.toString() : node.label;
+
+        if (!text) {
+          vscode.window.showErrorMessage(`No label too copy.`);
+          return;
+        }
+
+        await vscode.env.clipboard.writeText(text);
+        vscode.window.showInformationMessage(`Copied ${text} to clipboard.`);
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyIPv6', async (node: PeerTree) => {
+      const ip = node.TailscaleIPs[0];
+      await vscode.env.clipboard.writeText(ip);
+      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyHostname', async (node: PeerTree) => {
+      const name = node.HostName;
+      await vscode.env.clipboard.writeText(name);
+      vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
     })
   );
 
