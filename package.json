@@ -114,15 +114,18 @@
       "view/title": [
         {
           "command": "tailscale.refreshServe",
-          "group": "overflow"
+          "group": "overflow",
+          "when": "view == tailscale-serve-view"
         },
         {
           "command": "tailscale.resetServe",
-          "group": "overflow"
+          "group": "overflow",
+          "when": "view == tailscale-serve-view"
         },
         {
           "command": "tailscale.openAdminConsole",
-          "group": "overflow"
+          "group": "overflow",
+          "when": "view == tailscale-serve-view"
         }
       ]
     },
