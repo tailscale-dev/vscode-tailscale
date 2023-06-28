@@ -43,6 +43,11 @@ export function errorForType(type: string): TailscaleError {
           },
         ],
       };
+    case 'REQUIRES_RESTART':
+      return {
+        title: 'Restart Flatpak Container',
+        message: 'Please quit VSCode and restart the container to finish setting up Tailscale',
+      };
     default:
       return {
         title: 'Unknown error',

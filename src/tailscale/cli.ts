@@ -154,11 +154,16 @@ export class Tailscale {
       Logger.info(`path: ${binPath}`, LOG_COMPONENT);
       this.notifyExit = () => {
         Logger.info('starting sudo tsrelay');
-        const childProcess = cp.spawn(`/usr/bin/pkexec`, [
-          '--disable-internal-agent',
-          binPath,
-          ...args,
-        ]);
+        let authCmd = `/usr/bin/pkexec`;
+        let authArgs = ['--disable-internal-agent', binPath, ...args];
+        if (
+          process.env['container'] === 'flatpak' &&
+          process.env['FLATPAK_ID'] === 'com.visualstudio.code'
+        ) {
+          authCmd = 'flatpak-spawn';
+          authArgs = ['--host', 'pkexec', '--disable-internal-agent', binPath, ...args];
+        }
+        const childProcess = cp.spawn(authCmd, authArgs);
         childProcess.on('exit', async (code) => {
           Logger.warn(`sudo child process exited with code ${code}`, LOG_COMPONENT);
           if (code === 0) {

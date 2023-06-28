@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strconv"
 	"strings"
@@ -56,7 +57,12 @@ const (
 	// NotRunning indicates tailscaled is
 	// not running
 	NotRunning = "NOT_RUNNING"
+	// RequiresRestart indicates that the flatpak
+	// container needs to be fully restarted
+	RequiresRestart = "REQUIRES_RESTART"
 )
+
+var requiresRestart bool
 
 func main() {
 	must(run())
@@ -78,10 +84,48 @@ func run() error {
 		Logger: log.New(logOut, "", 0),
 	}
 
+	flatpakID := os.Getenv("FLATPAK_ID")
+	isFlatpak := os.Getenv("container") == "flatpak" && strings.HasPrefix(flatpakID, "com.visualstudio.code")
+	if isFlatpak {
+		lggr.Println("running inside flatpak")
+		var err error
+		requiresRestart, err = ensureTailscaledAccessible(lggr, flatpakID)
+		if err != nil {
+			return err
+		}
+		lggr.Printf("requires restart: %v", requiresRestart)
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	return runHTTPServer(ctx, lggr, *port, *nonce)
+}
+
+func ensureTailscaledAccessible(lggr *logger, flatpakID string) (bool, error) {
+	_, err := os.Stat("/run/tailscale")
+	if err == nil {
+		lggr.Println("tailscaled is accessible")
+		return false, nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return false, fmt.Errorf("error checking /run/tailscale: %w", err)
+	}
+	lggr.Println("running flatpak override")
+	cmd := exec.Command(
+		"flatpak-spawn",
+		"--host",
+		"flatpak",
+		"override",
+		"--user",
+		flatpakID,
+		"--filesystem=/run/tailscale",
+	)
+	output, err := cmd.Output()
+	if err != nil {
+		return false, fmt.Errorf("error running flatpak override: %s - %w", output, err)
+	}
+	return true, nil
 }
 
 type serverDetails struct {
@@ -252,6 +296,12 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			w.Write([]byte(`{}`))
 		case http.MethodGet:
+			if requiresRestart {
+				json.NewEncoder(w).Encode(RelayError{
+					Errors: []Error{{Type: RequiresRestart}},
+				})
+				return
+			}
 			var wg sync.WaitGroup
 			wg.Add(1)
 			portMap := map[uint16]string{}
@@ -414,8 +464,8 @@ func (h *httpHandler) getConfigs(ctx context.Context) (*ipnstate.Status, *ipn.Se
 	var (
 		st *ipnstate.Status
 		sc *ipn.ServeConfig
-		g  errgroup.Group
 	)
+	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
 		sc, err = h.lc.GetServeConfig(ctx)
