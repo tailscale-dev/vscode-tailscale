@@ -44,28 +44,33 @@ export class Tailscale {
     return ts;
   }
 
-  async init(port?: string, nonce?: string) {
+  defaultArgs() {
+    const args = [];
+    if (this._vscode.env.logLevel === LogLevel.Debug) {
+      args.push('-v');
+    }
+    if (this.port) {
+      args.push(`-port=${this.port}`);
+    }
+    if (this.nonce) {
+      args.push(`-nonce=${this.nonce}`);
+    }
+    if (this.socket) {
+      args.push(`-socket=${this.socket}`);
+    }
+    return args;
+  }
+
+  async init() {
     return new Promise<null>((resolve) => {
       this.socket = vscode.workspace.getConfiguration(EXTENSION_NS).get<string>('socketPath');
       let binPath = this.tsrelayPath();
-      let args = [];
-      if (this._vscode.env.logLevel === LogLevel.Debug) {
-        args.push('-v');
-      }
+      let args = this.defaultArgs();
       let cwd = __dirname;
       if (process.env.NODE_ENV === 'development') {
         binPath = '../tool/go';
         args = ['run', '.', ...args];
         cwd = path.join(cwd, '../tsrelay');
-      }
-      if (port) {
-        args.push(`-port=${this.port}`);
-      }
-      if (nonce) {
-        args.push(`-nonce=${this.nonce}`);
-      }
-      if (this.socket) {
-        args.push(`-socket=${this.socket}`);
       }
       Logger.debug(`path: ${binPath}`, LOG_COMPONENT);
       Logger.debug(`args: ${args.join(' ')}`, LOG_COMPONENT);
@@ -109,6 +114,59 @@ export class Tailscale {
       this.processStderr(this.childProcess);
     });
   }
+  async initSudo() {
+    return new Promise<null>((resolve, err) => {
+      const binPath = this.tsrelayPath();
+      const args = this.defaultArgs();
+
+      Logger.info(`path: ${binPath}`, LOG_COMPONENT);
+      this.notifyExit = () => {
+        Logger.info('starting sudo tsrelay');
+        let authCmd = `/usr/bin/pkexec`;
+        let authArgs = ['--disable-internal-agent', binPath, ...args];
+        if (
+          process.env['container'] === 'flatpak' &&
+          process.env['FLATPAK_ID'] &&
+          process.env['FLATPAK_ID'].startsWith('com.visualstudio.code')
+        ) {
+          authCmd = 'flatpak-spawn';
+          authArgs = ['--host', 'pkexec', '--disable-internal-agent', binPath, ...args];
+        }
+        const childProcess = cp.spawn(authCmd, authArgs);
+        childProcess.on('exit', async (code) => {
+          Logger.warn(`sudo child process exited with code ${code}`, LOG_COMPONENT);
+          if (code === 0) {
+            return;
+          } else if (code === 126) {
+            // authentication not successful
+            this._vscode.window.showErrorMessage(
+              'Creating a Funnel must be done by an administrator'
+            );
+          } else {
+            this._vscode.window.showErrorMessage('Could not run authenticator, please check logs');
+          }
+          await this.init();
+          err('unauthenticated');
+        });
+        childProcess.on('error', (err) => {
+          Logger.error(`sudo child process error ${err}`, LOG_COMPONENT);
+        });
+        childProcess.stdout.on('data', (data: Buffer) => {
+          Logger.debug('received data from sudo');
+          const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
+          if (this.url !== details.address) {
+            Logger.error(`expected url to be ${this.url} but got ${details.address}`);
+            return;
+          }
+          this.runPortDisco();
+          Logger.debug('resolving');
+          resolve(null);
+        });
+        this.processStderr(childProcess);
+      };
+      this.dispose();
+    });
+  }
 
   processStderr(childProcess: cp.ChildProcess) {
     if (!childProcess.stderr) {
@@ -138,65 +196,6 @@ export class Tailscale {
       if (line.length > 0) {
         Logger.info(line, LOG_COMPONENT);
       }
-    });
-  }
-
-  async initSudo() {
-    return new Promise<null>((resolve, err) => {
-      const binPath = this.tsrelayPath();
-      const args = [`-nonce=${this.nonce}`, `-port=${this.port}`];
-      if (this._vscode.env.logLevel === LogLevel.Debug) {
-        args.push('-v');
-      }
-      if (this.socket) {
-        args.push(`-socket=${this.socket}`);
-      }
-      Logger.info(`path: ${binPath}`, LOG_COMPONENT);
-      this.notifyExit = () => {
-        Logger.info('starting sudo tsrelay');
-        let authCmd = `/usr/bin/pkexec`;
-        let authArgs = ['--disable-internal-agent', binPath, ...args];
-        if (
-          process.env['container'] === 'flatpak' &&
-          process.env['FLATPAK_ID'] &&
-          process.env['FLATPAK_ID'].startsWith('com.visualstudio.code')
-        ) {
-          authCmd = 'flatpak-spawn';
-          authArgs = ['--host', 'pkexec', '--disable-internal-agent', binPath, ...args];
-        }
-        const childProcess = cp.spawn(authCmd, authArgs);
-        childProcess.on('exit', async (code) => {
-          Logger.warn(`sudo child process exited with code ${code}`, LOG_COMPONENT);
-          if (code === 0) {
-            return;
-          } else if (code === 126) {
-            // authentication not successful
-            this._vscode.window.showErrorMessage(
-              'Creating a Funnel must be done by an administrator'
-            );
-          } else {
-            this._vscode.window.showErrorMessage('Could not run authenticator, please check logs');
-          }
-          await this.init(this.port, this.nonce);
-          err('unauthenticated');
-        });
-        childProcess.on('error', (err) => {
-          Logger.error(`sudo child process error ${err}`, LOG_COMPONENT);
-        });
-        childProcess.stdout.on('data', (data: Buffer) => {
-          Logger.debug('received data from sudo');
-          const details = JSON.parse(data.toString().trim()) as TSRelayDetails;
-          if (this.url !== details.address) {
-            Logger.error(`expected url to be ${this.url} but got ${details.address}`);
-            return;
-          }
-          this.runPortDisco();
-          Logger.debug('resolving');
-          resolve(null);
-        });
-        this.processStderr(childProcess);
-      };
-      this.dispose();
     });
   }
 
