@@ -158,7 +158,8 @@ export class Tailscale {
         let authArgs = ['--disable-internal-agent', binPath, ...args];
         if (
           process.env['container'] === 'flatpak' &&
-          process.env['FLATPAK_ID'] === 'com.visualstudio.code'
+          process.env['FLATPAK_ID'] &&
+          process.env['FLATPAK_ID'].startsWith('com.visualstudio.code')
         ) {
           authCmd = 'flatpak-spawn';
           authArgs = ['--host', 'pkexec', '--disable-internal-agent', binPath, ...args];
