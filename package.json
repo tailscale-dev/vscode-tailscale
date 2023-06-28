@@ -186,14 +186,14 @@
         "type": "object",
         "title": "Tailscale",
         "properties": {
-          "tailscale.path": {
+          "tailscale.socketPath": {
             "type": "string",
             "default": null,
             "markdownDescription": "An absolute path to the `tailscaled` unix socket. By default, the extension looks for the default path based on the platform.",
             "scope": "window",
             "examples": [
               "/var/run/tailscaled.socket",
-              "C:\\Program Files\\Tailscale\\tailscaled.exe"
+              "\\\\.\\pipe\\ProtectedPrefix\\Administrators\\Tailscale\\tailscaled"
             ]
           }
         }

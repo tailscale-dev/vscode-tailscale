@@ -46,7 +46,7 @@ export class Tailscale {
 
   async init(port?: string, nonce?: string) {
     return new Promise<null>((resolve) => {
-      this.socket = vscode.workspace.getConfiguration(EXTENSION_NS).get<string>('path');
+      this.socket = vscode.workspace.getConfiguration(EXTENSION_NS).get<string>('socketPath');
       let binPath = this.tsrelayPath();
       let args = [];
       if (this._vscode.env.logLevel === LogLevel.Debug) {
