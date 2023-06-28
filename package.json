@@ -189,11 +189,11 @@
           "tailscale.path": {
             "type": "string",
             "default": null,
-            "markdownDescription": "An absolute path to the `tailscale` CLI executable. By default, the extension looks for `tailscale` in the `PATH`, but if set, will use the path specified instead.",
+            "markdownDescription": "An absolute path to the `tailscaled` unix socket. By default, the extension looks for the default path based on the platform.",
             "scope": "window",
             "examples": [
-              "/usr/bin/tailscale",
-              "C:\\Program Files\\Tailscale\\tailscale.exe"
+              "/var/run/tailscaled.socket",
+              "C:\\Program Files\\Tailscale\\tailscaled.exe"
             ]
           }
         }

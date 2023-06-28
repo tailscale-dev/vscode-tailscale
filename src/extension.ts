@@ -1,55 +1,23 @@
 import * as vscode from 'vscode';
 
 import { ServePanelProvider } from './serve-panel-provider';
-import { getTailscaleCommandPath } from './tailscale';
-import { downloadLinkForPlatform, ADMIN_CONSOLE } from './utils/url';
+import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
-import { fileExists } from './utils';
-import { EXTENSION_ID } from './constants';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
 
 let tailscaleInstance: Tailscale;
 
 export async function activate(context: vscode.ExtensionContext) {
-  const commandPath = await getTailscaleCommandPath();
-
-  Logger.info(`CLI path: ${commandPath}`);
   vscode.commands.executeCommand('setContext', 'tailscale.env', process.env.NODE_ENV);
-
-  if (commandPath && !(await fileExists(commandPath))) {
-    vscode.window
-      .showErrorMessage(
-        `Tailscale CLI not found at ${commandPath}. Set tailscale.path`,
-        'Open Settings'
-      )
-      .then(() => {
-        vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${EXTENSION_ID}`);
-      });
-  }
-
-  if (!commandPath) {
-    vscode.window
-      .showErrorMessage(
-        'Tailscale CLI not found. Install Tailscale or set tailscale.path',
-        'Install Tailscale',
-        'Open Settings'
-      )
-      .then((selection) => {
-        if (selection === 'Install Tailscale') {
-          vscode.env.openExternal(vscode.Uri.parse(downloadLinkForPlatform(process.platform)));
-        } else if (selection === 'Open Settings') {
-          vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${EXTENSION_ID}`);
-        }
-      });
-  }
 
   tailscaleInstance = await Tailscale.withInit(vscode);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
     // assume if we have any BackendState we are installed
-    vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.installed', !!commandPath);
+    const isInstalled = status.BackendState !== '';
+    vscode.commands.executeCommand('setContext', 'tailscale.walkthroughs.installed', isInstalled);
 
     // Funnel check
     const isFunnelOn = !status?.Errors?.some((e) => e.Type === 'FUNNEL_OFF');
