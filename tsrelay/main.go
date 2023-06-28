@@ -57,9 +57,9 @@ const (
 	// NotRunning indicates tailscaled is
 	// not running
 	NotRunning = "NOT_RUNNING"
-	// RequiresRestart indicates that the flatpak
+	// FlatpakRequiresRestart indicates that the flatpak
 	// container needs to be fully restarted
-	RequiresRestart = "REQUIRES_RESTART"
+	FlatpakRequiresRestart = "FLATPAK_REQUIRES_RESTART"
 )
 
 var requiresRestart bool
@@ -298,7 +298,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case http.MethodGet:
 			if requiresRestart {
 				json.NewEncoder(w).Encode(RelayError{
-					Errors: []Error{{Type: RequiresRestart}},
+					Errors: []Error{{Type: FlatpakRequiresRestart}},
 				})
 				return
 			}
