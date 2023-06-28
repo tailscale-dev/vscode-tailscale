@@ -33,8 +33,14 @@ export interface WithErrors {
   Errors?: RelayError[];
 }
 
-interface RelayError {
-  Type: 'FUNNEL_OFF' | 'HTTPS_OFF' | 'OFFLINE' | 'REQUIRES_SUDO' | 'NOT_RUNNING';
+export interface RelayError {
+  Type:
+    | 'FUNNEL_OFF'
+    | 'HTTPS_OFF'
+    | 'OFFLINE'
+    | 'REQUIRES_SUDO'
+    | 'NOT_RUNNING'
+    | 'FLATPAK_REQUIRES_RESTART';
 }
 
 interface PeerStatus {
