@@ -7,6 +7,7 @@ import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
 import { trimSuffix } from '../utils';
+import { EXTENSION_NS } from '../constants';
 
 const LOG_COMPONENT = 'tsrelay';
 
@@ -31,6 +32,7 @@ export class Tailscale {
   public authkey?: string;
   private childProcess?: cp.ChildProcess;
   private notifyExit?: () => void;
+  private socket?: string;
 
   constructor(vscode: vscodeModule) {
     this._vscode = vscode;
@@ -44,6 +46,7 @@ export class Tailscale {
 
   async init(port?: string, nonce?: string) {
     return new Promise<null>((resolve) => {
+      this.socket = vscode.workspace.getConfiguration(EXTENSION_NS).get<string>('socketPath');
       let binPath = this.tsrelayPath();
       let args = [];
       if (this._vscode.env.logLevel === LogLevel.Debug) {
@@ -60,6 +63,9 @@ export class Tailscale {
       }
       if (nonce) {
         args.push(`-nonce=${this.nonce}`);
+      }
+      if (this.socket) {
+        args.push(`-socket=${this.socket}`);
       }
       Logger.debug(`path: ${binPath}`, LOG_COMPONENT);
       Logger.debug(`args: ${args.join(' ')}`, LOG_COMPONENT);
@@ -141,6 +147,9 @@ export class Tailscale {
       const args = [`-nonce=${this.nonce}`, `-port=${this.port}`];
       if (this._vscode.env.logLevel === LogLevel.Debug) {
         args.push('-v');
+      }
+      if (this.socket) {
+        args.push(`-socket=${this.socket}`);
       }
       Logger.info(`path: ${binPath}`, LOG_COMPONENT);
       this.notifyExit = () => {

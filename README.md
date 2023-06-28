@@ -81,14 +81,12 @@ If the extension isn't working, we recommend following these steps to troublesho
    - If you have signed in to multiple Tailscale accounts on your device, ensure that the correct account is active.
 2. Ensure that your Tailnet access controls (ACLs) are [configured to allow Tailscale Funnel](https://tailscale.com/kb/1223/tailscale-funnel/#setup) on your device.
 3. Ensure that [magicDNS and HTTPS Certificates are enabled](https://tailscale.com/kb/1153/enabling-https/) on your tailnet.
-4. Ensure `tailscale` is available in the environment path. You can check this by running `tailscale status` in your CLI; if no command is found, you may need to add the Tailscale executable to your path. Alternatively, you can set its path via the `tailscale.path` setting in VS Code.
+4. If you are running `tailscaled` in a non-default path, you can set its path via the `tailscale.socketPath` setting in VS Code.
 
 ## Configuration
 
-- `tailscale.path`: A path to the `tailscale` executable. If unset, the extension will use
-  the environment path to resolve the `tailscale` executable. If set, the extension
-  will use the supplied path. The path should include the executable name (e.g.
-  `/usr/bin/tailscale`, `C:\Program Files\tailscale\tailscale.exe`).
+- `tailscale.socketPath`: A path to the `tailscaled` unix socket. If unset, the extension will use
+  the default path based on the platform. If set, the extension will use the supplied path.
 
 ## Contribute
 
