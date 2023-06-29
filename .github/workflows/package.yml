@@ -31,18 +31,8 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.20.x'
-      - name: Capture version
-        id: version
-        run: npm run env | grep npm_package_version >> $GITHUB_OUTPUT
-      - run: echo "version=${{ steps.version.outputs.npm_package_version }}"
-      - name: Build Go
-        run: |
-          go install github.com/goreleaser/goreleaser@latest
-          goreleaser build --snapshot --clean
-        env:
-          GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.npm_package_version }}
       - name: Package
-        run: tool/yarn vsce package --allow-star-activation
+        run: tool/yarn package
       - name: Upload vsix artifact
         uses: actions/upload-artifact@v3
         with:
