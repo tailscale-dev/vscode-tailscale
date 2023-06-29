@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to an [Odd-Even Versioning](https://en.wikipedia.org/wiki/Software_versioning#Odd-numbered_versions_for_development_releases) scheme. Odd-numbered versions are used for development and pre-release updates, while even-numbered versions are used for stable or public releases.
 
+## [0.4.4] - 2023-06-29
+
+An update providing a fix for users running on Flatpak while reducing the required VS Code version to 1.74.0.
+
+### Changed
+
+- package.json: change "engines"."vscode" to "^1.74.0" (#89)
+- Only run in the UI, not on a remote (#58)
+- Replace tailscale binary with tailscaled unix socket (#83)
+- Upgrade dependencies: vscode (#48), @types/node (#49), glob (#51), eslint (#65), webpack (#63), typescript (#69, #78), react (#68), @types/react (#74), swr (#72),
+
+### Fixed
+
+- Run flatpak-spawn when pkexec is needed (#86)
+- Only add menu items to serve view (#77)
+
 ## [0.4.3] - 2023-06-21
 
 ### Fixed
