@@ -69,7 +69,7 @@ func (m *mockClient) SetServeConfig(ctx context.Context, config *ipn.ServeConfig
 
 // Status implements localClient.
 func (m *mockClient) Status(ctx context.Context) (*ipnstate.Status, error) {
-	if m.p.MockOffline {
+	if m.p.MockOffline || m.p.Status == nil {
 		return nil, &net.OpError{Op: "dial"}
 	}
 	return m.p.Status, nil
@@ -77,7 +77,7 @@ func (m *mockClient) Status(ctx context.Context) (*ipnstate.Status, error) {
 
 // StatusWithoutPeers implements localClient.
 func (m *mockClient) StatusWithoutPeers(ctx context.Context) (*ipnstate.Status, error) {
-	if m.p.MockOffline {
+	if m.p.MockOffline || m.p.Status == nil {
 		return nil, &net.OpError{Op: "dial"}
 	}
 	copy := *(m.p.Status)
