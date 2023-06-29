@@ -237,7 +237,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-unicorn": "^47.0.0",
-    "glob": "^10.3.0",
+    "glob": "^10.3.1",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",
     "mocha": "^10.2.0",
