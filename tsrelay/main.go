@@ -31,11 +31,12 @@ import (
 )
 
 var (
-	logfile = flag.String("logfile", "", "send logs to a file instead of stderr")
-	verbose = flag.Bool("v", false, "verbose logging")
-	port    = flag.Int("port", 0, "port for http server. If 0, one will be chosen")
-	nonce   = flag.String("nonce", "", "nonce for the http server")
-	socket  = flag.String("socket", "", "alternative path for local api socket")
+	logfile  = flag.String("logfile", "", "send logs to a file instead of stderr")
+	verbose  = flag.Bool("v", false, "verbose logging")
+	port     = flag.Int("port", 0, "port for http server. If 0, one will be chosen")
+	nonce    = flag.String("nonce", "", "nonce for the http server")
+	socket   = flag.String("socket", "", "alternative path for local api socket")
+	mockFile = flag.String("mockfile", "", "a profile file to mock LocalClient responses")
 )
 
 // ErrorTypes for signaling
@@ -152,11 +153,18 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 		Nonce:   nonce,
 	}
 	json.NewEncoder(os.Stdout).Encode(sd)
+	var lc localClient = &tailscale.LocalClient{
+		Socket: *socket,
+	}
+	if *mockFile != "" {
+		lc, err = NewMockClient(*mockFile)
+		if err != nil {
+			return fmt.Errorf("error creating mock client: %w", err)
+		}
+	}
 	s := &http.Server{
 		Handler: &httpHandler{
-			lc: tailscale.LocalClient{
-				Socket: *socket,
-			},
+			lc:           lc,
 			nonce:        nonce,
 			l:            lggr,
 			pids:         make(map[int]struct{}),
@@ -179,7 +187,7 @@ func getNonce() string {
 type httpHandler struct {
 	sync.Mutex
 	nonce        string
-	lc           tailscale.LocalClient
+	lc           localClient
 	l            *logger
 	u            websocket.Upgrader
 	pids         map[int]struct{}
