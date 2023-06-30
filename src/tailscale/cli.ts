@@ -44,12 +44,12 @@ export class Tailscale {
     const ts = new Tailscale(vscode);
     await ts.init();
     vscode.workspace.onDidChangeConfiguration((event) => {
-      Logger.info('config changed');
       if (event.affectsConfiguration('tailscale.portDiscovery')) {
         if (ts.portDiscoOn() && !ts.ws) {
-          Logger.info('running port disco');
+          Logger.debug('running port disco');
           ts.runPortDisco();
         } else if (!ts.portDiscoOn() && ts.ws) {
+          Logger.debug('turning off port disco');
           ts.ws.close();
           ts.ws = undefined;
         }
