@@ -198,6 +198,15 @@
               "/var/run/tailscaled.socket",
               "\\\\.\\pipe\\ProtectedPrefix\\Administrators\\Tailscale\\tailscaled"
             ]
+          },
+          "tailscale.portDiscovery": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Whether the extension notifies you of newly opened ports on your machine",
+            "scope": "window",
+            "examples": [
+              false
+            ]
           }
         }
       }

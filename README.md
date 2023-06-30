@@ -49,6 +49,8 @@ You can open the public URL in your default browser or copy it to your clipboard
 
 When you start a local server from VS Code, Tailscale will ask if you'd like to share that port over the internet with Funnel.
 
+You can turn this off in your vscode settings via the `tailscale.portDiscovery` option.
+
 ## How Funnel works
 
 | Internet accessible                                                                                         | Secure tunnel                                                                                                        |
@@ -87,6 +89,8 @@ If the extension isn't working, we recommend following these steps to troublesho
 
 - `tailscale.socketPath`: A path to the `tailscaled` unix socket. If unset, the extension will use
   the default path based on the platform. If set, the extension will use the supplied path.
+
+- `tailscale.portDiscovery`: Whether the extension notifies you of newly opened ports on your machine
 
 ## Contribute
 
