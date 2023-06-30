@@ -44,7 +44,9 @@ func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error
 			err := c.ReadJSON(&msg)
 			if err != nil {
 				// TOOD: handle connection closed
-				h.l.VPrintf("error reading json: %v", err)
+				if !websocket.IsUnexpectedCloseError(err) {
+					h.l.VPrintf("error reading json: %v", err)
+				}
 				return
 			}
 			h.Lock()
