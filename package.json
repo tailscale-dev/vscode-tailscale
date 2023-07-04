@@ -232,7 +232,7 @@
     "@vscode/test-electron": "^2.3.3",
     "@vscode/vsce": "^2.19.0",
     "@vscode/webview-ui-toolkit": "^1.2.2",
-    "backport": "^8.9.7",
+    "backport": "^8.9.8",
     "bufferutil": "^4.0.7",
     "css-loader": "^6.8.1",
     "eslint": "^8.43.0",
