@@ -6,6 +6,8 @@
   prConcurrentLimit: 0,
   prHourlyLimit: 0,
   rangeStrategy: 'bump',
+  timezone: 'America/Los_Angeles',
+  schedule: ['before 8am on monday'],
   packageRules: [
     {
       groupName: 'react',
