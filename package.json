@@ -199,10 +199,10 @@
               "\\\\.\\pipe\\ProtectedPrefix\\Administrators\\Tailscale\\tailscaled"
             ]
           },
-          "tailscale.portDiscovery": {
+          "tailscale.portDiscovery.enabled": {
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Whether the extension notifies you of newly opened ports on your machine",
+            "markdownDescription": "Enable/disable notification to serve new ports over Tailscale Funnel.",
             "scope": "window",
             "examples": [
               false

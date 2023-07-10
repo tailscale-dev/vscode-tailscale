@@ -44,7 +44,7 @@ export class Tailscale {
     const ts = new Tailscale(vscode);
     await ts.init();
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration('tailscale.portDiscovery')) {
+      if (event.affectsConfiguration('tailscale.portDiscovery.enabled')) {
         if (ts.portDiscoOn() && !ts.ws) {
           Logger.debug('running port disco');
           ts.runPortDisco();
@@ -183,7 +183,7 @@ export class Tailscale {
   }
 
   portDiscoOn() {
-    return vscode.workspace.getConfiguration(EXTENSION_NS).get<boolean>('portDiscovery');
+    return vscode.workspace.getConfiguration(EXTENSION_NS).get<boolean>('portDiscovery.enabled');
   }
 
   processStderr(childProcess: cp.ChildProcess) {
