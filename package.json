@@ -198,6 +198,15 @@
               "/var/run/tailscaled.socket",
               "\\\\.\\pipe\\ProtectedPrefix\\Administrators\\Tailscale\\tailscaled"
             ]
+          },
+          "tailscale.portDiscovery.enabled": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Enable/disable notification to serve new ports over Tailscale Funnel.",
+            "scope": "window",
+            "examples": [
+              false
+            ]
           }
         }
       }

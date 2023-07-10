@@ -22,6 +22,7 @@ interface vscodeModule {
   window: typeof vscode.window;
   env: typeof vscode.env;
   commands: typeof vscode.commands;
+  workspace: typeof vscode.workspace;
 }
 
 export class Tailscale {
@@ -33,6 +34,7 @@ export class Tailscale {
   private childProcess?: cp.ChildProcess;
   private notifyExit?: () => void;
   private socket?: string;
+  private ws?: WebSocket;
 
   constructor(vscode: vscodeModule) {
     this._vscode = vscode;
@@ -41,6 +43,18 @@ export class Tailscale {
   static async withInit(vscode: vscodeModule): Promise<Tailscale> {
     const ts = new Tailscale(vscode);
     await ts.init();
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration('tailscale.portDiscovery.enabled')) {
+        if (ts.portDiscoOn() && !ts.ws) {
+          Logger.debug('running port disco');
+          ts.runPortDisco();
+        } else if (!ts.portDiscoOn() && ts.ws) {
+          Logger.debug('turning off port disco');
+          ts.ws.close();
+          ts.ws = undefined;
+        }
+      }
+    });
     return ts;
   }
 
@@ -166,6 +180,10 @@ export class Tailscale {
       };
       this.dispose();
     });
+  }
+
+  portDiscoOn() {
+    return vscode.workspace.getConfiguration(EXTENSION_NS).get<boolean>('portDiscovery.enabled');
   }
 
   processStderr(childProcess: cp.ChildProcess) {
@@ -306,16 +324,20 @@ export class Tailscale {
     if (!this.url) {
       throw new Error('uninitialized client');
     }
+    if (!this.portDiscoOn()) {
+      Logger.info('port discovery is off');
+      return;
+    }
 
-    const ws = new WebSocket(`ws://${this.url.slice('http://'.length)}/portdisco`, {
+    this.ws = new WebSocket(`ws://${this.url.slice('http://'.length)}/portdisco`, {
       headers: {
         Authorization: 'Basic ' + this.authkey,
       },
     });
-    ws.on('error', (e) => {
+    this.ws.on('error', (e) => {
       Logger.info(`got ws error: ${e}`);
     });
-    ws.on('open', () => {
+    this.ws.on('open', () => {
       Logger.info('websocket is open');
       this._vscode.window.terminals.forEach(async (t) => {
         const pid = await t.processId;
@@ -323,7 +345,7 @@ export class Tailscale {
           return;
         }
         Logger.debug(`adding initial termianl process: ${pid}`);
-        ws.send(
+        this.ws?.send(
           JSON.stringify({
             type: 'addPID',
             pid: pid,
@@ -331,10 +353,10 @@ export class Tailscale {
         );
       });
     });
-    ws.on('close', () => {
+    this.ws.on('close', () => {
       Logger.info('websocket is closed');
     });
-    ws.on('message', async (data) => {
+    this.ws.on('message', async (data) => {
       Logger.info('got message');
       const msg = JSON.parse(data.toString());
       Logger.info(`msg is ${msg.type}`);
@@ -357,7 +379,7 @@ export class Tailscale {
         return;
       }
       Logger.info(`pid is ${pid}`);
-      ws.send(
+      this.ws?.send(
         JSON.stringify({
           type: 'addPID',
           pid: pid,
@@ -370,7 +392,7 @@ export class Tailscale {
       if (!pid) {
         return;
       }
-      ws.send(
+      this.ws?.send(
         JSON.stringify({
           type: 'removePID',
           pid: pid,

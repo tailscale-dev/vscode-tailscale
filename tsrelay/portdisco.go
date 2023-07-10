@@ -33,8 +33,9 @@ type wsMessage struct {
 
 func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error {
 	defer c.Close()
-
+	closeCh := make(chan struct{})
 	go func() {
+		defer close(closeCh)
 		for {
 			if ctx.Err() != nil {
 				return
@@ -43,6 +44,9 @@ func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error
 			err := c.ReadJSON(&msg)
 			if err != nil {
 				// TOOD: handle connection closed
+				if !websocket.IsUnexpectedCloseError(err) {
+					h.l.VPrintf("error reading json: %v", err)
+				}
 				return
 			}
 			h.Lock()
@@ -86,6 +90,9 @@ func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case <-closeCh:
+			h.l.Println("portdisco reader is closed")
+			return nil
 		case <-ticker.C:
 			ports, changed, err := p.Poll()
 			if err != nil {
