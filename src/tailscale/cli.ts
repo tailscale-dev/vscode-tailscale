@@ -239,83 +239,52 @@ export class Tailscale {
   }
 
   async serveStatus(): Promise<ServeStatus> {
-    if (!this.url) {
-      throw new Error('uninitialized client');
-    }
-    try {
-      const resp = await fetch(`${this.url}/serve`, {
-        headers: {
-          Authorization: 'Basic ' + this.authkey,
-        },
-      });
-
-      const status = (await resp.json()) as ServeStatus;
-      return status;
-    } catch (e) {
-      Logger.error(`error calling status: ${JSON.stringify(e, null, 2)}`);
-      throw e;
-    }
+    return (await this.performFetch('/serve')) as ServeStatus;
   }
 
   async serveAdd(p: ServeParams) {
-    if (!this.url) {
-      throw new Error('uninitialized client');
-    }
-    try {
-      const resp = await fetch(`${this.url}/serve`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Basic ' + this.authkey,
-        },
-        body: JSON.stringify(p),
-      });
-      if (!resp.ok) {
-        throw new Error('/serve failed');
-      }
-    } catch (e) {
-      Logger.info(`error adding serve: ${e}`);
-      throw e;
-    }
+    await this.performFetch('/serve', 'POST', p);
   }
 
   async serveDelete(p?: ServeParams) {
-    if (!this.url) {
-      throw new Error('uninitialized client');
-    }
-    try {
-      const resp = await fetch(`${this.url}/serve`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: 'Basic ' + this.authkey,
-        },
-        body: JSON.stringify(p),
-      });
-      if (!resp.ok) {
-        throw new Error('/serve failed');
-      }
-    } catch (e) {
-      Logger.info(`error deleting serve: ${e}`);
-      throw e;
-    }
+    await this.performFetch('/serve', 'DELETE', p);
   }
 
   async setFunnel(port: number, on: boolean) {
+    await this.performFetch('/funnel', 'POST', { port, on });
+  }
+
+  async performFetch(endpoint: string, method = 'GET', body?: unknown) {
     if (!this.url) {
       throw new Error('uninitialized client');
     }
+
     try {
-      const resp = await fetch(`${this.url}/funnel`, {
-        method: 'POST',
+      const resp = await fetch(`${this.url}${endpoint}`, {
+        method,
         headers: {
           Authorization: 'Basic ' + this.authkey,
         },
-        body: JSON.stringify({ port, on }),
+        body: body !== undefined && typeof body === 'object' ? JSON.stringify(body) : undefined,
       });
+
       if (!resp.ok) {
-        throw new Error('/serve failed');
+        Logger.error(`${endpoint} failed: ${JSON.stringify(resp)}`);
+        throw new Error(`${endpoint} failed`);
       }
+
+      const text = await resp.text();
+
+      try {
+        return JSON.parse(text);
+        // eslint-disable-next-line no-empty
+      } catch {
+        Logger.error(`failed to parse json: ${text}`);
+      }
+
+      return text;
     } catch (e) {
-      Logger.info(`error deleting serve: ${e}`);
+      Logger.info(`error in ${method} ${endpoint}: ${e}`);
       throw e;
     }
   }

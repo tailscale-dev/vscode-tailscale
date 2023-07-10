@@ -46,18 +46,9 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.refreshServe', () => {
-      Logger.info('called tailscale.refreshServe', 'command');
-      servePanelProvider.refreshState();
-    })
-  );
-
-  context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.resetServe', async () => {
       Logger.info('called tailscale.resetServe', 'command');
       await tailscaleInstance.serveDelete();
-      servePanelProvider.refreshState();
-
       vscode.window.showInformationMessage('Serve configuration reset');
     })
   );

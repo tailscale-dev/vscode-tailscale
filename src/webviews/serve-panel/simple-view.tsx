@@ -5,10 +5,11 @@ import { vsCodeAPI } from '../../vscode-api';
 import { PortInput } from './components/port-input';
 import { Error } from './components/error';
 import { KB_FUNNEL_USE_CASES } from '../../utils/url';
-import { useServe, useServeMutation, fetchWithUser } from './data';
+import { useServe, useServeMutation } from './swr';
 import { Tooltip } from './components/tooltip';
 import { errorForType } from '../../tailscale/error';
-import { ServeParams, WithErrors } from '../../types';
+import { serveReset } from '../tsrelay';
+import { ServeParams } from '../../types';
 
 export const SimpleView = () => {
   const { data, mutate, isLoading } = useServe();
@@ -75,6 +76,7 @@ export const SimpleView = () => {
         </div>
       </div>
 
+      {/* TODO: handle data.Self being unset */}
       {data?.Self && <Form />}
     </div>
   );
@@ -191,10 +193,8 @@ export const SimpleView = () => {
 
     setIsDeleting(true);
 
-    const resp = (await fetchWithUser('/serve', {
-      method: 'DELETE',
-      body: '{}',
-    })) as WithErrors;
+    const resp = await serveReset();
+
     if (resp.Errors?.length && resp.Errors[0].Type === 'REQUIRES_SUDO') {
       vsCodeAPI.postMessage({
         type: 'sudoPrompt',
@@ -227,7 +227,8 @@ export const SimpleView = () => {
       source: `http://127.0.0.1:${port}`,
       funnel: true,
     };
-    const resp = (await trigger(params)) as WithErrors;
+
+    const resp = await trigger(params);
     if (resp.Errors?.length && resp.Errors[0].Type === 'REQUIRES_SUDO') {
       vsCodeAPI.postMessage({
         type: 'sudoPrompt',

@@ -113,11 +113,6 @@
     "menus": {
       "view/title": [
         {
-          "command": "tailscale.refreshServe",
-          "group": "overflow",
-          "when": "view == tailscale-serve-view"
-        },
-        {
           "command": "tailscale.resetServe",
           "group": "overflow",
           "when": "view == tailscale-serve-view"
@@ -143,11 +138,6 @@
       {
         "command": "tailscale.resetServe",
         "title": "Reset",
-        "category": "Tailscale"
-      },
-      {
-        "command": "tailscale.refreshServe",
-        "title": "Refresh",
         "category": "Tailscale"
       },
       {
