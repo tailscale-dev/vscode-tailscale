@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { FileInfo, Peer, Status } from './types';
+import { FileInfo, Peer, SendFileRequest, Status } from './types';
 import { Tailscale } from './tailscale/cli';
 import { Logger } from './logger';
 
@@ -12,11 +12,11 @@ export class NodeExplorerProvider
     vscode.TreeDragAndDropController<PeerBaseTreeItem>,
     vscode.FileDecorationProvider
 {
-  dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
+  dropMimeTypes = ['text/uri-list', 'application/vnd.code.tree.tsFileEntry'];
   dragMimeTypes = [];
 
-  private _onDidChangeTreeData: vscode.EventEmitter<(PeerBaseTreeItem | undefined)[] | undefined> =
-    new vscode.EventEmitter<PeerBaseTreeItem[] | undefined>();
+  private _onDidChangeTreeData: vscode.EventEmitter<(PeerBaseTreeItem | undefined) | undefined> =
+    new vscode.EventEmitter<PeerBaseTreeItem | undefined>();
   // We want to use an array as the event type, but the API for this is currently being finalized. Until it's finalized, use any.
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
   disposable: vscode.Disposable;
@@ -98,55 +98,64 @@ export class NodeExplorerProvider
     sources: vscode.DataTransfer,
     _: vscode.CancellationToken
   ): Promise<void> {
-    // sources.forEach(async (item) => {
-    //   Logger.info(await item.asString());
-    // });
     if (!target) {
       return;
     }
-    const transferItem = sources.get('text/uri-list');
-    if (!transferItem || !transferItem.value) {
+
+    const request: SendFileRequest = {
+      destNode: '',
+      destPath: '',
+      sourceNode: '',
+      sourcePath: '',
+    };
+    let sendable = false;
+
+    const fe = sources.get('application/vnd.code.tree.tsFileEntry');
+    if (fe?.value?.length && fe.value[0] instanceof FileEntry) {
+      sendable = true;
+      const fileEntry = fe.value[0];
+      request.sourceNode = fileEntry.HostName;
+      request.sourcePath = fileEntry.path;
+    } else {
+      // Put this in an else because text/uri-list
+      // also returns a truthy response in case of FileEntry.
+      const transferItem = sources.get('text/uri-list');
+      if (transferItem && transferItem.value) {
+        sendable = true;
+        request.sourcePath = transferItem.value;
+      }
+    }
+
+    if (!sendable) {
       return;
     }
 
     if (target instanceof PeerTree) {
-      // TODO: error handling
-      vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Window,
-          cancellable: false,
-          title: 'Taildropping file...',
-        },
-        async (progress) => {
-          progress.report({ increment: 0 });
-
-          await this.ts.sendFile(transferItem.value, target.ID, '');
-
-          progress.report({ increment: 100 });
-        }
-      );
-      return;
+      request.destNode = target.HostName;
     }
     if (target instanceof FileEntry && target.isDir) {
-      // TODO: error handling
-      vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Window,
-          cancellable: false,
-          title: 'Taildropping file...',
-        },
-        async (progress) => {
-          progress.report({ increment: 0 });
+      request.destNode = target.HostName;
+      request.destPath = target.path;
+    }
 
-          // TODO: if dropped on a file, copy to parent dir.
-          await this.ts.sendFile(transferItem.value, target.HostName, target.path);
-
-          progress.report({ increment: 100 });
-          this._onDidChangeTreeData.fire([target]);
-        }
-      );
+    if (!request.destNode) {
       return;
     }
+
+    // TODO: error handling
+    vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Window,
+        cancellable: false,
+        title: 'Tailscale is sending your file...',
+      },
+      async (progress) => {
+        progress.report({ increment: 0 });
+        await this.ts.sendFile(request);
+        progress.report({ increment: 100 });
+        this._onDidChangeTreeData.fire(target);
+      }
+    );
   }
 
   public async handleDrag(
@@ -155,7 +164,7 @@ export class NodeExplorerProvider
     _: vscode.CancellationToken
   ): Promise<void> {
     treeDataTransfer.set(
-      'application/vnd.code.tree.testViewDragAndDrop',
+      'application/vnd.code.tree.tsFileEntry',
       new vscode.DataTransferItem(source)
     );
   }

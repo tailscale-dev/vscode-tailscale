@@ -195,3 +195,10 @@ export interface FileInfo {
   isDir: boolean;
   path: string;
 }
+
+export interface SendFileRequest {
+  sourceNode: string;
+  sourcePath: string;
+  destNode: string;
+  destPath: string;
+}

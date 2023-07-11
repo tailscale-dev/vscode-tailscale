@@ -586,29 +586,33 @@ type serveRequest struct {
 }
 
 type sendFileRequest struct {
-	File string `json:"file"`
-	Node string `json:"node"`
-	Dest string `json:"dest"`
+	SourceNode string `json:"sourceNode"`
+	SourcePath string `json:"sourcePath"`
+	DestNode   string `json:"destNode"`
+	DestPath   string `json:"destPath"`
 }
 
 func (h *httpHandler) sendFile(ctx context.Context, body io.Reader) error {
 	var req sendFileRequest
 	err := json.NewDecoder(body).Decode(&req)
 	if err != nil {
-		return err
+		return fmt.Errorf("error decoding request: %w", err)
 	}
-	req.File = strings.TrimPrefix(req.File, "file://")
-	f, err := os.Open(req.File)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	fi, err := f.Stat()
-	if err != nil {
-		return err
-	}
-	if req.Dest == "" {
-		err = h.lc.PushFile(ctx, tailcfg.StableNodeID(req.Node), fi.Size(), fi.Name(), f)
+	req.SourcePath = strings.TrimPrefix(req.SourcePath, "file://")
+	if req.DestPath == "" {
+		f, err := os.Open(req.SourcePath)
+		if err != nil {
+			return fmt.Errorf("error opening local path: %w", err)
+		}
+		defer f.Close()
+		fi, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		err = h.lc.PushFile(ctx, tailcfg.StableNodeID(req.DestNode), fi.Size(), fi.Name(), f)
+		if err != nil {
+			return err
+		}
 	} else {
 		err = h.scpFile(ctx, req)
 	}
@@ -617,7 +621,7 @@ func (h *httpHandler) sendFile(ctx context.Context, body io.Reader) error {
 
 func (h *httpHandler) scpFile(ctx context.Context, req sendFileRequest) error {
 	// TODO: maintain connections for performance
-	user, err := h.getSSHUser(req.Node)
+	user, err := h.getSSHUser(req.DestNode)
 	if err != nil {
 		return fmt.Errorf("error getting ssh user: %w", err)
 	}
@@ -627,7 +631,7 @@ func (h *httpHandler) scpFile(ctx context.Context, req sendFileRequest) error {
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil },
 		Timeout:         3 * time.Second,
 	}
-	client, err := ssh.Dial("tcp", req.Node+":22", config)
+	client, err := ssh.Dial("tcp", req.DestNode+":22", config)
 	if err != nil {
 		return fmt.Errorf("failed to dial: %w", err)
 	}
@@ -637,17 +641,60 @@ func (h *httpHandler) scpFile(ctx context.Context, req sendFileRequest) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.Open(req.File)
+	defer scpc.Close()
+
+	f, size, err := h.getFile(ctx, req)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting source file: %w", err)
 	}
 	defer f.Close()
-	f.Stat()
-	err = scpc.CopyFromFile(ctx, *f, filepath.Join(req.Dest, filepath.Base(req.File)), "0660")
+	err = scpc.CopyPassThru(ctx, f, filepath.Join(req.DestPath, filepath.Base(req.SourcePath)), "0660", size, nil)
 	if err != nil {
 		return fmt.Errorf("error scping: %w", err)
 	}
 	return nil
+}
+
+func (h *httpHandler) getFile(ctx context.Context, req sendFileRequest) (io.ReadCloser, int64, error) {
+	if req.SourceNode == "" {
+		f, err := os.Open(req.SourcePath)
+		if err != nil {
+			return nil, 0, err
+		}
+		fi, err := f.Stat()
+		if err != nil {
+			return nil, 0, err
+		}
+		return f, fi.Size(), nil
+	}
+	user, err := h.getSSHUser(req.SourceNode)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error getting ssh user: %w", err)
+	}
+	config := &ssh.ClientConfig{
+		User:            user,
+		Auth:            []ssh.AuthMethod{},
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil },
+		Timeout:         3 * time.Second,
+	}
+	client, err := ssh.Dial("tcp", req.SourceNode+":22", config)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to dial: %w", err)
+	}
+	defer client.Close()
+
+	scpc, err := scp.NewClientBySSH(client)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer scpc.Close()
+
+	var buf bytes.Buffer
+	err = scpc.CopyFromRemotePassThru(ctx, &buf, req.SourcePath, nil)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error copying from remote: %w", err)
+	}
+	return io.NopCloser(&buf), int64(buf.Len()), nil
 }
 
 func (h *httpHandler) serveConfigDNS(ctx context.Context) (*ipn.ServeConfig, string, error) {

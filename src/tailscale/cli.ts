@@ -2,7 +2,14 @@ import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import * as WebSocket from 'ws';
-import type { ServeParams, ServeStatus, TSRelayDetails, Status, FileInfo } from '../types';
+import type {
+  ServeParams,
+  ServeStatus,
+  TSRelayDetails,
+  Status,
+  FileInfo,
+  SendFileRequest,
+} from '../types';
 import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
@@ -98,7 +105,7 @@ export class Tailscale {
               LOG_COMPONENT
             );
           }
-          this.runPortDisco();
+          // this.runPortDisco();
           resolve(null);
         });
       } else {
@@ -240,7 +247,7 @@ export class Tailscale {
     }
   }
 
-  async sendFile(file: string, node: string, dest: string) {
+  async sendFile(req: SendFileRequest) {
     if (!this.url) {
       throw new Error('uninitialized client');
     }
@@ -251,7 +258,7 @@ export class Tailscale {
         headers: {
           Authorization: 'Basic ' + this.authkey,
         },
-        body: JSON.stringify({ file, node, dest }),
+        body: JSON.stringify(req),
       });
 
       const text = await resp.text();
