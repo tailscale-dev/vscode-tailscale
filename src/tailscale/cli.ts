@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import * as WebSocket from 'ws';
-import type { ServeParams, ServeStatus, TSRelayDetails, Status } from '../types';
+import type { ServeParams, ServeStatus, TSRelayDetails, Status, FileInfo } from '../types';
 import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
@@ -113,7 +113,7 @@ export class Tailscale {
 
           if (process.env.NODE_ENV === 'development') {
             Logger.info(
-              `curl "${this.url}/serve" -H "Authorization: Basic ${this.authkey}"`,
+              `curl -H "Authorization: Basic ${this.authkey}" "${this.url}/serve"`,
               LOG_COMPONENT
             );
           }
@@ -252,7 +252,52 @@ export class Tailscale {
       const status = (await resp.json()) as Status;
       return status;
     } catch (e) {
-      Logger.error(`error calling status: ${JSON.stringify(e, null, 2)}`);
+      Logger.error(`error calling status: ${e}`);
+      throw e;
+    }
+  }
+
+  async sendFile(file: string, node: string, dest: string) {
+    if (!this.url) {
+      throw new Error('uninitialized client');
+    }
+
+    try {
+      const resp = await fetch(`${this.url}/send-file`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + this.authkey,
+        },
+        body: JSON.stringify({ file, node, dest }),
+      });
+
+      const text = await resp.text();
+      if (resp.status >= 400) {
+        Logger.info(`Error sending file: ${text}`);
+      }
+    } catch (e) {
+      Logger.error(`error calling sendFile: ${e}`);
+      throw e;
+    }
+  }
+
+  async exploreFiles(hostName: string, path: string): Promise<FileInfo[]> {
+    if (!this.url) {
+      throw new Error('uninitialized client');
+    }
+
+    try {
+      const resp = await fetch(`${this.url}/file-explorer`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + this.authkey,
+        },
+        body: JSON.stringify({ hostName, path }),
+      });
+      const list = (await resp.json()) as FileInfo[];
+      return list;
+    } catch (e) {
+      Logger.error(`error calling exploreFiles: ${e}`);
       throw e;
     }
   }

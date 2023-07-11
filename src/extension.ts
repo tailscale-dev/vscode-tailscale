@@ -48,6 +48,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance);
   vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
+  const view = vscode.window.createTreeView('tailscale-node-explorer-view', {
+    treeDataProvider: nodeExplorerProvider,
+    showCollapseAll: true,
+    dragAndDropController: nodeExplorerProvider,
+  });
+  context.subscriptions.push(view);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {
