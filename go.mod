@@ -3,8 +3,11 @@ module github.com/tailscale-dev/vscode-tailscale
 go 1.20
 
 require (
+	github.com/bramvdbogaerde/go-scp v1.2.1
 	github.com/gorilla/websocket v1.5.0
+	github.com/kevinburke/ssh_config v1.2.0
 	github.com/mitchellh/go-ps v1.0.0
+	golang.org/x/crypto v0.8.0
 	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/sync v0.2.0
 	tailscale.com v1.1.1-0.20230607142209-f8f0b981ac9c
@@ -25,7 +28,6 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
-	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect

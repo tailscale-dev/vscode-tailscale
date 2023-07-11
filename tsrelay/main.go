@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,12 +16,16 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/bramvdbogaerde/go-scp"
 	"github.com/gorilla/websocket"
+	"github.com/kevinburke/ssh_config"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 	"tailscale.com/client/tailscale"
@@ -152,6 +157,7 @@ func runHTTPServer(ctx context.Context, lggr *logger, port int, nonce string) er
 		Nonce:   nonce,
 	}
 	json.NewEncoder(os.Stdout).Encode(sd)
+	lggr.Printf(`curl -u "%s:" "http://127.0.0.1:%s/localapi/v0/status"`, nonce, u.Port())
 	s := &http.Server{
 		Handler: &httpHandler{
 			lc: tailscale.LocalClient{
@@ -256,7 +262,15 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/localapi/v0/status":
 		st, err := h.lc.Status(ctx)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			var oe *net.OpError
+			if errors.As(err, &oe) && oe.Op == "dial" {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				json.NewEncoder(w).Encode(RelayError{
+					Errors: []Error{{Type: NotRunning}},
+				})
+			} else {
+				http.Error(w, err.Error(), 500)
+			}
 			return
 		}
 		json.NewEncoder(w).Encode(st)
@@ -296,123 +310,11 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			w.Write([]byte(`{}`))
 		case http.MethodGet:
-			if requiresRestart {
-				json.NewEncoder(w).Encode(RelayError{
-					Errors: []Error{{Type: FlatpakRequiresRestart}},
-				})
-				return
-			}
-			var wg sync.WaitGroup
-			wg.Add(1)
-			portMap := map[uint16]string{}
-			go func() {
-				defer wg.Done()
-				p := &portlist.Poller{IncludeLocalhost: true}
-				defer p.Close()
-				ports, _, err := p.Poll()
-				if err != nil {
-					h.l.Printf("error polling for serve: %v", err)
-					return
-				}
-				for _, p := range ports {
-					portMap[p.Port] = p.Process
-				}
-			}()
-
-			st, sc, err := h.getConfigs(ctx)
+			s, err := h.getServe(r.Context())
 			if err != nil {
-				var oe *net.OpError
-				if errors.As(err, &oe) && oe.Op == "dial" {
-					w.WriteHeader(http.StatusServiceUnavailable)
-					json.NewEncoder(w).Encode(RelayError{
-						Errors: []Error{{Type: NotRunning}},
-					})
-				} else {
-					http.Error(w, err.Error(), 500)
-				}
+				json.NewEncoder(w).Encode(err) // todo
 				return
 			}
-
-			s := serveStatus{
-				ServeConfig:  sc,
-				Services:     make(map[uint16]string),
-				BackendState: st.BackendState,
-				FunnelPorts:  []int{},
-			}
-
-			wg.Wait()
-			if sc != nil {
-				for _, webCfg := range sc.Web {
-					for _, addr := range webCfg.Handlers {
-						if addr.Proxy == "" {
-							continue
-						}
-						u, err := url.Parse(addr.Proxy)
-						if err != nil {
-							h.l.Printf("error parsing address proxy %q: %v", addr.Proxy, err)
-							continue
-						}
-						portInt, err := strconv.Atoi(u.Port())
-						if err != nil {
-							h.l.Printf("error parsing port %q of proxy %q: %v", u.Port(), addr.Proxy, err)
-							continue
-						}
-						port := uint16(portInt)
-						if process, ok := portMap[port]; ok {
-							s.Services[port] = process
-						}
-					}
-				}
-			}
-
-			if st.Self != nil {
-				s.Self = &peerStatus{
-					DNSName: st.Self.DNSName,
-					Online:  st.Self.Online,
-				}
-				capabilities := st.Self.Capabilities
-				if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||
-					!slices.Contains(capabilities, tailcfg.NodeAttrFunnel) {
-					s.Errors = append(s.Errors, Error{
-						Type: FunnelOff,
-					})
-				}
-				if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoHTTPS) {
-					s.Errors = append(s.Errors, Error{
-						Type: HTTPSOff,
-					})
-				}
-				if !st.Self.Online || s.BackendState == "NeedsLogin" {
-					s.Errors = append(s.Errors, Error{
-						Type: Offline,
-					})
-				}
-			}
-
-			idx := slices.IndexFunc(st.Self.Capabilities, func(s string) bool {
-				return strings.HasPrefix(s, "https://tailscale.com/cap/funnel-ports")
-			})
-
-			if idx >= 0 {
-				u, err := url.Parse(st.Self.Capabilities[idx])
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					return
-				}
-
-				ports := strings.Split(strings.TrimSpace(u.Query().Get("ports")), ",")
-
-				for _, ps := range ports {
-					p, err := strconv.Atoi(ps)
-					if err != nil {
-						http.Error(w, err.Error(), 500)
-						return
-					}
-
-					s.FunnelPorts = append(s.FunnelPorts, p)
-				}
-			}
-
 			json.NewEncoder(w).Encode(s)
 		}
 	case "/funnel":
@@ -435,9 +337,244 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{}`))
 	case "/portdisco":
 		h.portDiscoHandler(w, r)
+	case "/send-file":
+		if err := h.sendFile(r.Context(), r.Body); err != nil {
+			h.l.Println("error sending file", err)
+			http.Error(w, "error sending file", 500)
+			return
+		}
+	case "/file-explorer":
+		ft, err := h.getFileTree(r.Context(), r.Body)
+		if err != nil {
+			h.l.Println("error exploring file", err)
+			http.Error(w, "error exploring file", 500)
+			return
+		}
+		json.NewEncoder(w).Encode(ft)
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+type getFileTreeRequest struct {
+	User     string `json:"user"`
+	HostName string `json:"hostName"`
+	Path     string `json:"path"`
+}
+
+type fileInfo struct {
+	Name  string `json:"name"`
+	IsDir bool   `json:"isDir"`
+	Path  string `json:"path"`
+}
+
+func (h *httpHandler) getFileTree(ctx context.Context, body io.Reader) ([]fileInfo, error) {
+	req := &getFileTreeRequest{}
+	err := json.NewDecoder(body).Decode(req)
+	if err != nil {
+		return nil, err
+	}
+	if req.HostName == "" || req.Path == "" {
+		return nil, fmt.Errorf("invalid request parameters")
+	}
+	if req.User == "" {
+		req.User, err = h.getSSHUser(req.HostName)
+		if err != nil {
+			// TODO: handle not found
+			return nil, fmt.Errorf("error retrieving ssh user: %w", err)
+		}
+	}
+	res, err := runSSHCmd(ctx, req.User, req.HostName, "ls -p "+req.Path)
+	if err != nil {
+		return nil, fmt.Errorf("error running ssh cmd: %w", err)
+	}
+	if res == "" {
+		// TODO: make TypeScript okay getting a nil map
+		return []fileInfo{}, nil
+	}
+	lines := strings.Split(res, "\n")
+	fi := make([]fileInfo, 0, len(lines))
+	for _, l := range lines {
+		name := strings.TrimSuffix(l, "/")
+		fi = append(fi, fileInfo{
+			Name:  name,
+			IsDir: name != l,
+			Path:  filepath.Join(req.Path, name),
+		})
+	}
+	return fi, nil
+}
+
+func (h *httpHandler) getSSHUser(hostName string) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	f, err := os.Open(filepath.Join(homeDir, ".ssh/config"))
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	cfg, err := ssh_config.Decode(f)
+	if err != nil {
+		return "", fmt.Errorf("error decoding ssh config: %w", err)
+	}
+	for _, host := range cfg.Hosts {
+		mp := mapifyKVs(host)
+		if mp["HostName"] == hostName {
+			user := mp["User"]
+			if user == "" {
+				break
+			}
+			return user, nil
+		}
+	}
+	return "", os.ErrNotExist
+}
+
+func runSSHCmd(ctx context.Context, user, hostname, cmd string) (string, error) {
+	// TODO: maintain connections for performance
+	config := &ssh.ClientConfig{
+		User:            user,
+		Auth:            []ssh.AuthMethod{},
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil },
+		Timeout:         3 * time.Second,
+	}
+	client, err := ssh.Dial("tcp", hostname+":22", config)
+	if err != nil {
+		return "", fmt.Errorf("failed to dial: %w", err)
+	}
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close()
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	session.Stdout = &stdout
+	session.Stderr = &stderr
+	if err := session.Run(cmd); err != nil {
+		return "", fmt.Errorf("failed to run: stderr: %s - %w", &stderr, err)
+	}
+	return strings.TrimSpace(stdout.String()), nil
+}
+
+func (h *httpHandler) getServe(ctx context.Context) (*serveStatus, error) {
+	if requiresRestart {
+		return nil, RelayError{
+			Errors: []Error{{Type: FlatpakRequiresRestart}},
+		}
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	portMap := map[uint16]string{}
+	go func() {
+		defer wg.Done()
+		p := &portlist.Poller{IncludeLocalhost: true}
+		defer p.Close()
+		ports, _, err := p.Poll()
+		if err != nil {
+			h.l.Printf("error polling for serve: %v", err)
+			return
+		}
+		for _, p := range ports {
+			portMap[p.Port] = p.Process
+		}
+	}()
+
+	st, sc, err := h.getConfigs(ctx)
+	if err != nil {
+		var oe *net.OpError
+		if errors.As(err, &oe) && oe.Op == "dial" {
+			return nil, RelayError{
+				statusCode: http.StatusServiceUnavailable,
+				Errors:     []Error{{Type: NotRunning}},
+			}
+		}
+		return nil, err
+	}
+
+	s := serveStatus{
+		ServeConfig:  sc,
+		Services:     make(map[uint16]string),
+		BackendState: st.BackendState,
+		FunnelPorts:  []int{},
+	}
+
+	wg.Wait()
+	if sc != nil {
+		for _, webCfg := range sc.Web {
+			for _, addr := range webCfg.Handlers {
+				if addr.Proxy == "" {
+					continue
+				}
+				u, err := url.Parse(addr.Proxy)
+				if err != nil {
+					h.l.Printf("error parsing address proxy %q: %v", addr.Proxy, err)
+					continue
+				}
+				portInt, err := strconv.Atoi(u.Port())
+				if err != nil {
+					h.l.Printf("error parsing port %q of proxy %q: %v", u.Port(), addr.Proxy, err)
+					continue
+				}
+				port := uint16(portInt)
+				if process, ok := portMap[port]; ok {
+					s.Services[port] = process
+				}
+			}
+		}
+	}
+
+	if st.Self != nil {
+		s.Self = &peerStatus{
+			DNSName: st.Self.DNSName,
+			Online:  st.Self.Online,
+		}
+		capabilities := st.Self.Capabilities
+		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||
+			!slices.Contains(capabilities, tailcfg.NodeAttrFunnel) {
+			s.Errors = append(s.Errors, Error{
+				Type: FunnelOff,
+			})
+		}
+		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoHTTPS) {
+			s.Errors = append(s.Errors, Error{
+				Type: HTTPSOff,
+			})
+		}
+		if !st.Self.Online || s.BackendState == "NeedsLogin" {
+			s.Errors = append(s.Errors, Error{
+				Type: Offline,
+			})
+		}
+	}
+
+	idx := slices.IndexFunc(st.Self.Capabilities, func(s string) bool {
+		return strings.HasPrefix(s, "https://tailscale.com/cap/funnel-ports")
+	})
+
+	if idx >= 0 {
+		u, err := url.Parse(st.Self.Capabilities[idx])
+		if err != nil {
+			return nil, err
+		}
+
+		ports := strings.Split(strings.TrimSpace(u.Query().Get("ports")), ",")
+
+		for _, ps := range ports {
+			p, err := strconv.Atoi(ps)
+			if err != nil {
+				return nil, err
+			}
+
+			s.FunnelPorts = append(s.FunnelPorts, p)
+		}
+	}
+
+	return &s, nil
 }
 
 type serveRequest struct {
@@ -446,6 +583,71 @@ type serveRequest struct {
 	Port       uint16
 	MountPoint string
 	Funnel     bool
+}
+
+type sendFileRequest struct {
+	File string `json:"file"`
+	Node string `json:"node"`
+	Dest string `json:"dest"`
+}
+
+func (h *httpHandler) sendFile(ctx context.Context, body io.Reader) error {
+	var req sendFileRequest
+	err := json.NewDecoder(body).Decode(&req)
+	if err != nil {
+		return err
+	}
+	req.File = strings.TrimPrefix(req.File, "file://")
+	f, err := os.Open(req.File)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if req.Dest == "" {
+		err = h.lc.PushFile(ctx, tailcfg.StableNodeID(req.Node), fi.Size(), fi.Name(), f)
+	} else {
+		err = h.scpFile(ctx, req)
+	}
+	return err
+}
+
+func (h *httpHandler) scpFile(ctx context.Context, req sendFileRequest) error {
+	// TODO: maintain connections for performance
+	user, err := h.getSSHUser(req.Node)
+	if err != nil {
+		return fmt.Errorf("error getting ssh user: %w", err)
+	}
+	config := &ssh.ClientConfig{
+		User:            user,
+		Auth:            []ssh.AuthMethod{},
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil },
+		Timeout:         3 * time.Second,
+	}
+	client, err := ssh.Dial("tcp", req.Node+":22", config)
+	if err != nil {
+		return fmt.Errorf("failed to dial: %w", err)
+	}
+	defer client.Close()
+
+	scpc, err := scp.NewClientBySSH(client)
+	if err != nil {
+		return err
+	}
+	f, err := os.Open(req.File)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	f.Stat()
+	err = scpc.CopyFromFile(ctx, *f, filepath.Join(req.Dest, filepath.Base(req.File)), "0660")
+	if err != nil {
+		return fmt.Errorf("error scping: %w", err)
+	}
+	return nil
 }
 
 func (h *httpHandler) serveConfigDNS(ctx context.Context) (*ipn.ServeConfig, string, error) {
@@ -724,4 +926,15 @@ func (l *logger) VPrintln(v ...any) {
 	if *verbose {
 		l.Println(v...)
 	}
+}
+func mapifyKVs(h *ssh_config.Host) map[string]string {
+	mp := make(map[string]string)
+	for _, n := range h.Nodes {
+		kv, ok := n.(*ssh_config.KV)
+		if !ok {
+			continue
+		}
+		mp[kv.Key] = kv.Value
+	}
+	return mp
 }

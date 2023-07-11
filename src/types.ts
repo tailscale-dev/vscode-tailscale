@@ -25,9 +25,10 @@ export interface Peer {
   Active?: boolean;
   Online?: boolean;
   TailscaleIPs: string[];
+  sshHostKeys?: string[];
 }
 
-export interface Status {
+export interface Status extends WithErrors {
   Peer: {
     [key: string]: Peer;
   };
@@ -187,4 +188,10 @@ export interface TSRelayDetails {
   address: string;
   nonce: string;
   port: string;
+}
+
+export interface FileInfo {
+  name: string;
+  isDir: boolean;
+  path: string;
 }
