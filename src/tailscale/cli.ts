@@ -35,6 +35,7 @@ export class Tailscale {
   private notifyExit?: () => void;
   private socket?: string;
   private ws?: WebSocket;
+  private snoozing?: boolean;
 
   constructor(vscode: vscodeModule) {
     this._vscode = vscode;
@@ -363,13 +364,30 @@ export class Tailscale {
       if (msg.type != 'newPort') {
         return;
       }
+      if (this.snoozing) {
+        return;
+      }
       const shouldServe = await this._vscode.window.showInformationMessage(
         msg.message,
         { modal: false },
-        'Serve'
+        'Serve',
+        'Snooze Notifications'
       );
-      if (shouldServe) {
+      if (shouldServe === 'Serve') {
         await this.runFunnel(msg.port);
+      } else if (shouldServe === 'Snooze Notifications') {
+        this.snooze();
+        const openSettings = await this._vscode.window.showInformationMessage(
+          'Snoozed for 15 minutes. You can fully turn off port discovery in the settings',
+          { modal: false },
+          'Open Settings'
+        );
+        if (openSettings) {
+          this._vscode.commands.executeCommand(
+            'workbench.action.openSettings',
+            'tailscale.portDiscovery.enabled'
+          );
+        }
       }
     });
     this._vscode.window.onDidOpenTerminal(async (e: vscode.Terminal) => {
@@ -399,6 +417,13 @@ export class Tailscale {
         })
       );
     });
+  }
+
+  async snooze() {
+    this.snoozing = true;
+    setTimeout(() => {
+      this.snoozing = false;
+    }, 900000); // fifteen minutes
   }
 
   async runFunnel(port: number) {
