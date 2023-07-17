@@ -5,7 +5,14 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
-import { NodeExplorerProvider, PeerDetailTreeItem, PeerTree } from './node-explorer-provider';
+import {
+  FileExplorer,
+  NodeExplorerProvider,
+  PeerDetailTreeItem,
+  PeerTree,
+} from './node-explorer-provider';
+
+import { TSObjFileSystemProvider } from './tsobj-file-system-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -44,6 +51,13 @@ export async function activate(context: vscode.ExtensionContext) {
       ? vscode.Uri.parse('http://127.0.0.1:8000')
       : vscode.Uri.joinPath(context.extensionUri, 'dist'),
     tailscaleInstance
+  );
+
+  const tsObjFileSystemProvider = new TSObjFileSystemProvider();
+  context.subscriptions.push(
+    vscode.workspace.registerFileSystemProvider('ts', tsObjFileSystemProvider, {
+      isCaseSensitive: true,
+    })
   );
 
   const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance);
@@ -86,7 +100,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.copyIPv4', async (node: PeerTree) => {
-      const ip = node.TailscaleIPs[1];
+      const ip = node.TailscaleIPs[0];
 
       if (!ip) {
         vscode.window.showErrorMessage(`No IPv4 address found for ${node.HostName}.`);
@@ -100,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.copyIPv6', async (node: PeerTree) => {
-      const ip = node.TailscaleIPs[0];
+      const ip = node.TailscaleIPs[1];
       await vscode.env.clipboard.writeText(ip);
       vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
     })

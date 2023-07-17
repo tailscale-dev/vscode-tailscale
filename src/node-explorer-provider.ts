@@ -3,9 +3,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { FileInfo, Peer, Status } from './types';
 import { Tailscale } from './tailscale/cli';
-import { Logger } from './logger';
+import { TSObjFileSystemProvider } from './tsobj-file-system-provider';
 
-// NodeExplorerProvider serves as a TreeDataProvider for PeerTree items.
 export class NodeExplorerProvider
   implements
     vscode.TreeDataProvider<PeerBaseTreeItem>,
@@ -17,20 +16,29 @@ export class NodeExplorerProvider
 
   private _onDidChangeTreeData: vscode.EventEmitter<(PeerBaseTreeItem | undefined)[] | undefined> =
     new vscode.EventEmitter<PeerBaseTreeItem[] | undefined>();
+
   // We want to use an array as the event type, but the API for this is currently being finalized. Until it's finalized, use any.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
+
   disposable: vscode.Disposable;
+
   private peers: { [hostName: string]: Peer } = {};
+  private fsProvider: TSObjFileSystemProvider;
 
   constructor(private readonly ts: Tailscale) {
     this.disposable = vscode.window.registerFileDecorationProvider(this);
+    this.fsProvider = new TSObjFileSystemProvider();
+
+    this.registerDeleteCommand();
   }
 
-  dispoe() {
+  dispose() {
     this.disposable.dispose();
   }
 
   onDidChangeFileDecorations?: vscode.Event<vscode.Uri | vscode.Uri[] | undefined> | undefined;
+
   provideFileDecoration(
     uri: vscode.Uri,
     _: vscode.CancellationToken
@@ -52,25 +60,28 @@ export class NodeExplorerProvider
   }
 
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
+    // File Explorer
     if (element instanceof FileExplorer) {
-      const files = await this.ts.exploreFiles(element.HostName, '$HOME');
-      return files.map((f) => new FileEntry(f, element.HostName));
+      const dirents = await vscode.workspace.fs.readDirectory(element.uri);
+      return dirents.map(([name, type]) => {
+        const childUri = element.uri.with({ path: `${element.uri.path}/${name}` });
+        return new FileExplorer(name, childUri, type);
+      });
     }
-    if (element instanceof FileEntry) {
-      const files = await this.ts.exploreFiles(element.HostName, element.path);
-      return files.map((f) => new FileEntry(f, element.HostName));
-    }
+
+    // Node root
     if (element instanceof PeerTree) {
       return [
-        new PeerDetailTreeItem('Hostname', element.HostName, 'tailscale-peer-item-hostname'),
-        new PeerDetailTreeItem('IPv6', element.TailscaleIPs[0], 'tailscale-peer-item-ip'),
-        ...(element.TailscaleIPs[1]
-          ? [new PeerDetailTreeItem('IPv4', element.TailscaleIPs[1], 'tailscale-peer-item-ip')]
-          : []),
-        new FileExplorer({ ...element }),
+        new FileExplorer(
+          'File Explorer',
+          // TODO: allow the directory to be configurable
+          vscode.Uri.parse(`ts://nodes/${element.HostName}/~`),
+          vscode.FileType.Directory
+        ),
       ];
     } else {
-      // Otherwise, return the top-level nodes (peers)
+      // Peer List
+
       const peers: PeerTree[] = [];
 
       try {
@@ -82,6 +93,7 @@ export class NodeExplorerProvider
         for (const key in status.Peer) {
           const p = status.Peer[key];
           this.peers[p.HostName] = p;
+
           peers.push(new PeerTree({ ...p }));
         }
       } catch (e: any) {
@@ -93,58 +105,35 @@ export class NodeExplorerProvider
     }
   }
 
-  public async handleDrop(
-    target: PeerBaseTreeItem | undefined,
-    sources: vscode.DataTransfer,
-    _: vscode.CancellationToken
-  ): Promise<void> {
-    // sources.forEach(async (item) => {
-    //   Logger.info(await item.asString());
-    // });
-    if (!target) {
-      return;
-    }
-    const transferItem = sources.get('text/uri-list');
-    if (!transferItem || !transferItem.value) {
-      return;
-    }
+  public async handleDrop(target: FileExplorer, dataTransfer: vscode.DataTransfer): Promise<void> {
+    console.log('handleDrop', target, dataTransfer);
+    // TODO: figure out why the progress bar doesn't show up
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Window,
+        cancellable: false,
+        title: 'Tailscale',
+      },
+      async (progress) => {
+        dataTransfer.forEach(async ({ value }) => {
+          const uri = vscode.Uri.parse(value);
+          console.log('uri', uri);
 
-    if (target instanceof PeerTree) {
-      // TODO: error handling
-      vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Window,
-          cancellable: false,
-          title: 'Taildropping file...',
-        },
-        async (progress) => {
-          progress.report({ increment: 0 });
-
-          await this.ts.sendFile(transferItem.value, target.ID, '');
-
-          progress.report({ increment: 100 });
-        }
-      );
-      return;
-    }
-    if (target instanceof FileEntry && target.isDir) {
-      // TODO: error handling
-      vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Window,
-          cancellable: false,
-          title: 'Taildropping file...',
-        },
-        async (progress) => {
-          progress.report({ increment: 0 });
-
-          // TODO: if dropped on a file, copy to parent dir.
-          await this.ts.sendFile(transferItem.value, target.HostName, target.path);
+          try {
+            await this.fsProvider.scp(uri, target?.uri);
+            console.log('scp done');
+          } catch (e) {
+            vscode.window.showErrorMessage(`unable to copy ${uri} to ${target?.uri}`);
+            console.error(`Error copying ${uri} to ${target?.uri}: ${e}`);
+          }
 
           progress.report({ increment: 100 });
           this._onDidChangeTreeData.fire([target]);
-        }
-      );
+        });
+      }
+    );
+
+    if (!target) {
       return;
     }
   }
@@ -159,6 +148,32 @@ export class NodeExplorerProvider
       new vscode.DataTransferItem(source)
     );
   }
+
+  registerDeleteCommand() {
+    vscode.commands.registerCommand('tailscale.ssh.delete', this.delete.bind(this));
+  }
+
+  async delete(file: FileExplorer) {
+    try {
+      await vscode.workspace.fs.delete(file.uri);
+      vscode.window.showInformationMessage(`${file.label} deleted successfully.`);
+
+      const normalizedPath = path.normalize(file.uri.toString());
+      const parentDir = path.dirname(normalizedPath);
+      const dirName = path.basename(parentDir);
+
+      const parentFileExplorerItem = new FileExplorer(
+        dirName,
+        vscode.Uri.parse(parentDir),
+        vscode.FileType.Directory
+      );
+
+      this._onDidChangeTreeData.fire([parentFileExplorerItem]);
+      console.log('parentFileExplorerItem', parentFileExplorerItem);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Could not delete ${file.label}: ${e}`);
+    }
+  }
 }
 
 export class PeerBaseTreeItem extends vscode.TreeItem {
@@ -168,46 +183,30 @@ export class PeerBaseTreeItem extends vscode.TreeItem {
   }
 }
 
-// FileEntry represents a TreeItem for a file or directory
-export class FileEntry extends PeerBaseTreeItem {
-  public ID: string;
-  public HostName: string;
-  public path: string;
-  public isDir: boolean;
+export class FileExplorer extends vscode.TreeItem {
+  constructor(
+    public readonly label: string,
+    public readonly uri: vscode.Uri,
+    public readonly type: vscode.FileType,
+    public readonly collapsibleState: vscode.TreeItemCollapsibleState = type ===
+    vscode.FileType.Directory
+      ? vscode.TreeItemCollapsibleState.Collapsed
+      : vscode.TreeItemCollapsibleState.None
+  ) {
+    super(label, collapsibleState);
 
-  public constructor(obj: FileInfo, hostName: string) {
-    super(obj.name);
-
-    this.ID = obj.name;
-    this.HostName = hostName;
-    this.path = obj.path;
-    this.isDir = obj.isDir;
-    if (obj.isDir) {
-      this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+    if (type === vscode.FileType.File) {
+      this.command = {
+        command: 'vscode.open',
+        title: 'Open File',
+        arguments: [this.uri],
+      };
     }
   }
 
-  contextValue = 'tailscale-file-entry';
+  contextValue = 'file-explorer-item';
 }
 
-// FileExplorer represents a TreeItem for files
-export class FileExplorer extends PeerBaseTreeItem {
-  public ID: string;
-  public HostName: string;
-
-  public constructor(obj: Peer) {
-    super('File Explorer');
-
-    this.ID = obj.ID;
-    this.HostName = obj.HostName;
-    // Setting the collapsible state to Collapsed will make the node expandable
-    this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-  }
-
-  contextValue = 'tailscale-file-explorer';
-}
-
-// PeerTree represents a TreeItem for a Peer, containing data for display and navigation.
 export class PeerTree extends PeerBaseTreeItem {
   public ID: string;
   public HostName: string;
@@ -239,7 +238,6 @@ export class PeerTree extends PeerBaseTreeItem {
       ),
     };
 
-    // Setting the collapsible state to Collapsed will make the node expandable
     this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
   }
 

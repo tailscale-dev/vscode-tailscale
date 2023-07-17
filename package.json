@@ -143,6 +143,11 @@
           "command": "tailscale.copyHostname",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
           "group": "1_peer@1"
+        },
+        {
+          "command": "tailscale.ssh.delete",
+          "group": "fileActions@2",
+          "when": "view == tailscale-node-explorer-view && viewItem == file-explorer-item"
         }
       ]
     },
@@ -193,6 +198,10 @@
       {
         "command": "tailscale.copyHostname",
         "title": "Copy Hostname"
+      },
+      {
+        "command": "tailscale.ssh.delete",
+        "title": "Delete"
       }
     ],
     "viewsContainers": {

@@ -257,51 +257,6 @@ export class Tailscale {
     }
   }
 
-  async sendFile(file: string, node: string, dest: string) {
-    if (!this.url) {
-      throw new Error('uninitialized client');
-    }
-
-    try {
-      const resp = await fetch(`${this.url}/send-file`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Basic ' + this.authkey,
-        },
-        body: JSON.stringify({ file, node, dest }),
-      });
-
-      const text = await resp.text();
-      if (resp.status >= 400) {
-        Logger.info(`Error sending file: ${text}`);
-      }
-    } catch (e) {
-      Logger.error(`error calling sendFile: ${e}`);
-      throw e;
-    }
-  }
-
-  async exploreFiles(hostName: string, path: string): Promise<FileInfo[]> {
-    if (!this.url) {
-      throw new Error('uninitialized client');
-    }
-
-    try {
-      const resp = await fetch(`${this.url}/file-explorer`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Basic ' + this.authkey,
-        },
-        body: JSON.stringify({ hostName, path }),
-      });
-      const list = (await resp.json()) as FileInfo[];
-      return list;
-    } catch (e) {
-      Logger.error(`error calling exploreFiles: ${e}`);
-      throw e;
-    }
-  }
-
   async serveStatus(): Promise<ServeStatus> {
     if (!this.url) {
       throw new Error('uninitialized client');
