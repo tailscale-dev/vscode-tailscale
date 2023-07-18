@@ -231,7 +231,8 @@
       "tailscale-nodes-explorer": [
         {
           "id": "tailscale-node-explorer-view",
-          "name": "Nodes"
+          "name": "Nodes",
+          "when": "config.tailscale.nodeExplorer.enabled"
         }
       ]
     },
@@ -258,6 +259,11 @@
             "examples": [
               false
             ]
+          },
+          "tailscale.nodeExplorer.enabled": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "(IN DEVELOPMENT) Enable the Tailscale Node Explorer view."
           }
         }
       }
