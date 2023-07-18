@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { FileInfo, Peer, Status } from './types';
 import { Tailscale } from './tailscale/cli';
-import { TSObjFileSystemProvider } from './tsobj-file-system-provider';
+import { TSFileSystemProvider } from './ts-file-system-provider';
 
 export class NodeExplorerProvider
   implements
@@ -24,11 +24,11 @@ export class NodeExplorerProvider
   disposable: vscode.Disposable;
 
   private peers: { [hostName: string]: Peer } = {};
-  private fsProvider: TSObjFileSystemProvider;
+  private fsProvider: TSFileSystemProvider;
 
   constructor(private readonly ts: Tailscale) {
     this.disposable = vscode.window.registerFileDecorationProvider(this);
-    this.fsProvider = new TSObjFileSystemProvider();
+    this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
   }
@@ -96,6 +96,7 @@ export class NodeExplorerProvider
 
           peers.push(new PeerTree({ ...p }));
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
         vscode.window.showErrorMessage(`unable to fetch status ${e.message}`);
         console.error(`Error fetching status: ${e}`);

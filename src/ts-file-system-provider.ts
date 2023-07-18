@@ -43,7 +43,7 @@ export class Directory implements vscode.FileStat {
 
 export type Entry = File | Directory;
 
-export class TSObjFileSystemProvider implements vscode.FileSystemProvider {
+export class TSFileSystemProvider implements vscode.FileSystemProvider {
   // Implementation of the `onDidChangeFile` event
   onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = new vscode.EventEmitter<
     vscode.FileChangeEvent[]
@@ -83,7 +83,7 @@ export class TSObjFileSystemProvider implements vscode.FileSystemProvider {
     Logger.info(`hostname: ${hostname}`, 'tsobj-fsp');
     Logger.info(`remotePath: ${resourcePath}`, 'tsobj-fsp');
 
-    const command = `ssh ${hostname} ls -lA "${resourcePath}"`;
+    const command = `ssh ${hostname} ls -Ap "${resourcePath}"`;
     return new Promise((resolve, reject) => {
       exec(command, (error, stdout) => {
         if (error) {
@@ -92,16 +92,24 @@ export class TSObjFileSystemProvider implements vscode.FileSystemProvider {
           const lines = stdout.trim().split('\n');
           const files: [string, vscode.FileType][] = [];
           for (const line of lines) {
-            // Skip the first line if it starts with 'total'
-            if (line.startsWith('total')) {
-              continue;
-            }
-            const parts = line.trim().split(/\s+/);
-            const name = parts[parts.length - 1];
-            const isDirectory = parts[0].startsWith('d');
+            const isDirectory = line.endsWith('/');
             const type = isDirectory ? vscode.FileType.Directory : vscode.FileType.File;
+            const name = isDirectory ? line.slice(0, -1) : line; // Remove trailing slash if it's a directory
             files.push([name, type]);
           }
+
+          files.sort((a, b) => {
+            if (a[1] === vscode.FileType.Directory && b[1] !== vscode.FileType.Directory) {
+              return -1;
+            }
+            if (a[1] !== vscode.FileType.Directory && b[1] === vscode.FileType.Directory) {
+              return 1;
+            }
+
+            // If same type, sort by name
+            return a[0].localeCompare(b[0]);
+          });
+
           resolve(files);
         }
       });

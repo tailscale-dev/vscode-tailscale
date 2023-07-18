@@ -12,7 +12,7 @@ import {
   PeerTree,
 } from './node-explorer-provider';
 
-import { TSObjFileSystemProvider } from './tsobj-file-system-provider';
+import { TSFileSystemProvider } from './ts-file-system-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -53,7 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
-  const tsObjFileSystemProvider = new TSObjFileSystemProvider();
+  const tsObjFileSystemProvider = new TSFileSystemProvider();
   context.subscriptions.push(
     vscode.workspace.registerFileSystemProvider('ts', tsObjFileSystemProvider, {
       isCaseSensitive: true,
