@@ -5,6 +5,14 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
+import {
+  FileExplorer,
+  NodeExplorerProvider,
+  PeerDetailTreeItem,
+  PeerTree,
+} from './node-explorer-provider';
+
+import { TSFileSystemProvider } from './ts-file-system-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -45,6 +53,22 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
+  const tsObjFileSystemProvider = new TSFileSystemProvider();
+  context.subscriptions.push(
+    vscode.workspace.registerFileSystemProvider('ts', tsObjFileSystemProvider, {
+      isCaseSensitive: true,
+    })
+  );
+
+  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance);
+  vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
+  const view = vscode.window.createTreeView('tailscale-node-explorer-view', {
+    treeDataProvider: nodeExplorerProvider,
+    showCollapseAll: true,
+    dragAndDropController: nodeExplorerProvider,
+  });
+  context.subscriptions.push(view);
+
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {
       Logger.info('called tailscale.refreshServe', 'command');
@@ -71,6 +95,36 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openAdminConsole', () => {
       vscode.env.openExternal(vscode.Uri.parse(ADMIN_CONSOLE));
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyIPv4', async (node: PeerTree) => {
+      const ip = node.TailscaleIPs[0];
+
+      if (!ip) {
+        vscode.window.showErrorMessage(`No IPv4 address found for ${node.HostName}.`);
+        return;
+      }
+
+      await vscode.env.clipboard.writeText(ip);
+      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyIPv6', async (node: PeerTree) => {
+      const ip = node.TailscaleIPs[1];
+      await vscode.env.clipboard.writeText(ip);
+      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.copyHostname', async (node: PeerTree) => {
+      const name = node.HostName;
+      await vscode.env.clipboard.writeText(name);
+      vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
     })
   );
 

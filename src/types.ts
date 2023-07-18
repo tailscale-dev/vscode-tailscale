@@ -19,6 +19,21 @@ export interface Handlers {
   Proxy: string;
 }
 
+export interface Peer {
+  ID: string;
+  HostName: string;
+  Active?: boolean;
+  Online?: boolean;
+  TailscaleIPs: string[];
+  sshHostKeys?: string[];
+}
+
+export interface Status extends WithErrors {
+  Peer: {
+    [key: string]: Peer;
+  };
+}
+
 export interface ServeStatus extends WithErrors {
   ServeConfig?: ServeConfig;
   FunnelPorts?: number[];
@@ -173,4 +188,10 @@ export interface TSRelayDetails {
   address: string;
   nonce: string;
   port: string;
+}
+
+export interface FileInfo {
+  name: string;
+  isDir: boolean;
+  path: string;
 }
