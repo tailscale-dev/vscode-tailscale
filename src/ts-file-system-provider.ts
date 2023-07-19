@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { exec } from 'child_process';
-import { Tailscale } from './tailscale/cli';
 import { Logger } from './logger';
 
 export class File implements vscode.FileStat {
@@ -83,7 +82,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     Logger.info(`hostname: ${hostname}`, 'tsobj-fsp');
     Logger.info(`remotePath: ${resourcePath}`, 'tsobj-fsp');
 
-    const command = `ssh ${hostname} ls -Ap "${resourcePath}"`;
+    const command = `ssh ${hostname} ls -Ap "${resourcePath.replace(/\s/g, '\\ ')}"`;
     return new Promise((resolve, reject) => {
       exec(command, (error, stdout) => {
         if (error) {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { FileInfo, Peer, Status } from './types';
+import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
 import { TSFileSystemProvider } from './ts-file-system-provider';
 
