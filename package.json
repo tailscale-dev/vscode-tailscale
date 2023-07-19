@@ -130,23 +130,43 @@
       ],
       "view/item/context": [
         {
-          "command": "tailscale.copyIPv4",
+          "command": "tailscale.node.openRemoteCode",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "1_peer@1"
+          "group": "1_action@1"
         },
         {
-          "command": "tailscale.copyIPv6",
+          "command": "tailscale.node.openTerminal",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "1_peer@1"
+          "group": "1_action@2"
         },
         {
-          "command": "tailscale.copyHostname",
+          "command": "tailscale.node.copyIPv4",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "1_peer@1"
+          "group": "2_copy@1"
         },
         {
-          "command": "tailscale.ssh.delete",
-          "group": "fileActions@2",
+          "command": "tailscale.node.copyIPv6",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "2_copy@1"
+        },
+        {
+          "command": "tailscale.node.copyHostname",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "2_copy@1"
+        },
+        {
+          "command": "tailscale.node.openDetailsLink",
+          "group": "3_control@1",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item"
+        },
+        {
+          "command": "tailscale.node.openRemoteCodeAtLocation",
+          "group": "1_action@2",
+          "when": "view == tailscale-node-explorer-view && viewItem == file-explorer-item"
+        },
+        {
+          "command": "tailscale.node.fs.delete",
+          "group": "2_fileAction@2",
           "when": "view == tailscale-node-explorer-view && viewItem == file-explorer-item"
         }
       ]
@@ -188,20 +208,36 @@
         "category": "tsdev"
       },
       {
-        "command": "tailscale.copyIPv4",
+        "command": "tailscale.node.copyIPv4",
         "title": "Copy IPv4"
       },
       {
-        "command": "tailscale.copyIPv6",
+        "command": "tailscale.node.copyIPv6",
         "title": "Copy IPv6"
       },
       {
-        "command": "tailscale.copyHostname",
+        "command": "tailscale.node.copyHostname",
         "title": "Copy Hostname"
       },
       {
-        "command": "tailscale.ssh.delete",
+        "command": "tailscale.node.openTerminal",
+        "title": "Open SSH"
+      },
+      {
+        "command": "tailscale.node.openRemoteCode",
+        "title": "Open Remote Connection"
+      },
+      {
+        "command": "tailscale.node.openDetailsLink",
+        "title": "Open Machine Details..."
+      },
+      {
+        "command": "tailscale.node.fs.delete",
         "title": "Delete"
+      },
+      {
+        "command": "tailscale.node.openRemoteCodeAtLocation",
+        "title": "Open Remote Connection"
       }
     ],
     "viewsContainers": {

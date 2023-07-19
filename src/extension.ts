@@ -98,36 +98,6 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.copyIPv4', async (node: PeerTree) => {
-      const ip = node.TailscaleIPs[0];
-
-      if (!ip) {
-        vscode.window.showErrorMessage(`No IPv4 address found for ${node.HostName}.`);
-        return;
-      }
-
-      await vscode.env.clipboard.writeText(ip);
-      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.copyIPv6', async (node: PeerTree) => {
-      const ip = node.TailscaleIPs[1];
-      await vscode.env.clipboard.writeText(ip);
-      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.copyHostname', async (node: PeerTree) => {
-      const name = node.HostName;
-      await vscode.env.clipboard.writeText(name);
-      vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
-    })
-  );
-
   vscode.window.registerWebviewViewProvider('tailscale-serve-view', servePanelProvider);
 
   context.subscriptions.push(
