@@ -325,10 +325,10 @@
     node-fetch "^2.6.7"
     universal-user-agent "^6.0.0"
 
-"@octokit/rest@^19.0.4":
-  version "19.0.11"
-  resolved "https://registry.npmjs.org/@octokit/rest/-/rest-19.0.11.tgz"
-  integrity sha512-m2a9VhaP5/tUw8FwfnW2ICXlXpLPIqxtg3XcAiGMLj/Xhw3RSBfZ8le/466ktO1Gcjr8oXudGnHhxV1TXJgFxw==
+"@octokit/rest@^19.0.7":
+  version "19.0.13"
+  resolved "https://registry.yarnpkg.com/@octokit/rest/-/rest-19.0.13.tgz#e799393264edc6d3c67eeda9e5bd7832dcf974e4"
+  integrity sha512-/EzVox5V9gYGdbAI+ovYj3nXQT1TtTHRT+0eZPcuC05UFSWO3mdO9UY1C0i2eLF9Un1ONJkAk+IEtYGAC+TahA==
   dependencies:
     "@octokit/core" "^4.2.1"
     "@octokit/plugin-paginate-rest" "^6.1.2"
@@ -1138,9 +1138,9 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.npmjs.org/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
-axios@^1.1.2:
+axios@^1.3.4:
   version "1.4.0"
-  resolved "https://registry.npmjs.org/axios/-/axios-1.4.0.tgz"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.4.0.tgz#38a7bf1224cd308de271146038b551d725f0be1f"
   integrity sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==
   dependencies:
     follow-redirects "^1.15.0"
@@ -1155,21 +1155,21 @@ azure-devops-node-api@^11.0.1:
     tunnel "0.0.6"
     typed-rest-client "^1.8.4"
 
-backport@^8.9.7:
-  version "8.9.7"
-  resolved "https://registry.npmjs.org/backport/-/backport-8.9.7.tgz"
-  integrity sha512-TNToeh+3QSvlywc1tUu8Hs+7L8ibyj3Y+LC/Ict+Qrb6wNVQMn+8KgNL99l3kcD7ynvin6Q34f6MGJ5c0KhHzQ==
+backport@^8.9.8:
+  version "8.9.8"
+  resolved "https://registry.yarnpkg.com/backport/-/backport-8.9.8.tgz#020a242370c8617b09a5ac57c1f027d4b7b9eb28"
+  integrity sha512-CjAf6BTEZCHddxngC7nZSQCE8U3aioyrCCWyT2CjLlAmrQZwnRk1/qb4bA01c6AjIxmYMq0lh4nHfry/adXSNA==
   dependencies:
-    "@octokit/rest" "^19.0.4"
-    axios "^1.1.2"
+    "@octokit/rest" "^19.0.7"
+    axios "^1.3.4"
     dedent "^0.7.0"
     del "^6.1.1"
     dotenv "^16.0.3"
-    elastic-apm-node "^3.38.0"
+    elastic-apm-node "3.46.0"
     find-up "^5.0.0"
     graphql "^16.6.0"
     graphql-tag "^2.12.6"
-    inquirer "^8.2.3"
+    inquirer "^8.2.5"
     lodash "^4.17.21"
     make-dir "^3.1.0"
     ora "^5.4.1"
@@ -1178,7 +1178,7 @@ backport@^8.9.7:
     terminal-link "^2.1.1"
     utility-types "^3.10.0"
     winston "^3.8.2"
-    yargs "^17.6.0"
+    yargs "^17.7.1"
     yargs-parser "^21.1.1"
 
 balanced-match@^1.0.0:
@@ -1960,9 +1960,9 @@ elastic-apm-http-client@11.4.0:
     semver "^6.3.0"
     stream-chopper "^3.0.1"
 
-elastic-apm-node@^3.38.0:
+elastic-apm-node@3.46.0:
   version "3.46.0"
-  resolved "https://registry.npmjs.org/elastic-apm-node/-/elastic-apm-node-3.46.0.tgz"
+  resolved "https://registry.yarnpkg.com/elastic-apm-node/-/elastic-apm-node-3.46.0.tgz#38a8cf8ee1da73d10d62eca59a770643171d16b2"
   integrity sha512-MuM7Xe+5K7AkfFqrKWrvBJVFcS+hPcTKGj7yR/0/WHR5/r/ZjkBEX/t2bUMjgyHHG4lu5LH/RN86ScGdw1GG2w==
   dependencies:
     "@elastic/ecs-pino-format" "^1.2.0"
@@ -3095,9 +3095,9 @@ ini@~1.3.0:
   resolved "https://registry.npmjs.org/ini/-/ini-1.3.8.tgz"
   integrity sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==
 
-inquirer@^8.2.3:
+inquirer@^8.2.5:
   version "8.2.5"
-  resolved "https://registry.npmjs.org/inquirer/-/inquirer-8.2.5.tgz"
+  resolved "https://registry.yarnpkg.com/inquirer/-/inquirer-8.2.5.tgz#d8654a7542c35a9b9e069d27e2df4858784d54f8"
   integrity sha512-QAgPDQMEgrDssk1XiwwHoOGYF9BAbUcc1+j+FhEvaOt8/cKRqyLn0U5qA6F74fGhTMGxf92pOvPBeh29jQJDTQ==
   dependencies:
     ansi-escapes "^4.2.1"
@@ -6170,9 +6170,9 @@ yargs@16.2.0:
     y18n "^5.0.5"
     yargs-parser "^20.2.2"
 
-yargs@^17.6.0:
+yargs@^17.7.1:
   version "17.7.2"
-  resolved "https://registry.npmjs.org/yargs/-/yargs-17.7.2.tgz"
+  resolved "https://registry.yarnpkg.com/yargs/-/yargs-17.7.2.tgz#991df39aca675a192b816e1e0363f9d75d2aa269"
   integrity sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==
   dependencies:
     cliui "^8.0.1"
