@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { exec } from 'child_process';
-import { Tailscale } from './tailscale/cli';
 import { Logger } from './logger';
 
 export class File implements vscode.FileStat {
@@ -222,7 +221,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   scp(src: vscode.Uri, dest: vscode.Uri): Promise<void> {
     Logger.info('scp', 'tsobj-fsp');
 
-    const { hostname: srcHostName, resourcePath: srcPath } = this.extractHostAndPath(src);
+    const { resourcePath: srcPath } = this.extractHostAndPath(src);
     const { hostname: destHostName, resourcePath: destPath } = this.extractHostAndPath(dest);
 
     const command = `scp ${srcPath} ${destHostName}:${destPath}`;
@@ -239,18 +238,6 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     });
   }
 
-  private executeShellCommand(command: string): Promise<{ stdout: string; stderr: string }> {
-    return new Promise((resolve, reject) => {
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve({ stdout: stdout.trim(), stderr: stderr.trim() });
-        }
-      });
-    });
-  }
-
   private extractHostAndPath(uri: vscode.Uri): { hostname: string | null; resourcePath: string } {
     switch (uri.scheme) {
       case 'ts': {
@@ -261,12 +248,16 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
         const [hostname, ...pathSegments] = segments;
         const resourcePath = decodeURIComponent(pathSegments.join(path.sep));
 
-        return { hostname, resourcePath };
+        return { hostname, resourcePath: escapeSpace(resourcePath) };
       }
       case 'file':
-        return { hostname: null, resourcePath: uri.path };
+        return { hostname: null, resourcePath: escapeSpace(uri.path) };
       default:
         throw new Error(`Unsupported scheme: ${uri.scheme}`);
     }
   }
+}
+
+function escapeSpace(str: string): string {
+  return str.replace(/\s/g, '\\ ');
 }
