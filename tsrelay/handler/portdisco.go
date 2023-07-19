@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"tailscale.com/portlist"
 )
 
-func (h *httpHandler) portDiscoHandler(w http.ResponseWriter, r *http.Request) {
+func (h *handler) portDiscoHandler(w http.ResponseWriter, r *http.Request) {
 	c, err := h.u.Upgrade(w, r, nil)
 	if err != nil {
 		h.l.Printf("error upgrading to websocket: %v", err)
@@ -31,7 +31,7 @@ type wsMessage struct {
 	Message string `json:"message"`
 }
 
-func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error {
+func (h *handler) runPortDisco(ctx context.Context, c *websocket.Conn) error {
 	defer c.Close()
 	closeCh := make(chan struct{})
 	go func() {
@@ -85,6 +85,7 @@ func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error
 		h.prev[p.Port] = p
 	}
 	h.l.Println("initial ports are set")
+	h.onPortUpdate()
 
 	for {
 		select {
@@ -110,7 +111,7 @@ func (h *httpHandler) runPortDisco(ctx context.Context, c *websocket.Conn) error
 	}
 }
 
-func (h *httpHandler) handlePortUpdates(c *websocket.Conn, up []portlist.Port) error {
+func (h *handler) handlePortUpdates(c *websocket.Conn, up []portlist.Port) error {
 	h.l.VPrintln("ports were updated")
 	h.Lock()
 	h.l.VPrintln("up is", len(up))
@@ -148,7 +149,7 @@ func (h *httpHandler) handlePortUpdates(c *websocket.Conn, up []portlist.Port) e
 	return nil
 }
 
-func (h *httpHandler) matchesPID(pid int) (bool, error) {
+func (h *handler) matchesPID(pid int) (bool, error) {
 	if _, ok := h.pids[pid]; ok {
 		return true, nil
 	}
