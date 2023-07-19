@@ -82,7 +82,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     Logger.info(`hostname: ${hostname}`, 'tsobj-fsp');
     Logger.info(`remotePath: ${resourcePath}`, 'tsobj-fsp');
 
-    const command = `ssh ${hostname} ls -Ap "${resourcePath.replace(/\s/g, '\\ ')}"`;
+    const command = `ssh ${hostname} ls -Ap "${resourcePath}"`;
     return new Promise((resolve, reject) => {
       exec(command, (error, stdout) => {
         if (error) {
@@ -238,18 +238,6 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     });
   }
 
-  private executeShellCommand(command: string): Promise<{ stdout: string; stderr: string }> {
-    return new Promise((resolve, reject) => {
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve({ stdout: stdout.trim(), stderr: stderr.trim() });
-        }
-      });
-    });
-  }
-
   private extractHostAndPath(uri: vscode.Uri): { hostname: string | null; resourcePath: string } {
     switch (uri.scheme) {
       case 'ts': {
@@ -260,12 +248,16 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
         const [hostname, ...pathSegments] = segments;
         const resourcePath = decodeURIComponent(pathSegments.join(path.sep));
 
-        return { hostname, resourcePath };
+        return { hostname, resourcePath: escapeSpace(resourcePath) };
       }
       case 'file':
-        return { hostname: null, resourcePath: uri.path };
+        return { hostname: null, resourcePath: escapeSpace(uri.path) };
       default:
         throw new Error(`Unsupported scheme: ${uri.scheme}`);
     }
   }
+}
+
+function escapeSpace(str: string): string {
+  return str.replace(/\s/g, '\\ ');
 }
