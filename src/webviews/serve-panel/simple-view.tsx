@@ -63,9 +63,7 @@ export const SimpleView = () => {
   const hasServeTextStyle = persistedPort ? textStyle : textDisabledStyle;
   return (
     <div>
-      {data?.Errors?.map((error, index) => (
-        <Error key={index} type={error.Type} />
-      ))}
+      {data?.Errors?.map((error, index) => <Error key={index} type={error.Type} />)}
 
       <div className="pt-2 pb-4">
         <div className="text-2xl">Tailscale Funnel</div>
