@@ -1,8 +1,7 @@
-package main
+package handler
 
 import (
 	"encoding/base64"
-	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -12,18 +11,20 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/tailscale-dev/vscode-tailscale/tsrelay/logger"
 	"tailscale.com/portlist"
 )
 
 func TestServe(t *testing.T) {
-	portCh := make(chan struct{}, 1)
-	srv := httptest.NewServer(&httpHandler{
+	portCh := make(chan struct{}, 2)
+	h := &handler{
 		nonce:        "123",
-		l:            &logger{Logger: log.New(os.Stderr, "", 0)},
+		l:            logger.Nop,
 		pids:         make(map[int]struct{}),
 		prev:         make(map[uint16]portlist.Port),
 		onPortUpdate: func() { portCh <- struct{}{} },
-	})
+	}
+	srv := httptest.NewServer(newHandler(h))
 	t.Cleanup(srv.Close)
 
 	headers := http.Header{}
@@ -41,6 +42,8 @@ func TestServe(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	<-portCh
 	<-portCh
 
 	lst, err := net.Listen("tcp", "127.0.0.1:4593")
