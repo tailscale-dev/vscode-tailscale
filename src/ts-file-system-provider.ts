@@ -221,7 +221,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   scp(src: vscode.Uri, dest: vscode.Uri): Promise<void> {
     Logger.info('scp', 'tsobj-fsp');
 
-    const { hostname: srcHostName, resourcePath: srcPath } = this.extractHostAndPath(src);
+    const { resourcePath: srcPath } = this.extractHostAndPath(src);
     const { hostname: destHostName, resourcePath: destPath } = this.extractHostAndPath(dest);
 
     const command = `scp ${srcPath} ${destHostName}:${destPath}`;
