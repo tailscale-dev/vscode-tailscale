@@ -31,6 +31,13 @@ export class NodeExplorerProvider
     this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
+    this.registerCopyIPv4Command();
+    this.registerCopyIPv6Command();
+    this.registerCopyHostnameCommand();
+    this.registerOpenTerminalCommand();
+    this.registerOpenRemoteCodeCommand();
+    this.registerOpenRemoteCodeLocationCommand();
+    this.registerOpenNodeDetailsCommand();
   }
 
   dispose() {
@@ -151,7 +158,89 @@ export class NodeExplorerProvider
   }
 
   registerDeleteCommand() {
-    vscode.commands.registerCommand('tailscale.ssh.delete', this.delete.bind(this));
+    vscode.commands.registerCommand('tailscale.node.fs.delete', this.delete.bind(this));
+  }
+
+  registerOpenRemoteCodeLocationCommand() {
+    vscode.commands.registerCommand(
+      'tailscale.node.openRemoteCodeAtLocation',
+      async (file: FileExplorer) => {
+        const { hostname, resourcePath } = this.fsProvider.extractHostAndPath(file.uri);
+        if (!hostname || !resourcePath) {
+          return;
+        }
+
+        // TODO: handle non-absolute paths
+        this.openRemoteCodeLocationWindow(hostname, resourcePath, false);
+      }
+    );
+  }
+
+  registerCopyIPv4Command() {
+    vscode.commands.registerCommand('tailscale.node.copyIPv4', async (node: PeerTree) => {
+      const ip = node.TailscaleIPs[0];
+
+      if (!ip) {
+        vscode.window.showErrorMessage(`No IPv4 address found for ${node.HostName}.`);
+        return;
+      }
+
+      await vscode.env.clipboard.writeText(ip);
+      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
+    });
+  }
+
+  registerCopyIPv6Command() {
+    vscode.commands.registerCommand('tailscale.node.copyIPv6', async (node: PeerTree) => {
+      const ip = node.TailscaleIPs[1];
+      await vscode.env.clipboard.writeText(ip);
+      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
+    });
+  }
+
+  registerCopyHostnameCommand() {
+    vscode.commands.registerCommand('tailscale.node.copyHostname', async (node: PeerTree) => {
+      const name = node.HostName;
+      await vscode.env.clipboard.writeText(name);
+      vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
+    });
+  }
+
+  registerOpenTerminalCommand() {
+    vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerTree) => {
+      const t = vscode.window.createTerminal(node.HostName);
+      t.sendText(`ssh ${node.HostName}`);
+      t.show();
+    });
+  }
+
+  registerOpenRemoteCodeCommand() {
+    vscode.commands.registerCommand('tailscale.node.openRemoteCode', async (node: PeerTree) => {
+      this.openRemoteCodeWindow(node.HostName, false);
+    });
+  }
+
+  registerOpenNodeDetailsCommand() {
+    vscode.commands.registerCommand('tailscale.node.openDetailsLink', async (node: PeerTree) => {
+      vscode.env.openExternal(
+        vscode.Uri.parse(`https://login.tailscale.com/admin/machines/${node.TailscaleIPs[0]}`)
+      );
+    });
+  }
+
+  openRemoteCodeWindow(host: string, reuseWindow: boolean) {
+    vscode.commands.executeCommand('vscode.newWindow', {
+      remoteAuthority: `ssh-remote+${host}`,
+      reuseWindow,
+    });
+  }
+
+  openRemoteCodeLocationWindow(host: string, path: string, reuseWindow: boolean) {
+    vscode.commands.executeCommand(
+      'vscode.openFolder',
+      vscode.Uri.from({ scheme: 'vscode-remote', authority: `ssh-remote+${host}`, path }),
+      { forceNewWindow: !reuseWindow }
+    );
   }
 
   async delete(file: FileExplorer) {

@@ -238,7 +238,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     });
   }
 
-  private extractHostAndPath(uri: vscode.Uri): { hostname: string | null; resourcePath: string } {
+  public extractHostAndPath(uri: vscode.Uri): { hostname: string | null; resourcePath: string } {
     switch (uri.scheme) {
       case 'ts': {
         // removes leading slash
