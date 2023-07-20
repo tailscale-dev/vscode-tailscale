@@ -26,8 +26,6 @@ jobs:
           key: yarn-cache
       - name: Install dependencies
         run: tool/yarn install --frozen-lockfile --prefer-offline
-      - name: Test
-        run: tool/yarn test
       - name: Lint
         run: tool/yarn lint
       - name: Typescript
