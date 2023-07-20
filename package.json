@@ -314,7 +314,7 @@
     "package": "vsce package --allow-star-activation",
     "precommit": "lint-staged",
     "prepare": "husky install",
-    "test": "vitest --passWithNoTests",
+    "test": "vitest",
     "vscode:prepublish": "(yarn run bundle-js & pid1=$!; yarn run bundle-go & pid2=$!; wait $pid1 || exit 1; wait $pid2 || exit 1)",
     "watch": "webpack serve"
   },
