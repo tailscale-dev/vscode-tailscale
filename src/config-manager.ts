@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Logger } from './logger';
 
 interface Host {
   user: string;
@@ -22,6 +23,8 @@ export class ConfigManager {
     } else {
       this.config = {};
     }
+
+    Logger.info(`location: ${this.configPath}`, 'config-manager');
   }
 
   static withContext(context: vscode.ExtensionContext) {
@@ -40,6 +43,14 @@ export class ConfigManager {
 
   set<K extends keyof Config>(key: K, value: Config[K]) {
     this.config[key] = value;
+    this.saveConfig();
+  }
+
+  setUserForHost(hostname: string, username: string) {
+    this.config.hosts = this.config.hosts || {};
+    this.config.hosts[hostname] = this.config.hosts[hostname] || {};
+    this.config.hosts[hostname].user = username;
+
     this.saveConfig();
   }
 

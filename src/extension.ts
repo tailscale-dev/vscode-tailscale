@@ -13,6 +13,7 @@ import {
 } from './node-explorer-provider';
 
 import { TSFileSystemProvider } from './ts-file-system-provider';
+import { ConfigManager } from './config-manager';
 
 let tailscaleInstance: Tailscale;
 
@@ -20,6 +21,8 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.commands.executeCommand('setContext', 'tailscale.env', process.env.NODE_ENV);
 
   tailscaleInstance = await Tailscale.withInit(vscode);
+
+  const configManager = ConfigManager.withContext(context);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
@@ -53,7 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
-  const tsObjFileSystemProvider = new TSFileSystemProvider();
+  const tsObjFileSystemProvider = new TSFileSystemProvider(configManager);
   context.subscriptions.push(
     vscode.workspace.registerFileSystemProvider('ts', tsObjFileSystemProvider, {
       isCaseSensitive: true,

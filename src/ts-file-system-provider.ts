@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { Logger } from './logger';
+import { SSH } from './utils/ssh';
 
 export class File implements vscode.FileStat {
   type: vscode.FileType;
@@ -43,6 +44,12 @@ export class Directory implements vscode.FileStat {
 export type Entry = File | Directory;
 
 export class TSFileSystemProvider implements vscode.FileSystemProvider {
+  private ssh: SSH;
+
+  constructor(private readonly configManager) {
+    this.ssh = new SSH(configManager);
+  }
+
   // Implementation of the `onDidChangeFile` event
   onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = new vscode.EventEmitter<
     vscode.FileChangeEvent[]
@@ -75,43 +82,42 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     });
   }
 
-  readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
+  async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
     Logger.info(`readDirectory: ${uri.toString()}`, 'tsobj-fsp');
 
     const { hostname, resourcePath } = this.extractHostAndPath(uri);
     Logger.info(`hostname: ${hostname}`, 'tsobj-fsp');
     Logger.info(`remotePath: ${resourcePath}`, 'tsobj-fsp');
 
-    const command = `ssh ${hostname} ls -Ap "${resourcePath}"`;
-    return new Promise((resolve, reject) => {
-      exec(command, (error, stdout) => {
-        if (error) {
-          reject(error);
-        } else {
-          const lines = stdout.trim().split('\n');
-          const files: [string, vscode.FileType][] = [];
-          for (const line of lines) {
-            const isDirectory = line.endsWith('/');
-            const type = isDirectory ? vscode.FileType.Directory : vscode.FileType.File;
-            const name = isDirectory ? line.slice(0, -1) : line; // Remove trailing slash if it's a directory
-            files.push([name, type]);
-          }
+    if (!hostname) {
+      throw new Error('hostname is undefined');
+    }
 
-          files.sort((a, b) => {
-            if (a[1] === vscode.FileType.Directory && b[1] !== vscode.FileType.Directory) {
-              return -1;
-            }
-            if (a[1] !== vscode.FileType.Directory && b[1] === vscode.FileType.Directory) {
-              return 1;
-            }
+    const s = (await this.ssh.runCommandAndPromptForUsername(
+      hostname,
+      `ls -Ap "${resourcePath}"`
+    )) as string;
+    console.log('s', s);
 
-            // If same type, sort by name
-            return a[0].localeCompare(b[0]);
-          });
+    const lines = s.trim().split('\n');
+    const files: [string, vscode.FileType][] = [];
+    for (const line of lines) {
+      const isDirectory = line.endsWith('/');
+      const type = isDirectory ? vscode.FileType.Directory : vscode.FileType.File;
+      const name = isDirectory ? line.slice(0, -1) : line; // Remove trailing slash if it's a directory
+      files.push([name, type]);
+    }
 
-          resolve(files);
-        }
-      });
+    return files.sort((a, b) => {
+      if (a[1] === vscode.FileType.Directory && b[1] !== vscode.FileType.Directory) {
+        return -1;
+      }
+      if (a[1] !== vscode.FileType.Directory && b[1] === vscode.FileType.Directory) {
+        return 1;
+      }
+
+      // If same type, sort by name
+      return a[0].localeCompare(b[0]);
     });
   }
 
@@ -241,8 +247,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   public extractHostAndPath(uri: vscode.Uri): { hostname: string | null; resourcePath: string } {
     switch (uri.scheme) {
       case 'ts': {
-        // removes leading slash
-        const hostPath = uri.path.slice(1);
+        const hostPath = uri.path.slice(1); // removes leading slash
 
         const segments = path.normalize(hostPath).split('/');
         const [hostname, ...pathSegments] = segments;
