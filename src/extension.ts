@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-
+import * as fs from 'fs';
 import { ServePanelProvider } from './serve-panel-provider';
 import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
@@ -13,6 +13,7 @@ import {
 } from './node-explorer-provider';
 
 import { TSFileSystemProvider } from './ts-file-system-provider';
+import { ConfigManager } from './config-manager';
 
 let tailscaleInstance: Tailscale;
 
@@ -20,6 +21,8 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.commands.executeCommand('setContext', 'tailscale.env', process.env.NODE_ENV);
 
   tailscaleInstance = await Tailscale.withInit(vscode);
+
+  const configManager = ConfigManager.withContext(context);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {

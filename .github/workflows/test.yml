@@ -26,12 +26,8 @@ jobs:
           key: yarn-cache
       - name: Install dependencies
         run: tool/yarn install --frozen-lockfile --prefer-offline
-      # - name: Integration Tests (Linux)
-      #   run: xvfb-run -a tool/yarn test
-      #   if: runner.os == 'Linux'
-      # - name: Integration Tests (macOS/Windows)
-      #   run: tool/yarn test
-      #   if: runner.os != 'Linux'
+      - name: Test
+        run: tool/yarn test
       - name: Lint
         run: tool/yarn lint
       - name: Typescript
