@@ -314,6 +314,7 @@
     "package": "vsce package --allow-star-activation",
     "precommit": "lint-staged",
     "prepare": "husky install",
+    "test": "vitest --passWithNoTests",
     "vscode:prepublish": "(yarn run bundle-js & pid1=$!; yarn run bundle-go & pid2=$!; wait $pid1 || exit 1; wait $pid2 || exit 1)",
     "watch": "webpack serve"
   },
@@ -351,6 +352,7 @@
     "ts-loader": "^9.4.4",
     "typescript": "^5.1.6",
     "utf-8-validate": "^6.0.3",
+    "vitest": "^.33.0",
     "vscode-jsonrpc": "^8.1.0",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
