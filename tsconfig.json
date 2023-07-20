@@ -12,5 +12,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedParameters": true
   },
-  "exclude": ["node_modules", ".vscode-test", "src/webviews"]
+  "exclude": ["node_modules", ".vscode-test", "src/webviews", "vitest.config.ts"]
 }
