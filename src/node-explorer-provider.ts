@@ -80,7 +80,7 @@ export class NodeExplorerProvider
     if (element instanceof PeerTree) {
       return [
         new FileExplorer(
-          'File Explorer',
+          'File explorer',
           // TODO: allow the directory to be configurable
           vscode.Uri.parse(`ts://nodes/${element.HostName}/~`),
           vscode.FileType.Directory
@@ -114,7 +114,6 @@ export class NodeExplorerProvider
   }
 
   public async handleDrop(target: FileExplorer, dataTransfer: vscode.DataTransfer): Promise<void> {
-    console.log('handleDrop', target, dataTransfer);
     // TODO: figure out why the progress bar doesn't show up
     await vscode.window.withProgress(
       {
@@ -125,11 +124,9 @@ export class NodeExplorerProvider
       async (progress) => {
         dataTransfer.forEach(async ({ value }) => {
           const uri = vscode.Uri.parse(value);
-          console.log('uri', uri);
 
           try {
             await this.fsProvider.scp(uri, target?.uri);
-            console.log('scp done');
           } catch (e) {
             vscode.window.showErrorMessage(`unable to copy ${uri} to ${target?.uri}`);
             console.error(`Error copying ${uri} to ${target?.uri}: ${e}`);
@@ -259,7 +256,6 @@ export class NodeExplorerProvider
       );
 
       this._onDidChangeTreeData.fire([parentFileExplorerItem]);
-      console.log('parentFileExplorerItem', parentFileExplorerItem);
     } catch (e) {
       vscode.window.showErrorMessage(`Could not delete ${file.label}: ${e}`);
     }

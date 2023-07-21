@@ -3,6 +3,7 @@ import * as path from 'path';
 import { exec } from 'child_process';
 import { Logger } from './logger';
 import { SSH } from './utils/ssh';
+import { ConfigManager } from './config-manager';
 
 export class File implements vscode.FileStat {
   type: vscode.FileType;
@@ -46,7 +47,7 @@ export type Entry = File | Directory;
 export class TSFileSystemProvider implements vscode.FileSystemProvider {
   private ssh: SSH;
 
-  constructor(private readonly configManager) {
+  constructor(configManager?: ConfigManager) {
     this.ssh = new SSH(configManager);
   }
 
@@ -59,27 +60,27 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     throw new Error('Watch not supported');
   }
 
-  stat(uri: vscode.Uri): vscode.FileStat | Thenable<vscode.FileStat> {
+  async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
     Logger.info(`stat: ${uri.toString()}`, 'tsobj-fsp');
     const { hostname, resourcePath } = this.extractHostAndPath(uri);
 
-    const command = `ssh ${hostname} "stat -L -c '{\\"type\\": \\"%F\\", \\"size\\": %s, \\"ctime\\": %Z, \\"mtime\\": %Y}' ${resourcePath}"`;
+    if (!hostname) {
+      throw new Error('hostname is undefined');
+    }
 
-    return new Promise((resolve, reject) => {
-      exec(command, (error, stdout) => {
-        if (error) {
-          reject(error);
-        } else {
-          const result = JSON.parse(stdout.trim());
-          const type =
-            result.type === 'directory' ? vscode.FileType.Directory : vscode.FileType.File;
-          const size = result.size || 0;
-          const ctime = result.ctime * 1000;
-          const mtime = result.mtime * 1000;
-          resolve({ type, size, ctime, mtime });
-        }
-      });
-    });
+    const command = `stat -L -c '{\\"type\\": \\"%F\\", \\"size\\": %s, \\"ctime\\": %Z, \\"mtime\\": %Y}'`;
+    const s = (await this.ssh.runCommandAndPromptForUsername(
+      hostname,
+      `"${command}" "${resourcePath}"`
+    )) as string;
+
+    const result = JSON.parse(s.trim());
+    const type = result.type === 'directory' ? vscode.FileType.Directory : vscode.FileType.File;
+    const size = result.size || 0;
+    const ctime = result.ctime * 1000;
+    const mtime = result.mtime * 1000;
+
+    return { type, size, ctime, mtime };
   }
 
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
@@ -97,7 +98,6 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
       hostname,
       `ls -Ap "${resourcePath}"`
     )) as string;
-    console.log('s', s);
 
     const lines = s.trim().split('\n');
     const files: [string, vscode.FileType][] = [];
@@ -121,23 +121,24 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     });
   }
 
-  readFile(uri: vscode.Uri): Promise<Uint8Array> {
+  async readFile(uri: vscode.Uri): Promise<Uint8Array> {
     Logger.info(`readFile: ${uri.toString()}`, 'tsobj-readFile');
     const { hostname, resourcePath } = this.extractHostAndPath(uri);
-    const command = `ssh ${hostname} "cat ${resourcePath}"`;
-    return new Promise((resolve, reject) => {
-      exec(command, (error, stdout) => {
-        if (error) {
-          reject(error);
-        } else {
-          const buffer = Buffer.from(stdout, 'binary');
-          resolve(new Uint8Array(buffer));
-        }
-      });
-    });
+
+    if (!hostname) {
+      throw new Error('hostname is undefined');
+    }
+
+    const s = (await this.ssh.runCommandAndPromptForUsername(
+      hostname,
+      `cat "${resourcePath}"`
+    )) as string;
+
+    const buffer = Buffer.from(s, 'binary');
+    return new Uint8Array(buffer);
   }
 
-  writeFile(
+  async writeFile(
     uri: vscode.Uri,
     content: Uint8Array,
     options: { create: boolean; overwrite: boolean }
@@ -150,7 +151,9 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
       throw vscode.FileSystemError.FileExists(uri);
     }
 
-    const command = `ssh ${hostname} "cat > ${resourcePath}"`;
+    // TODO: update runCommandAndPromptForUsername to accept stdin
+    const command = `ssh ${hostname} "tee ${resourcePath}"`;
+    // TODO: handle write protected file and prompt for sudo password
     return new Promise((resolve, reject) => {
       const process = exec(command, (error) => {
         if (error) {
@@ -164,60 +167,55 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     });
   }
 
-  delete(uri: vscode.Uri, options: { recursive: boolean }): Promise<void> {
+  async delete(uri: vscode.Uri, options: { recursive: boolean }): Promise<void> {
     Logger.info(`delete: ${uri.toString()}`, 'tsobj-fsp');
 
     const { hostname, resourcePath } = this.extractHostAndPath(uri);
 
-    const command = `ssh ${hostname} "rm ${options.recursive ? '-r' : ''} ${resourcePath}"`;
-    return new Promise((resolve, reject) => {
-      exec(command, (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
+    if (!hostname) {
+      throw new Error('hostname is undefined');
+    }
+
+    await this.ssh.runCommandAndPromptForUsername(
+      hostname,
+      `"rm ${options.recursive ? '-r' : ''} ${resourcePath}"`
+    );
   }
 
-  createDirectory(uri: vscode.Uri): Promise<void> {
+  async createDirectory(uri: vscode.Uri): Promise<void> {
     Logger.info(`createDirectory: ${uri.toString()}`, 'tsobj-fsp');
 
     const { hostname, resourcePath } = this.extractHostAndPath(uri);
 
-    const command = `ssh ${hostname} mkdir -p ${resourcePath}`;
-    return new Promise((resolve, reject) => {
-      exec(command, (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
+    if (!hostname) {
+      throw new Error('hostname is undefined');
+    }
+
+    await this.ssh.runCommandAndPromptForUsername(hostname, `mkdir -p "${resourcePath}"`);
   }
 
-  rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): Promise<void> {
+  async rename(
+    oldUri: vscode.Uri,
+    newUri: vscode.Uri,
+    options: { overwrite: boolean }
+  ): Promise<void> {
     Logger.info('rename', 'tsobj-fsp');
 
     const { hostname: oldHost, resourcePath: oldPath } = this.extractHostAndPath(oldUri);
     const { hostname: newHost, resourcePath: newPath } = this.extractHostAndPath(newUri);
 
+    if (!oldHost) {
+      throw new Error('hostname is undefined');
+    }
+
     if (oldHost !== newHost) {
       throw new Error('Cannot rename files across different hosts.');
     }
 
-    const command = `ssh ${oldHost} mv ${options.overwrite ? '-f' : ''} ${oldPath} ${newPath}`;
-    return new Promise((resolve, reject) => {
-      exec(command, (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
+    await this.ssh.runCommandAndPromptForUsername(
+      oldHost,
+      `${oldHost} mv ${options.overwrite ? '-f' : ''} ${oldPath} ${newPath}`
+    );
   }
 
   // scp pi@haas:/home/pi/foo.txt ubuntu@backup:/home/ubuntu/
@@ -231,7 +229,6 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     const { hostname: destHostName, resourcePath: destPath } = this.extractHostAndPath(dest);
 
     const command = `scp ${srcPath} ${destHostName}:${destPath}`;
-    console.log('command', command);
 
     return new Promise((resolve, reject) => {
       exec(command, (error) => {
