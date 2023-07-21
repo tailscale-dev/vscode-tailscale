@@ -4,11 +4,9 @@ import * as path from 'path';
 import { test, expect, beforeEach } from 'vitest';
 import { ConfigManager } from './config-manager';
 
-const extensionContext = {
-  globalStoragePath: '/tmp/vscode-tailscale',
-} as vscode.ExtensionContext;
-
-const configPath = path.join(extensionContext.globalStoragePath, 'config.json');
+const fsPath = '/tmp/vscode-tailscale';
+const globalStorageUri = { fsPath } as vscode.Uri;
+const configPath = path.join(fsPath, 'config.json');
 
 beforeEach(() => {
   if (fs.existsSync(configPath)) {
@@ -17,15 +15,15 @@ beforeEach(() => {
 });
 
 test('withContext will create directory if it does not exist', () => {
-  fs.rmSync(extensionContext.globalStoragePath, { recursive: true, force: true });
-  expect(fs.existsSync(extensionContext.globalStoragePath)).toBe(false);
+  fs.rmSync(fsPath, { recursive: true, force: true });
+  expect(fs.existsSync(fsPath)).toBe(false);
 
-  ConfigManager.withContext(extensionContext);
-  expect(fs.existsSync(extensionContext.globalStoragePath)).toBe(true);
+  ConfigManager.withGlobalStorageUri(globalStorageUri);
+  expect(fs.existsSync(fsPath)).toBe(true);
 });
 
 test('withContext returns an initialized ConfigManager', () => {
-  const cm = ConfigManager.withContext(extensionContext);
+  const cm = ConfigManager.withGlobalStorageUri(globalStorageUri);
   expect(cm.configPath).toBe(configPath);
 });
 
@@ -39,7 +37,7 @@ test('set persists config to disk', () => {
   };
 
   cm.set('hosts', hosts);
-  expect(cm.get('hosts')).toEqual(hosts);
+  expect(cm.config.hosts).toEqual(hosts);
 
   const f = fs.readFileSync(configPath, 'utf8');
   expect(JSON.parse(f)).toEqual({ hosts });

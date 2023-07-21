@@ -5,12 +5,7 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
-import {
-  FileExplorer,
-  NodeExplorerProvider,
-  PeerDetailTreeItem,
-  PeerTree,
-} from './node-explorer-provider';
+import { NodeExplorerProvider, PeerTree } from './node-explorer-provider';
 
 import { TSFileSystemProvider } from './ts-file-system-provider';
 import { ConfigManager } from './config-manager';
@@ -22,7 +17,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   tailscaleInstance = await Tailscale.withInit(vscode);
 
-  const configManager = ConfigManager.withContext(context);
+  const configManager = ConfigManager.withGlobalStorageUri(context.globalStorageUri);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
@@ -56,9 +51,9 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
-  const tsObjFileSystemProvider = new TSFileSystemProvider(configManager);
+  const tsFileSystemProvider = new TSFileSystemProvider(configManager);
   context.subscriptions.push(
-    vscode.workspace.registerFileSystemProvider('ts', tsObjFileSystemProvider, {
+    vscode.workspace.registerFileSystemProvider('ts', tsFileSystemProvider, {
       isCaseSensitive: true,
     })
   );
@@ -98,6 +93,21 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openAdminConsole', () => {
       vscode.env.openExternal(vscode.Uri.parse(ADMIN_CONSOLE));
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.node.setUsername', async (node: PeerTree) => {
+      const username = await vscode.window.showInputBox({
+        prompt: `Enter the username to use for ${node.HostName}`,
+        value: configManager.config?.hosts?.[node.HostName]?.user,
+      });
+
+      if (!username) {
+        return;
+      }
+
+      configManager.setUserForHost(node.HostName, username);
     })
   );
 
