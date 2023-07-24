@@ -8,8 +8,7 @@ import { TSFileSystemProvider } from './ts-file-system-provider';
 export class NodeExplorerProvider
   implements
     vscode.TreeDataProvider<PeerBaseTreeItem>,
-    vscode.TreeDragAndDropController<PeerBaseTreeItem>,
-    vscode.FileDecorationProvider
+    vscode.TreeDragAndDropController<PeerBaseTreeItem>
 {
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
   dragMimeTypes = [];
@@ -21,13 +20,10 @@ export class NodeExplorerProvider
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
-  disposable: vscode.Disposable;
-
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 
   constructor(private readonly ts: Tailscale) {
-    this.disposable = vscode.window.registerFileDecorationProvider(this);
     this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
@@ -40,27 +36,9 @@ export class NodeExplorerProvider
     this.registerOpenNodeDetailsCommand();
   }
 
-  dispose() {
-    this.disposable.dispose();
-  }
+  dispose() {}
 
   onDidChangeFileDecorations?: vscode.Event<vscode.Uri | vscode.Uri[] | undefined> | undefined;
-
-  provideFileDecoration(
-    uri: vscode.Uri,
-    _: vscode.CancellationToken
-  ): vscode.ProviderResult<vscode.FileDecoration> {
-    if (uri.scheme === 'tsobj') {
-      const p = this.peers[uri.authority];
-      if (p?.sshHostKeys?.length) {
-        return {
-          badge: '>_',
-          tooltip: 'You can drag and drop files to this node',
-        };
-      }
-    }
-    return {};
-  }
 
   getTreeItem(element: PeerBaseTreeItem): vscode.TreeItem {
     return element;
@@ -80,7 +58,7 @@ export class NodeExplorerProvider
     if (element instanceof PeerTree) {
       return [
         new FileExplorer(
-          'File Explorer',
+          'File explorer',
           // TODO: allow the directory to be configurable
           vscode.Uri.parse(`ts://nodes/${element.HostName}/~`),
           vscode.FileType.Directory
@@ -114,7 +92,6 @@ export class NodeExplorerProvider
   }
 
   public async handleDrop(target: FileExplorer, dataTransfer: vscode.DataTransfer): Promise<void> {
-    console.log('handleDrop', target, dataTransfer);
     // TODO: figure out why the progress bar doesn't show up
     await vscode.window.withProgress(
       {
@@ -125,11 +102,9 @@ export class NodeExplorerProvider
       async (progress) => {
         dataTransfer.forEach(async ({ value }) => {
           const uri = vscode.Uri.parse(value);
-          console.log('uri', uri);
 
           try {
             await this.fsProvider.scp(uri, target?.uri);
-            console.log('scp done');
           } catch (e) {
             vscode.window.showErrorMessage(`unable to copy ${uri} to ${target?.uri}`);
             console.error(`Error copying ${uri} to ${target?.uri}: ${e}`);
@@ -259,7 +234,6 @@ export class NodeExplorerProvider
       );
 
       this._onDidChangeTreeData.fire([parentFileExplorerItem]);
-      console.log('parentFileExplorerItem', parentFileExplorerItem);
     } catch (e) {
       vscode.window.showErrorMessage(`Could not delete ${file.label}: ${e}`);
     }
@@ -268,7 +242,7 @@ export class NodeExplorerProvider
 
 export class PeerBaseTreeItem extends vscode.TreeItem {
   constructor(label: string) {
-    super(vscode.Uri.parse(`tsobj://${label}`));
+    super(vscode.Uri.parse(`ts://${label}`));
     this.label = label;
   }
 }

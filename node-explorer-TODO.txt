@@ -1,8 +1,0 @@
-* Handle offline, or unavailable - show error
-* Add refresh action
-* change user (node context)
-* change root directory (node and FileExplorer context)
-* figure out why the progress bar doesn't show up
-* add file explorer context (get path, delete, rename)
-* download button
-* 

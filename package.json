@@ -140,6 +140,11 @@
           "group": "1_action@2"
         },
         {
+          "command": "tailscale.node.setUsername",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "1_action@3"
+        },
+        {
           "command": "tailscale.node.copyIPv4",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
           "group": "2_copy@1"
@@ -236,6 +241,10 @@
         "title": "Delete"
       },
       {
+        "command": "tailscale.node.setUsername",
+        "title": "Change SSH Username"
+      },
+      {
         "command": "tailscale.node.openRemoteCodeAtLocation",
         "title": "Open Remote Connection"
       }
@@ -300,6 +309,25 @@
             "type": "boolean",
             "default": false,
             "markdownDescription": "(IN DEVELOPMENT) Enable the Tailscale Node Explorer view."
+          },
+          "tailscale.ssh.defaultUsername": {
+            "type": "string",
+            "default": null,
+            "markdownDescription": "Default username for SSH connections.",
+            "scope": "window",
+            "examples": [
+              "amelie"
+            ]
+          },
+          "tailscale.ssh.defaultRootPath": {
+            "type": "string",
+            "default": null,
+            "markdownDescription": "Default root path for SSH connections.",
+            "scope": "window",
+            "examples": [
+              "/",
+              "home/amelie"
+            ]
           }
         }
       }

@@ -13,19 +13,19 @@ interface Config {
 }
 
 export class ConfigManager {
-  private config: Config;
+  private _config: Config;
 
   constructor(public readonly configPath: string) {
     if (fs.existsSync(this.configPath)) {
       const rawData = fs.readFileSync(this.configPath, 'utf8');
-      this.config = JSON.parse(rawData);
+      this._config = JSON.parse(rawData);
     } else {
-      this.config = {};
+      this._config = {};
     }
   }
 
-  static withContext(context: vscode.ExtensionContext) {
-    const globalStoragePath = context.globalStoragePath;
+  static withGlobalStorageUri(globalStorageUri: vscode.Uri) {
+    const globalStoragePath = globalStorageUri.fsPath;
 
     if (!fs.existsSync(globalStoragePath)) {
       fs.mkdirSync(globalStoragePath);
@@ -34,16 +34,24 @@ export class ConfigManager {
     return new ConfigManager(path.join(globalStoragePath, 'config.json'));
   }
 
-  get<K extends keyof Config>(key: K): Config[K] {
-    return this.config[key];
+  set<K extends keyof Config>(key: K, value: Config[K]) {
+    this._config[key] = value;
+    this.saveConfig();
   }
 
-  set<K extends keyof Config>(key: K, value: Config[K]) {
-    this.config[key] = value;
+  public get config(): Config {
+    return this._config;
+  }
+
+  setUserForHost(hostname: string, username: string) {
+    this._config.hosts = this._config.hosts ?? {};
+    this._config.hosts[hostname] = this._config.hosts[hostname] ?? {};
+    this._config.hosts[hostname].user = username;
+
     this.saveConfig();
   }
 
   private saveConfig() {
-    fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2), 'utf8');
+    fs.writeFileSync(this.configPath, JSON.stringify(this._config, null, 2), 'utf8');
   }
 }
