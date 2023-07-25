@@ -83,6 +83,15 @@ export class NodeExplorerProvider
         }
         for (const key in status.Peer) {
           const p = status.Peer[key];
+
+          // ShareeNode indicates this node exists in the netmap because
+          // it's owned by a shared-to user and that node might connect
+          // to us. These nodes are hidden by "tailscale status", but present
+          // in JSON output so we should filter out.
+          if (p.ShareeNode) {
+            continue;
+          }
+
           this.peers[p.HostName] = p;
 
           peers.push(new PeerTree({ ...p }));
