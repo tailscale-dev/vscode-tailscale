@@ -26,6 +26,7 @@ export interface Peer {
   Online?: boolean;
   TailscaleIPs: string[];
   sshHostKeys?: string[];
+  ShareeNode?: boolean;
 }
 
 export interface Status extends WithErrors {
