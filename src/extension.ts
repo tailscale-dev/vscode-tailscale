@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { ServePanelProvider } from './serve-panel-provider';
@@ -9,6 +10,7 @@ import { NodeExplorerProvider, PeerTree } from './node-explorer-provider';
 
 import { TSFileSystemProvider } from './ts-file-system-provider';
 import { ConfigManager } from './config-manager';
+import { SSH } from './utils/ssh';
 
 let tailscaleInstance: Tailscale;
 
@@ -18,6 +20,7 @@ export async function activate(context: vscode.ExtensionContext) {
   tailscaleInstance = await Tailscale.withInit(vscode);
 
   const configManager = ConfigManager.withGlobalStorageUri(context.globalStorageUri);
+  const ssh = new SSH(configManager);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
@@ -58,7 +61,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance);
+  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance, ssh);
   vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
   const view = vscode.window.createTreeView('tailscale-node-explorer-view', {
     treeDataProvider: nodeExplorerProvider,
@@ -107,7 +110,28 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      configManager.setUserForHost(node.HostName, username);
+      configManager.setForHost(node.HostName, 'user', username);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.node.setRootDir', async (node: PeerTree) => {
+      const dir = await vscode.window.showInputBox({
+        prompt: `Enter the root directory to use for ${node.HostName}`,
+        value: configManager.config?.hosts?.[node.HostName]?.rootDir || '~',
+      });
+
+      if (!dir) {
+        return;
+      }
+
+      if (!path.isAbsolute(dir) && dir !== '~') {
+        vscode.window.showErrorMessage(`${dir} is an invalid absolute path`);
+        return;
+      }
+
+      configManager.setForHost(node.HostName, 'rootDir', dir);
+      // TODO: trigger refresh to fsFileSystemProvider
     })
   );
 
