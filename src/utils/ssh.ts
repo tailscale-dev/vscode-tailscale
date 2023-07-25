@@ -72,7 +72,7 @@ export class SSH {
     });
 
     if (username && this.configManager) {
-      this.configManager.setUserForHost(hostname, username);
+      this.configManager.setForHost(hostname, 'user', username);
     }
 
     return username;
@@ -125,7 +125,7 @@ export class SSH {
     }
   }
 
-  sshHostnameWithUser(hostname: string) {
+  public sshHostnameWithUser(hostname: string) {
     const { hosts } = this.configManager?.config || {};
     const userForHost = hosts?.[hostname]?.user?.trim();
     const defaultUser = vscode.workspace.getConfiguration('ssh').get<string>('defaultUser')?.trim();

@@ -43,10 +43,14 @@ export class ConfigManager {
     return this._config;
   }
 
-  setUserForHost(hostname: string, username: string) {
+  setForHost<TKey extends keyof Host, TValue extends Host[TKey]>(
+    hostname: string,
+    key: TKey,
+    value: TValue
+  ) {
     this._config.hosts = this._config.hosts ?? {};
     this._config.hosts[hostname] = this._config.hosts[hostname] ?? {};
-    this._config.hosts[hostname].user = username;
+    this._config.hosts[hostname][key] = value;
 
     this.saveConfig();
   }

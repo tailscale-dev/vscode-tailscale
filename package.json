@@ -126,6 +126,11 @@
           "command": "tailscale.openAdminConsole",
           "group": "overflow",
           "when": "view == tailscale-serve-view || view == tailscale-node-explorer-view"
+        },
+        {
+          "command": "tailscale.nodeExplorer.refresh",
+          "group": "navigation",
+          "when": "view == tailscale-node-explorer-view"
         }
       ],
       "view/item/context": [
@@ -142,37 +147,42 @@
         {
           "command": "tailscale.node.setUsername",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "1_action@3"
+          "group": "2_settings@3"
+        },
+        {
+          "command": "tailscale.node.setRootDir",
+          "when": "(view == tailscale-node-explorer-view && viewItem == tailscale-peer-item) || (view == tailscale-node-explorer-view && viewItem =~ /^file-explorer-item-root/)",
+          "group": "2_settings@3"
         },
         {
           "command": "tailscale.node.copyIPv4",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "2_copy@1"
+          "group": "3_copy@1"
         },
         {
           "command": "tailscale.node.copyIPv6",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "2_copy@1"
+          "group": "3_copy@1"
         },
         {
           "command": "tailscale.node.copyHostname",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "2_copy@1"
+          "group": "3_copy@1"
         },
         {
           "command": "tailscale.node.openDetailsLink",
-          "group": "3_control@1",
+          "group": "4_control@1",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item"
         },
         {
           "command": "tailscale.node.openRemoteCodeAtLocation",
           "group": "1_action@2",
-          "when": "view == tailscale-node-explorer-view && viewItem == file-explorer-item"
+          "when": "view == tailscale-node-explorer-view && viewItem =~ /^file-explorer-item-root/"
         },
         {
           "command": "tailscale.node.fs.delete",
           "group": "2_fileAction@2",
-          "when": "view == tailscale-node-explorer-view && viewItem == file-explorer-item"
+          "when": "view == tailscale-node-explorer-view && viewItem =~ /^file-explorer-item-child/"
         }
       ]
     },
@@ -229,6 +239,11 @@
         "title": "Open SSH"
       },
       {
+        "command": "tailscale.nodeExplorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "tailscale.node.openRemoteCode",
         "title": "Open Remote Connection"
       },
@@ -243,6 +258,10 @@
       {
         "command": "tailscale.node.setUsername",
         "title": "Change SSH Username"
+      },
+      {
+        "command": "tailscale.node.setRootDir",
+        "title": "Change Root Path"
       },
       {
         "command": "tailscale.node.openRemoteCodeAtLocation",
@@ -374,6 +393,7 @@
     "prettier": "^3.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "ssh2": "^1.14.0",
     "style-loader": "^3.3.3",
     "swr": "^2.2.0",
     "tailwindcss": "^3.3.3",
