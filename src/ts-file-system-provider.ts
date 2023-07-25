@@ -58,9 +58,12 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
 
     const s = await this.ssh.runCommandAndPromptForUsername(hostname, 'ls', ['-Ap', resourcePath]);
 
-    const lines = s.trim().split('\n');
+    const lines = s.trim();
     const files: [string, vscode.FileType][] = [];
-    for (const line of lines) {
+    for (const line of lines.split('\n')) {
+      if (line === '') {
+        continue;
+      }
       const isDirectory = line.endsWith('/');
       const type = isDirectory ? vscode.FileType.Directory : vscode.FileType.File;
       const name = isDirectory ? line.slice(0, -1) : line; // Remove trailing slash if it's a directory
