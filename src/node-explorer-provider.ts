@@ -4,6 +4,7 @@ import * as path from 'path';
 import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
 import { TSFileSystemProvider } from './ts-file-system-provider';
+import { SSH } from './utils/ssh';
 
 export class NodeExplorerProvider
   implements
@@ -23,7 +24,10 @@ export class NodeExplorerProvider
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 
-  constructor(private readonly ts: Tailscale) {
+  constructor(
+    private readonly ts: Tailscale,
+    private ssh: SSH
+  ) {
     this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
@@ -34,6 +38,7 @@ export class NodeExplorerProvider
     this.registerOpenRemoteCodeCommand();
     this.registerOpenRemoteCodeLocationCommand();
     this.registerOpenNodeDetailsCommand();
+    this.registerRefresh();
   }
 
   dispose() {}
@@ -50,7 +55,7 @@ export class NodeExplorerProvider
       const dirents = await vscode.workspace.fs.readDirectory(element.uri);
       return dirents.map(([name, type]) => {
         const childUri = element.uri.with({ path: `${element.uri.path}/${name}` });
-        return new FileExplorer(name, childUri, type);
+        return new FileExplorer(name, childUri, type, 'child');
       });
     }
 
@@ -61,7 +66,8 @@ export class NodeExplorerProvider
           'File explorer',
           // TODO: allow the directory to be configurable
           vscode.Uri.parse(`ts://nodes/${element.HostName}/~`),
-          vscode.FileType.Directory
+          vscode.FileType.Directory,
+          'root'
         ),
       ];
     } else {
@@ -184,7 +190,7 @@ export class NodeExplorerProvider
   registerOpenTerminalCommand() {
     vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerTree) => {
       const t = vscode.window.createTerminal(node.HostName);
-      t.sendText(`ssh ${node.HostName}`);
+      t.sendText(`ssh ${this.ssh.sshHostnameWithUser(node.HostName)}`);
       t.show();
     });
   }
@@ -200,6 +206,12 @@ export class NodeExplorerProvider
       vscode.env.openExternal(
         vscode.Uri.parse(`https://login.tailscale.com/admin/machines/${node.TailscaleIPs[0]}`)
       );
+    });
+  }
+
+  registerRefresh(): void {
+    vscode.commands.registerCommand('tailscale.nodeExplorer.refresh', () => {
+      this._onDidChangeTreeData.fire(undefined);
     });
   }
 
@@ -252,6 +264,7 @@ export class FileExplorer extends vscode.TreeItem {
     public readonly label: string,
     public readonly uri: vscode.Uri,
     public readonly type: vscode.FileType,
+    public readonly context?: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState = type ===
     vscode.FileType.Directory
       ? vscode.TreeItemCollapsibleState.Collapsed
@@ -266,9 +279,9 @@ export class FileExplorer extends vscode.TreeItem {
         arguments: [this.uri],
       };
     }
-  }
 
-  contextValue = 'file-explorer-item';
+    this.contextValue = `file-explorer-item${context ? '-' : ''}${context}`;
+  }
 }
 
 export class PeerTree extends PeerBaseTreeItem {
