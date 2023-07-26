@@ -27,9 +27,15 @@ export interface Peer {
   TailscaleIPs: string[];
   sshHostKeys?: string[];
   ShareeNode?: boolean;
+  TailnetName: string;
+}
+
+interface CurrentTailnet {
+  Name: string;
 }
 
 export interface Status extends WithErrors {
+  CurrentTailnet: CurrentTailnet;
   Peer: {
     [key: string]: Peer;
   };

@@ -65,7 +65,7 @@ export class NodeExplorerProvider
         new FileExplorer(
           'File explorer',
           // TODO: allow the directory to be configurable
-          vscode.Uri.parse(`ts://nodes/${element.HostName}/~`),
+          vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/~`),
           vscode.FileType.Directory,
           'root'
         ),
@@ -83,6 +83,7 @@ export class NodeExplorerProvider
         }
         for (const key in status.Peer) {
           const p = status.Peer[key];
+          p.TailnetName = status.CurrentTailnet.Name;
 
           // ShareeNode indicates this node exists in the netmap because
           // it's owned by a shared-to user and that node might connect
@@ -297,6 +298,7 @@ export class PeerTree extends PeerBaseTreeItem {
   public ID: string;
   public HostName: string;
   public TailscaleIPs: string[];
+  public TailnetName: string;
 
   public constructor(obj: Peer) {
     super(obj.HostName);
@@ -304,6 +306,7 @@ export class PeerTree extends PeerBaseTreeItem {
     this.ID = obj.ID;
     this.HostName = obj.HostName;
     this.TailscaleIPs = obj.TailscaleIPs;
+    this.TailnetName = obj.TailnetName;
 
     this.iconPath = {
       light: path.join(
