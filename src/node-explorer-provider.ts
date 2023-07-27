@@ -24,10 +24,7 @@ export class NodeExplorerProvider
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 
-  constructor(
-    private readonly ts: Tailscale,
-    private ssh: SSH
-  ) {
+  constructor(private readonly ts: Tailscale, private ssh: SSH) {
     this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
@@ -48,26 +45,14 @@ export class NodeExplorerProvider
   }
 
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
-    // File Explorer
-    if (element instanceof FileExplorer) {
-      const dirents = await vscode.workspace.fs.readDirectory(element.uri);
-      return dirents.map(([name, type]) => {
-        const childUri = element.uri.with({ path: `${element.uri.path}/${name}` });
-        return new FileExplorer(name, childUri, type, 'child');
-      });
-    }
-
     // Node root
     if (element instanceof PeerTree) {
-      return [
-        new FileExplorer(
-          'File explorer',
-          // TODO: allow the directory to be configurable
-          vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/~`),
-          vscode.FileType.Directory,
-          'root'
-        ),
-      ];
+      const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/~`);
+      const dirents = await vscode.workspace.fs.readDirectory(uri);
+      return dirents.map(([name, type]) => {
+        const childUri = uri.with({ path: `${uri.path}/${name}` });
+        return new FileExplorer(name, childUri, type, 'child');
+      });
     } else {
       // Peer List
 
