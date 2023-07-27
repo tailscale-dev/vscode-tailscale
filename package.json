@@ -140,9 +140,19 @@
           "group": "1_action@1"
         },
         {
+          "command": "tailscale.node.openRemoteCode",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "inline"
+        },
+        {
           "command": "tailscale.node.openTerminal",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
           "group": "1_action@2"
+        },
+        {
+          "command": "tailscale.node.openTerminal",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "inline"
         },
         {
           "command": "tailscale.node.setUsername",
@@ -236,7 +246,8 @@
       },
       {
         "command": "tailscale.node.openTerminal",
-        "title": "Open SSH"
+        "title": "Open SSH",
+        "icon": "$(terminal)"
       },
       {
         "command": "tailscale.nodeExplorer.refresh",
@@ -245,7 +256,8 @@
       },
       {
         "command": "tailscale.node.openRemoteCode",
-        "title": "Open Remote Connection"
+        "title": "Open remote connection",
+        "icon": "$(remote-explorer)"
       },
       {
         "command": "tailscale.node.openDetailsLink",
