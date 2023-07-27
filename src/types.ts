@@ -49,6 +49,7 @@ export interface ServeStatus extends WithErrors {
   };
   BackendState: string;
   Self: PeerStatus;
+  Peers?: Peer[];
 }
 
 export interface WithErrors {

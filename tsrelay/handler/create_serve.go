@@ -86,7 +86,7 @@ func (h *handler) createServe(ctx context.Context, body io.Reader) error {
 }
 
 func (h *handler) serveConfigDNS(ctx context.Context) (*ipn.ServeConfig, string, error) {
-	st, sc, err := h.getConfigs(ctx)
+	st, sc, err := h.getConfigs(ctx, false)
 	if err != nil {
 		return nil, "", fmt.Errorf("error getting configs: %w", err)
 	}

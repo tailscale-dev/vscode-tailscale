@@ -24,10 +24,7 @@ export class NodeExplorerProvider
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 
-  constructor(
-    private readonly ts: Tailscale,
-    private ssh: SSH
-  ) {
+  constructor(private readonly ts: Tailscale, private ssh: SSH) {
     this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
@@ -40,8 +37,6 @@ export class NodeExplorerProvider
     this.registerOpenNodeDetailsCommand();
     this.registerRefresh();
   }
-
-  dispose() {}
 
   onDidChangeFileDecorations?: vscode.Event<vscode.Uri | vscode.Uri[] | undefined> | undefined;
 
@@ -74,29 +69,16 @@ export class NodeExplorerProvider
       // Peer List
 
       const peers: PeerTree[] = [];
-
       try {
-        const status = await this.ts.status();
+        const status = await this.ts.serveStatus(true);
         if (status.Errors && status.Errors.length) {
           // TODO: return a proper error
           return [];
         }
-        for (const key in status.Peer) {
-          const p = status.Peer[key];
-          p.TailnetName = status.CurrentTailnet.Name;
-
-          // ShareeNode indicates this node exists in the netmap because
-          // it's owned by a shared-to user and that node might connect
-          // to us. These nodes are hidden by "tailscale status", but present
-          // in JSON output so we should filter out.
-          if (p.ShareeNode) {
-            continue;
-          }
-
+        status.Peers?.forEach((p) => {
           this.peers[p.HostName] = p;
-
           peers.push(new PeerTree({ ...p }));
-        }
+        });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
         vscode.window.showErrorMessage(`unable to fetch status ${e.message}`);
