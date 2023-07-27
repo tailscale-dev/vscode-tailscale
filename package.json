@@ -204,7 +204,7 @@
       },
       {
         "command": "tailscale.openAdminConsole",
-        "title": "Admin Console",
+        "title": "Admin console",
         "category": "Tailscale"
       },
       {
@@ -219,17 +219,17 @@
       },
       {
         "command": "tailscale.openFunnelPanel",
-        "title": "Open Funnel Panel",
+        "title": "Open Funnel panel",
         "category": "Tailscale"
       },
       {
         "command": "tailscale.reloadServePanel",
-        "category": "tsdev",
-        "title": "Reload Serve Panel"
+        "title": "Reload Serve Panel",
+        "category": "tsdev"
       },
       {
         "command": "tailscale.simpleServeView",
-        "title": "Simple View",
+        "title": "Simple iew",
         "category": "tsdev"
       },
       {
@@ -242,7 +242,7 @@
       },
       {
         "command": "tailscale.node.copyHostname",
-        "title": "Copy Hostname"
+        "title": "Copy hostname"
       },
       {
         "command": "tailscale.node.openTerminal",
@@ -261,7 +261,7 @@
       },
       {
         "command": "tailscale.node.openDetailsLink",
-        "title": "Open Machine Details..."
+        "title": "Open machine details..."
       },
       {
         "command": "tailscale.node.fs.delete",
@@ -269,15 +269,15 @@
       },
       {
         "command": "tailscale.node.setUsername",
-        "title": "Change SSH Username"
+        "title": "Change SSH username"
       },
       {
         "command": "tailscale.node.setRootDir",
-        "title": "Change Root Directory"
+        "title": "Change root directory"
       },
       {
         "command": "tailscale.node.openRemoteCodeAtLocation",
-        "title": "Open Remote Connection"
+        "title": "Open remote connection"
       }
     ],
     "viewsContainers": {
