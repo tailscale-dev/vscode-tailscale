@@ -45,6 +45,10 @@ type peerStatus struct {
 	TailnetName  string
 }
 
+// TODO(marwan): since this endpoint serves both the Node Explorer and Funnel,
+// we should either:
+// 1. Pass a "with-config" option and change endpoint to be a generic /status. Or,
+// 2. Make a new endpoint if the logic ends up being overly complex for one endpoint.
 func (h *handler) getServeHandler(w http.ResponseWriter, r *http.Request) {
 	s, err := h.getServe(r.Context(), r.Body, r.FormValue("with-peers") == "1")
 	if err != nil {

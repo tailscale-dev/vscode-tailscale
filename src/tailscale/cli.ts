@@ -262,9 +262,9 @@ export class Tailscale {
       throw new Error('uninitialized client');
     }
     try {
-      let u = `${this.url}/serve`;
+      const u = new URL(`${this.url}/serve`);
       if (withPeers) {
-        u += '?with-peers=1';
+        u.searchParams.append('with-peers', '1');
       }
       const resp = await fetch(u, {
         headers: {
