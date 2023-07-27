@@ -24,7 +24,10 @@ export class NodeExplorerProvider
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 
-  constructor(private readonly ts: Tailscale, private ssh: SSH) {
+  constructor(
+    private readonly ts: Tailscale,
+    private ssh: SSH
+  ) {
     this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
