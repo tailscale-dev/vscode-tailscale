@@ -7,7 +7,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,6 +29,7 @@ type serveStatus struct {
 	Services     map[uint16]string
 	BackendState string
 	Self         *peerStatus
+	Peers        []*peerStatus
 	FunnelPorts  []int
 	Errors       []Error `json:",omitempty"`
 }
@@ -34,10 +37,20 @@ type serveStatus struct {
 type peerStatus struct {
 	DNSName string
 	Online  bool
+
+	// For node explorer
+	ID           tailcfg.StableNodeID
+	HostName     string
+	TailscaleIPs []netip.Addr
+	TailnetName  string
 }
 
+// TODO(marwan): since this endpoint serves both the Node Explorer and Funnel,
+// we should either:
+// 1. Pass a "with-config" option and change endpoint to be a generic /status. Or,
+// 2. Make a new endpoint if the logic ends up being overly complex for one endpoint.
 func (h *handler) getServeHandler(w http.ResponseWriter, r *http.Request) {
-	s, err := h.getServe(r.Context(), r.Body)
+	s, err := h.getServe(r.Context(), r.Body, r.FormValue("with-peers") == "1")
 	if err != nil {
 		var re RelayError
 		if errors.As(err, &re) {
@@ -53,7 +66,7 @@ func (h *handler) getServeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s)
 }
 
-func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, error) {
+func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) (*serveStatus, error) {
 	if h.requiresRestart {
 		return nil, RelayError{
 			statusCode: http.StatusPreconditionFailed,
@@ -77,7 +90,7 @@ func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, e
 		}
 	}()
 
-	st, sc, err := h.getConfigs(ctx)
+	st, sc, err := h.getConfigs(ctx, withPeers)
 	if err != nil {
 		var oe *net.OpError
 		if errors.As(err, &oe) && oe.Op == "dial" {
@@ -94,7 +107,30 @@ func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, e
 		Services:     make(map[uint16]string),
 		BackendState: st.BackendState,
 		FunnelPorts:  []int{},
+		Peers:        make([]*peerStatus, 0, len(st.Peer)),
 	}
+
+	for _, p := range st.Peer {
+		// ShareeNode indicates this node exists in the netmap because
+		// it's owned by a shared-to user and that node might connect
+		// to us. These nodes are hidden by "tailscale status", but present
+		// in JSON output so we should filter out.
+		if p.ShareeNode {
+			continue
+		}
+		s.Peers = append(s.Peers, &peerStatus{
+			DNSName:      p.DNSName,
+			Online:       p.Online,
+			ID:           p.ID,
+			HostName:     p.HostName,
+			TailscaleIPs: p.TailscaleIPs,
+			TailnetName:  st.CurrentTailnet.Name,
+		})
+	}
+
+	sort.Slice(s.Peers, func(i, j int) bool {
+		return s.Peers[i].HostName < s.Peers[j].HostName
+	})
 
 	wg.Wait()
 	if sc != nil {
@@ -123,8 +159,11 @@ func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, e
 
 	if st.Self != nil {
 		s.Self = &peerStatus{
-			DNSName: st.Self.DNSName,
-			Online:  st.Self.Online,
+			DNSName:      st.Self.DNSName,
+			Online:       st.Self.Online,
+			ID:           st.Self.ID,
+			HostName:     st.Self.HostName,
+			TailscaleIPs: st.Self.TailscaleIPs,
 		}
 		capabilities := st.Self.Capabilities
 		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||

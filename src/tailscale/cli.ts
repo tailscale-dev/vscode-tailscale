@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import * as WebSocket from 'ws';
-import type { ServeParams, ServeStatus, TSRelayDetails, Status, FileInfo } from '../types';
+import type { ServeParams, ServeStatus, TSRelayDetails, Status } from '../types';
 import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
@@ -257,12 +257,16 @@ export class Tailscale {
     }
   }
 
-  async serveStatus(): Promise<ServeStatus> {
+  async serveStatus(withPeers?: boolean): Promise<ServeStatus> {
     if (!this.url) {
       throw new Error('uninitialized client');
     }
     try {
-      const resp = await fetch(`${this.url}/serve`, {
+      const u = new URL(`${this.url}/serve`);
+      if (withPeers) {
+        u.searchParams.append('with-peers', '1');
+      }
+      const resp = await fetch(u, {
         headers: {
           Authorization: 'Basic ' + this.authkey,
         },
