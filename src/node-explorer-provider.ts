@@ -344,7 +344,7 @@ export class PeerDetailTreeItem extends PeerBaseTreeItem {
   }
 }
 
-// trimPathPrefix acts the same as a string trim prefix, but
+// trimPathPrefix is the same as a string trim prefix, but
 // prepends ~ to trimmed paths.
 function trimPathPrefix(s: string, prefix: string): string {
   if (s.startsWith(prefix)) {
