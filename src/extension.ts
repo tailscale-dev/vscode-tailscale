@@ -61,7 +61,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance, ssh);
+  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance, configManager, ssh);
   vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
   const view = vscode.window.createTreeView('tailscale-node-explorer-view', {
     treeDataProvider: nodeExplorerProvider,

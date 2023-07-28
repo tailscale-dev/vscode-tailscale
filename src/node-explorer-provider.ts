@@ -5,6 +5,7 @@ import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
 import { TSFileSystemProvider } from './ts-file-system-provider';
 import { SSH } from './utils/ssh';
+import { ConfigManager } from './config-manager';
 
 export class NodeExplorerProvider
   implements
@@ -24,7 +25,11 @@ export class NodeExplorerProvider
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 
-  constructor(private readonly ts: Tailscale, private ssh: SSH) {
+  constructor(
+    private readonly ts: Tailscale,
+    private readonly configManager: ConfigManager,
+    private ssh: SSH
+  ) {
     this.fsProvider = new TSFileSystemProvider();
 
     this.registerDeleteCommand();
@@ -45,14 +50,38 @@ export class NodeExplorerProvider
   }
 
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
-    // Node root
-    if (element instanceof PeerTree) {
-      const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/~`);
-      const dirents = await vscode.workspace.fs.readDirectory(uri);
+    // File Explorer
+    if (element instanceof FileExplorer) {
+      const dirents = await vscode.workspace.fs.readDirectory(element.uri);
       return dirents.map(([name, type]) => {
-        const childUri = uri.with({ path: `${uri.path}/${name}` });
+        const childUri = element.uri.with({ path: `${element.uri.path}/${name}` });
         return new FileExplorer(name, childUri, type, 'child');
       });
+    }
+
+    // Node root
+    if (element instanceof PeerTree) {
+      const { hosts } = this.configManager?.config || {};
+      let rootDir = hosts?.[element.HostName]?.rootDir;
+      let dirDesc = rootDir;
+      const homeDir = (await this.ssh.executeCommand(element.HostName, 'echo', ['~'])).trim();
+      if (rootDir && rootDir !== '~') {
+        dirDesc = trimPathPrefix(rootDir, homeDir);
+      } else {
+        rootDir = homeDir;
+        dirDesc = '~';
+      }
+      const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/${rootDir}`);
+      return [
+        new FileExplorer(
+          'File explorer',
+          uri,
+          vscode.FileType.Directory,
+          'root',
+          undefined,
+          dirDesc
+        ),
+      ];
     } else {
       // Peer List
 
@@ -248,7 +277,8 @@ export class FileExplorer extends vscode.TreeItem {
     public readonly collapsibleState: vscode.TreeItemCollapsibleState = type ===
     vscode.FileType.Directory
       ? vscode.TreeItemCollapsibleState.Collapsed
-      : vscode.TreeItemCollapsibleState.None
+      : vscode.TreeItemCollapsibleState.None,
+    public readonly description: string = ''
   ) {
     super(label, collapsibleState);
 
@@ -312,4 +342,13 @@ export class PeerDetailTreeItem extends PeerBaseTreeItem {
       this.contextValue = contextValue;
     }
   }
+}
+
+// trimPathPrefix acts the same as a string trim prefix, but
+// prepends ~ to trimmed paths.
+function trimPathPrefix(s: string, prefix: string): string {
+  if (s.startsWith(prefix)) {
+    return `~${s.slice(prefix.length)}`;
+  }
+  return s;
 }

@@ -1,5 +1,4 @@
-import { exec, spawn, ExecOptionsWithStringEncoding } from 'child_process';
-
+import { spawn } from 'child_process';
 import * as vscode from 'vscode';
 import { Logger } from '../logger';
 import { ConfigManager } from '../config-manager';
