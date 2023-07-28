@@ -23,6 +23,10 @@ export class NodeExplorerProvider
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
+  refreshAll() {
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 

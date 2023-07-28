@@ -131,7 +131,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
 
       configManager.setForHost(node.HostName, 'rootDir', dir);
-      // TODO: trigger refresh to fsFileSystemProvider
+      nodeExplorerProvider.refreshAll();
     })
   );
 
