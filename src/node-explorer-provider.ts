@@ -6,6 +6,7 @@ import { Tailscale } from './tailscale/cli';
 import { TSFileSystemProvider } from './ts-file-system-provider';
 import { SSH } from './utils/ssh';
 import { ConfigManager } from './config-manager';
+import { Logger } from './logger';
 
 export class NodeExplorerProvider
   implements
@@ -61,27 +62,33 @@ export class NodeExplorerProvider
 
     // Node root
     if (element instanceof PeerTree) {
-      const { hosts } = this.configManager?.config || {};
-      let rootDir = hosts?.[element.HostName]?.rootDir;
-      let dirDesc = rootDir;
-      const homeDir = (await this.ssh.executeCommand(element.HostName, 'echo', ['~'])).trim();
-      if (rootDir && rootDir !== '~') {
-        dirDesc = trimPathPrefix(rootDir, homeDir);
-      } else {
-        rootDir = homeDir;
-        dirDesc = '~';
+      try {
+        const { hosts } = this.configManager?.config || {};
+        let rootDir = hosts?.[element.HostName]?.rootDir;
+        let dirDesc = rootDir;
+        const homeDir = (await this.ssh.executeCommand(element.HostName, 'echo', ['~'])).trim();
+        if (rootDir && rootDir !== '~') {
+          dirDesc = trimPathPrefix(rootDir, homeDir);
+        } else {
+          rootDir = homeDir;
+          dirDesc = '~';
+        }
+        const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/${rootDir}`);
+        return [
+          new FileExplorer(
+            'File explorer',
+            uri,
+            vscode.FileType.Directory,
+            'root',
+            undefined,
+            dirDesc
+          ),
+        ];
+      } catch (e) {
+        Logger.error(`error expanding PeerTree: ${e}`);
+        // TODO: properly handle expansion error.
+        return [];
       }
-      const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/${rootDir}`);
-      return [
-        new FileExplorer(
-          'File explorer',
-          uri,
-          vscode.FileType.Directory,
-          'root',
-          undefined,
-          dirDesc
-        ),
-      ];
     } else {
       // Peer List
 
