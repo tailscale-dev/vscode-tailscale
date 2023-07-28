@@ -200,8 +200,11 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
 
         const segments = path.normalize(hostPath).split('/');
         const [hostname, ...pathSegments] = segments;
-        const resourcePath = decodeURIComponent(pathSegments.join(path.sep));
-        return { hostname, resourcePath: `/${escapeSpace(resourcePath)}` };
+        let resourcePath = decodeURIComponent(pathSegments.join(path.sep));
+        if (resourcePath !== '~') {
+          resourcePath = `/${escapeSpace(resourcePath)}`;
+        }
+        return { hostname, resourcePath };
       }
       case 'file':
         return { hostname: null, resourcePath: escapeSpace(uri.path) };

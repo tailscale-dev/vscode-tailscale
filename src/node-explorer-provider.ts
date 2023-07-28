@@ -62,10 +62,10 @@ export class NodeExplorerProvider
 
     // Node root
     if (element instanceof PeerTree) {
+      const { hosts } = this.configManager?.config || {};
+      let rootDir = hosts?.[element.HostName]?.rootDir;
+      let dirDesc = rootDir;
       try {
-        const { hosts } = this.configManager?.config || {};
-        let rootDir = hosts?.[element.HostName]?.rootDir;
-        let dirDesc = rootDir;
         const homeDir = (await this.ssh.executeCommand(element.HostName, 'echo', ['~'])).trim();
         if (rootDir && rootDir !== '~') {
           dirDesc = trimPathPrefix(rootDir, homeDir);
@@ -73,22 +73,23 @@ export class NodeExplorerProvider
           rootDir = homeDir;
           dirDesc = '~';
         }
-        const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/${rootDir}`);
-        return [
-          new FileExplorer(
-            'File explorer',
-            uri,
-            vscode.FileType.Directory,
-            'root',
-            undefined,
-            dirDesc
-          ),
-        ];
       } catch (e) {
-        Logger.error(`error expanding PeerTree: ${e}`);
         // TODO: properly handle expansion error.
-        return [];
+        Logger.error(`error expanding PeerTree: ${e}`);
+        rootDir = '~';
+        dirDesc = '~';
       }
+      const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/${rootDir}`);
+      return [
+        new FileExplorer(
+          'File explorer',
+          uri,
+          vscode.FileType.Directory,
+          'root',
+          undefined,
+          dirDesc
+        ),
+      ];
     } else {
       // Peer List
 
