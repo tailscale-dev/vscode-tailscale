@@ -5,6 +5,8 @@ import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
 import { TSFileSystemProvider } from './ts-file-system-provider';
 import { SSH } from './utils/ssh';
+import { ConfigManager } from './config-manager';
+import { Logger } from './logger';
 
 export class NodeExplorerProvider
   implements
@@ -21,11 +23,16 @@ export class NodeExplorerProvider
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
+  refreshAll() {
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
   private peers: { [hostName: string]: Peer } = {};
   private fsProvider: TSFileSystemProvider;
 
   constructor(
     private readonly ts: Tailscale,
+    private readonly configManager: ConfigManager,
     private ssh: SSH
   ) {
     this.fsProvider = new TSFileSystemProvider();
@@ -59,13 +66,32 @@ export class NodeExplorerProvider
 
     // Node root
     if (element instanceof PeerTree) {
+      const { hosts } = this.configManager?.config || {};
+      let rootDir = hosts?.[element.HostName]?.rootDir;
+      let dirDesc = rootDir;
+      try {
+        const homeDir = (await this.ssh.executeCommand(element.HostName, 'echo', ['~'])).trim();
+        if (rootDir && rootDir !== '~') {
+          dirDesc = trimPathPrefix(rootDir, homeDir);
+        } else {
+          rootDir = homeDir;
+          dirDesc = '~';
+        }
+      } catch (e) {
+        // TODO: properly handle expansion error.
+        Logger.error(`error expanding PeerTree: ${e}`);
+        rootDir = '~';
+        dirDesc = '~';
+      }
+      const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/${rootDir}`);
       return [
         new FileExplorer(
           'File explorer',
-          // TODO: allow the directory to be configurable
-          vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/~`),
+          uri,
           vscode.FileType.Directory,
-          'root'
+          'root',
+          undefined,
+          dirDesc
         ),
       ];
     } else {
@@ -263,7 +289,8 @@ export class FileExplorer extends vscode.TreeItem {
     public readonly collapsibleState: vscode.TreeItemCollapsibleState = type ===
     vscode.FileType.Directory
       ? vscode.TreeItemCollapsibleState.Collapsed
-      : vscode.TreeItemCollapsibleState.None
+      : vscode.TreeItemCollapsibleState.None,
+    public readonly description: string = ''
   ) {
     super(label, collapsibleState);
 
@@ -327,4 +354,13 @@ export class PeerDetailTreeItem extends PeerBaseTreeItem {
       this.contextValue = contextValue;
     }
   }
+}
+
+// trimPathPrefix is the same as a string trim prefix, but
+// prepends ~ to trimmed paths.
+function trimPathPrefix(s: string, prefix: string): string {
+  if (s.startsWith(prefix)) {
+    return `~${s.slice(prefix.length)}`;
+  }
+  return s;
 }
