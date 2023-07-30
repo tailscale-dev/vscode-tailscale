@@ -106,7 +106,7 @@ Open a pull-request for the changes and cherry-pick into the release branch
 ```
 $ npm version --no-git-tag-version 0.2.1
 $ git add package.json && git commit -sm 'version: v0.2.1'
-$ git tag -am "Relase 0.2.1" "v0.2.1"
+$ git tag -am "Release 0.2.1" "v0.2.1"
 ```
 
 ### Create or update an existing release branch
