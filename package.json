@@ -374,7 +374,7 @@
     "precommit": "lint-staged",
     "prepare": "husky install",
     "test": "vitest",
-    "vscode:prepublish": "(yarn run bundle-js & pid1=$!; yarn run bundle-go & pid2=$!; wait $pid1 || exit 1; wait $pid2 || exit 1)",
+    "vscode:prepublish": "concurrently --kill-others-on-fail \"yarn run bundle-js\" \"yarn run bundle-go\"",
     "watch": "webpack serve"
   },
   "devDependencies": {
@@ -391,6 +391,7 @@
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "backport": "^8.9.8",
     "bufferutil": "^4.0.7",
+    "concurrently": "^8.2.0",
     "css-loader": "^6.8.1",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.8.0",
