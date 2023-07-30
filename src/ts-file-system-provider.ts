@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { exec } from 'child_process';
 import { Logger } from './logger';
 import { SSH } from './utils/ssh';
@@ -196,11 +195,14 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   public extractHostAndPath(uri: vscode.Uri): { hostname: string | null; resourcePath: string } {
     switch (uri.scheme) {
       case 'ts': {
-        const hostPath = uri.path.slice(1); // removes leading slash
-
-        const segments = path.normalize(hostPath).split('/');
+        let hostPath = uri.path;
+        if (hostPath.startsWith('/')) {
+          // Remove leading slash
+          hostPath = hostPath.slice(1);
+        }
+        const segments = hostPath.split('/');
         const [hostname, ...pathSegments] = segments;
-        let resourcePath = decodeURIComponent(pathSegments.join(path.sep));
+        let resourcePath = decodeURIComponent(pathSegments.join('/'));
         if (resourcePath !== '~') {
           resourcePath = `/${escapeSpace(resourcePath)}`;
         }

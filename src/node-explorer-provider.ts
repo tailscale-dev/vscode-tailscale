@@ -83,7 +83,13 @@ export class NodeExplorerProvider
         rootDir = '~';
         dirDesc = '~';
       }
-      const uri = vscode.Uri.parse(`ts://${element.TailnetName}/${element.HostName}/${rootDir}`);
+      // This method of building the Uri cleans up the path, removing any
+      // leading or trailing slashes.
+      const uri = vscode.Uri.joinPath(
+        vscode.Uri.from({ scheme: 'ts', authority: element.TailnetName, path: '/' }),
+        element.HostName,
+        ...rootDir.split('/')
+      );
       return [
         new FileExplorer(
           'File explorer',
