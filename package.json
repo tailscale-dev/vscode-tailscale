@@ -135,22 +135,22 @@
       ],
       "view/item/context": [
         {
-          "command": "tailscale.node.openRemoteCode",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
-          "group": "1_action@1"
-        },
-        {
-          "command": "tailscale.node.openRemoteCode",
+          "command": "tailscale.node.openTerminal",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
           "group": "inline"
         },
         {
           "command": "tailscale.node.openTerminal",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "group": "1_action@1"
+        },
+        {
+          "command": "tailscale.node.openRemoteCode",
+          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
           "group": "1_action@2"
         },
         {
-          "command": "tailscale.node.openTerminal",
+          "command": "tailscale.node.openRemoteCode",
           "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
           "group": "inline"
         },
@@ -246,7 +246,7 @@
       },
       {
         "command": "tailscale.node.openTerminal",
-        "title": "Open SSH",
+        "title": "Terminal",
         "icon": "$(terminal)"
       },
       {
@@ -256,7 +256,7 @@
       },
       {
         "command": "tailscale.node.openRemoteCode",
-        "title": "Open remote connection",
+        "title": "Attach VS Code",
         "icon": "$(remote-explorer)"
       },
       {
@@ -277,7 +277,7 @@
       },
       {
         "command": "tailscale.node.openRemoteCodeAtLocation",
-        "title": "Open remote connection"
+        "title": "Attach VS Code"
       }
     ],
     "viewsContainers": {
