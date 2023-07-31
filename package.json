@@ -349,16 +349,6 @@
             "examples": [
               "amelie"
             ]
-          },
-          "tailscale.ssh.defaultRootPath": {
-            "type": "string",
-            "default": null,
-            "markdownDescription": "Default root directory for SSH connections.",
-            "scope": "window",
-            "examples": [
-              "/",
-              "home/amelie"
-            ]
           }
         }
       }
