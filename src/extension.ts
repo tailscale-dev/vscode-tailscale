@@ -6,11 +6,12 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
-import { NodeExplorerProvider, PeerTree } from './node-explorer-provider';
+import { FileExplorer, NodeExplorerProvider, PeerTree } from './node-explorer-provider';
 
 import { TSFileSystemProvider } from './ts-file-system-provider';
 import { ConfigManager } from './config-manager';
 import { SSH } from './utils/ssh';
+import { parseTsUri } from './utils/uri';
 
 let tailscaleInstance: Tailscale;
 
@@ -115,24 +116,37 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.node.setRootDir', async (node: PeerTree) => {
-      const dir = await vscode.window.showInputBox({
-        prompt: `Enter the root directory to use for ${node.HostName}`,
-        value: configManager.config?.hosts?.[node.HostName]?.rootDir || '~',
-      });
+    vscode.commands.registerCommand(
+      'tailscale.node.setRootDir',
+      async (node: PeerTree | FileExplorer) => {
+        let hostname: string;
 
-      if (!dir) {
-        return;
+        if (node instanceof FileExplorer) {
+          hostname = parseTsUri(node.uri).hostname;
+        } else if (node instanceof PeerTree) {
+          hostname = node.HostName;
+        } else {
+          throw new Error(`invalid node type: ${typeof node}`);
+        }
+
+        const dir = await vscode.window.showInputBox({
+          prompt: `Enter the root directory to use for ${hostname}`,
+          value: configManager.config?.hosts?.[hostname]?.rootDir || '~',
+        });
+
+        if (!dir) {
+          return;
+        }
+
+        if (!path.isAbsolute(dir) && dir !== '~') {
+          vscode.window.showErrorMessage(`${dir} is an invalid absolute path`);
+          return;
+        }
+
+        configManager.setForHost(hostname, 'rootDir', dir);
+        nodeExplorerProvider.refreshAll();
       }
-
-      if (!path.isAbsolute(dir) && dir !== '~') {
-        vscode.window.showErrorMessage(`${dir} is an invalid absolute path`);
-        return;
-      }
-
-      configManager.setForHost(node.HostName, 'rootDir', dir);
-      nodeExplorerProvider.refreshAll();
-    })
+    )
   );
 
   vscode.window.registerWebviewViewProvider('tailscale-serve-view', servePanelProvider);

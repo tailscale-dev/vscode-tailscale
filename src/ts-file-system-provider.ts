@@ -3,6 +3,8 @@ import { exec } from 'child_process';
 import { Logger } from './logger';
 import { SSH } from './utils/ssh';
 import { ConfigManager } from './config-manager';
+import { escapeSpace } from './utils/string';
+import { parseTsUri } from './utils/uri';
 
 export class TSFileSystemProvider implements vscode.FileSystemProvider {
   private ssh: SSH;
@@ -22,7 +24,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
 
   async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
     Logger.info(`stat: ${uri.toString()}`, 'tsFs');
-    const { hostname, resourcePath } = this.extractHostAndPath(uri);
+    const { hostname, resourcePath } = parseTsUri(uri);
 
     if (!hostname) {
       throw new Error('hostname is undefined');
@@ -47,7 +49,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
     Logger.info(`readDirectory: ${uri.toString()}`, 'tsFs');
 
-    const { hostname, resourcePath } = this.extractHostAndPath(uri);
+    const { hostname, resourcePath } = parseTsUri(uri);
     Logger.info(`hostname: ${hostname}`, 'tsFs');
     Logger.info(`remotePath: ${resourcePath}`, 'tsFs');
 
@@ -84,7 +86,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
 
   async readFile(uri: vscode.Uri): Promise<Uint8Array> {
     Logger.info(`readFile: ${uri.toString()}`, 'tsFs-readFile');
-    const { hostname, resourcePath } = this.extractHostAndPath(uri);
+    const { hostname, resourcePath } = parseTsUri(uri);
 
     if (!hostname) {
       throw new Error('hostname is undefined');
@@ -102,7 +104,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   ): Promise<void> {
     Logger.info(`writeFile: ${uri.toString()}`, 'tsFs');
 
-    const { hostname, resourcePath } = this.extractHostAndPath(uri);
+    const { hostname, resourcePath } = parseTsUri(uri);
 
     if (!options.create && !options.overwrite) {
       throw vscode.FileSystemError.FileExists(uri);
@@ -120,7 +122,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   async delete(uri: vscode.Uri, options: { recursive: boolean }): Promise<void> {
     Logger.info(`delete: ${uri.toString()}`, 'tsFs');
 
-    const { hostname, resourcePath } = this.extractHostAndPath(uri);
+    const { hostname, resourcePath } = parseTsUri(uri);
 
     if (!hostname) {
       throw new Error('hostname is undefined');
@@ -135,7 +137,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   async createDirectory(uri: vscode.Uri): Promise<void> {
     Logger.info(`createDirectory: ${uri.toString()}`, 'tsFs');
 
-    const { hostname, resourcePath } = this.extractHostAndPath(uri);
+    const { hostname, resourcePath } = parseTsUri(uri);
 
     if (!hostname) {
       throw new Error('hostname is undefined');
@@ -151,8 +153,8 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   ): Promise<void> {
     Logger.info('rename', 'tsFs');
 
-    const { hostname: oldHost, resourcePath: oldPath } = this.extractHostAndPath(oldUri);
-    const { hostname: newHost, resourcePath: newPath } = this.extractHostAndPath(newUri);
+    const { hostname: oldHost, resourcePath: oldPath } = parseTsUri(oldUri);
+    const { hostname: newHost, resourcePath: newPath } = parseTsUri(newUri);
 
     if (!oldHost) {
       throw new Error('hostname is undefined');
@@ -176,8 +178,8 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   scp(src: vscode.Uri, dest: vscode.Uri): Promise<void> {
     Logger.info('scp', 'tsFs');
 
-    const { resourcePath: srcPath } = this.extractHostAndPath(src);
-    const { hostname: destHostName, resourcePath: destPath } = this.extractHostAndPath(dest);
+    const { resourcePath: srcPath } = parseTsUri(src);
+    const { hostname: destHostName, resourcePath: destPath } = parseTsUri(dest);
 
     const command = `scp ${srcPath} ${destHostName}:${destPath}`;
 
@@ -191,31 +193,4 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
       });
     });
   }
-
-  public extractHostAndPath(uri: vscode.Uri): { hostname: string | null; resourcePath: string } {
-    switch (uri.scheme) {
-      case 'ts': {
-        let hostPath = uri.path;
-        if (hostPath.startsWith('/')) {
-          // Remove leading slash
-          hostPath = hostPath.slice(1);
-        }
-        const segments = hostPath.split('/');
-        const [hostname, ...pathSegments] = segments;
-        let resourcePath = decodeURIComponent(pathSegments.join('/'));
-        if (resourcePath !== '~') {
-          resourcePath = `/${escapeSpace(resourcePath)}`;
-        }
-        return { hostname, resourcePath };
-      }
-      case 'file':
-        return { hostname: null, resourcePath: escapeSpace(uri.path) };
-      default:
-        throw new Error(`Unsupported scheme: ${uri.scheme}`);
-    }
-  }
-}
-
-function escapeSpace(str: string): string {
-  return str.replace(/\s/g, '\\ ');
 }
