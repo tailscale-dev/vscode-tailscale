@@ -1,16 +1,15 @@
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
 import { Logger } from './logger';
-import { SSH } from './utils/ssh';
 import { ConfigManager } from './config-manager';
-import { escapeSpace } from './utils/string';
 import { parseTsUri } from './utils/uri';
 
-export class TSFileSystemProvider implements vscode.FileSystemProvider {
-  private ssh: SSH;
+import { SshConnectionManager } from './ssh-connection-manager';
 
-  constructor(configManager?: ConfigManager) {
-    this.ssh = new SSH(configManager);
+export class TSFileSystemProvider implements vscode.FileSystemProvider {
+  public manager: SshConnectionManager;
+
+  constructor(configManager: ConfigManager) {
+    this.manager = new SshConnectionManager(configManager);
   }
 
   // Implementation of the `onDidChangeFile` event
@@ -22,175 +21,80 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     throw new Error('Watch not supported');
   }
 
-  async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
-    Logger.info(`stat: ${uri.toString()}`, 'tsFs');
-    const { hostname, resourcePath } = parseTsUri(uri);
-
-    if (!hostname) {
-      throw new Error('hostname is undefined');
-    }
-
-    const s = await this.ssh.runCommandAndPromptForUsername(hostname, 'stat', [
-      '-L',
-      '-c',
-      `'{\\"type\\": \\"%F\\", \\"size\\": %s, \\"ctime\\": %Z, \\"mtime\\": %Y}'`,
-      resourcePath,
-    ]);
-
-    const result = JSON.parse(s.trim());
-    const type = result.type === 'directory' ? vscode.FileType.Directory : vscode.FileType.File;
-    const size = result.size || 0;
-    const ctime = result.ctime * 1000;
-    const mtime = result.mtime * 1000;
-
-    return { type, size, ctime, mtime };
-  }
-
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-    Logger.info(`readDirectory: ${uri.toString()}`, 'tsFs');
-
+    Logger.info(`readDirectory: ${uri}`, `tsFs`);
     const { hostname, resourcePath } = parseTsUri(uri);
-    Logger.info(`hostname: ${hostname}`, 'tsFs');
-    Logger.info(`remotePath: ${resourcePath}`, 'tsFs');
 
-    if (!hostname) {
-      throw new Error('hostname is undefined');
+    const sftp = await this.manager.getSftp(hostname);
+    if (!sftp) {
+      throw new Error('Unable to establish SFTP connection');
     }
 
-    const s = await this.ssh.runCommandAndPromptForUsername(hostname, 'ls', ['-Ap', resourcePath]);
-
-    const lines = s.trim();
-    const files: [string, vscode.FileType][] = [];
-    for (const line of lines.split('\n')) {
-      if (line === '') {
-        continue;
-      }
-      const isDirectory = line.endsWith('/');
-      const type = isDirectory ? vscode.FileType.Directory : vscode.FileType.File;
-      const name = isDirectory ? line.slice(0, -1) : line; // Remove trailing slash if it's a directory
-      files.push([name, type]);
-    }
-
-    return files.sort((a, b) => {
-      if (a[1] === vscode.FileType.Directory && b[1] !== vscode.FileType.Directory) {
-        return -1;
-      }
-      if (a[1] !== vscode.FileType.Directory && b[1] === vscode.FileType.Directory) {
-        return 1;
-      }
-
-      // If same type, sort by name
-      return a[0].localeCompare(b[0]);
-    });
+    return await sftp.readDirectory(resourcePath);
   }
 
-  async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-    Logger.info(`readFile: ${uri.toString()}`, 'tsFs-readFile');
+  async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
+    Logger.info(`stat: ${uri}`, 'tsFs');
     const { hostname, resourcePath } = parseTsUri(uri);
 
-    if (!hostname) {
-      throw new Error('hostname is undefined');
+    const sftp = await this.manager.getSftp(hostname);
+    if (!sftp) {
+      throw new Error('Unable to establish SFTP connection');
     }
 
-    const s = await this.ssh.runCommandAndPromptForUsername(hostname, 'cat', [resourcePath]);
-    const buffer = Buffer.from(s, 'binary');
-    return new Uint8Array(buffer);
-  }
-
-  async writeFile(
-    uri: vscode.Uri,
-    content: Uint8Array,
-    options: { create: boolean; overwrite: boolean }
-  ): Promise<void> {
-    Logger.info(`writeFile: ${uri.toString()}`, 'tsFs');
-
-    const { hostname, resourcePath } = parseTsUri(uri);
-
-    if (!options.create && !options.overwrite) {
-      throw vscode.FileSystemError.FileExists(uri);
-    }
-
-    if (!hostname) {
-      throw new Error('hostname is undefined');
-    }
-
-    await this.ssh.runCommandAndPromptForUsername(hostname, 'tee', [resourcePath], {
-      stdin: content.toString(),
-    });
-  }
-
-  async delete(uri: vscode.Uri, options: { recursive: boolean }): Promise<void> {
-    Logger.info(`delete: ${uri.toString()}`, 'tsFs');
-
-    const { hostname, resourcePath } = parseTsUri(uri);
-
-    if (!hostname) {
-      throw new Error('hostname is undefined');
-    }
-
-    await this.ssh.runCommandAndPromptForUsername(hostname, 'rm', [
-      `${options.recursive ? '-r' : ''}`,
-      resourcePath,
-    ]);
+    return await sftp.stat(resourcePath);
   }
 
   async createDirectory(uri: vscode.Uri): Promise<void> {
-    Logger.info(`createDirectory: ${uri.toString()}`, 'tsFs');
+    try {
+      Logger.info(`createDirectory: ${uri}`, 'tsFs');
+      const { hostname, resourcePath } = parseTsUri(uri);
 
+      const sftp = await this.manager.getSftp(hostname);
+      if (!sftp) throw new Error('Failed to establish SFTP connection');
+
+      return await sftp.createDirectory(resourcePath);
+    } catch (err) {
+      Logger.error(`createDirectory: ${err}`, 'tsFs');
+      throw err;
+    }
+  }
+
+  async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+    Logger.info(`readFile: ${uri}`, 'tsFs');
     const { hostname, resourcePath } = parseTsUri(uri);
 
-    if (!hostname) {
-      throw new Error('hostname is undefined');
+    const sftp = await this.manager.getSftp(hostname);
+    if (!sftp) {
+      throw new Error('Unable to establish SFTP connection');
     }
 
-    await this.ssh.runCommandAndPromptForUsername(hostname, 'mkdir', ['-p', resourcePath]);
+    return await sftp.readFile(resourcePath);
   }
 
-  async rename(
-    oldUri: vscode.Uri,
-    newUri: vscode.Uri,
-    options: { overwrite: boolean }
-  ): Promise<void> {
-    Logger.info('rename', 'tsFs');
+  async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
+    Logger.info(`readFile: ${uri}`, 'tsFs');
+    const { hostname, resourcePath } = parseTsUri(uri);
 
-    const { hostname: oldHost, resourcePath: oldPath } = parseTsUri(oldUri);
-    const { hostname: newHost, resourcePath: newPath } = parseTsUri(newUri);
-
-    if (!oldHost) {
-      throw new Error('hostname is undefined');
+    const sftp = await this.manager.getSftp(hostname);
+    if (!sftp) {
+      throw new Error('Unable to establish SFTP connection');
     }
 
-    if (oldHost !== newHost) {
-      throw new Error('Cannot rename files across different hosts.');
+    return await sftp.writeFile(resourcePath, content);
+  }
+
+  async delete(uri: vscode.Uri): Promise<void> {
+    Logger.info(`delete: ${uri}`, 'tsFs');
+    const { hostname, resourcePath } = parseTsUri(uri);
+
+    const sftp = await this.manager.getSftp(hostname);
+    if (!sftp) {
+      throw new Error('Unable to establish SFTP connection');
     }
 
-    await this.ssh.runCommandAndPromptForUsername(oldHost, 'mv', [
-      `${options.overwrite ? '-f' : ''}`,
-      oldPath,
-      newPath,
-    ]);
+    return await sftp.delete(resourcePath);
   }
 
-  // scp pi@haas:/home/pi/foo.txt ubuntu@backup:/home/ubuntu/
-  // scp /Users/Tyler/foo.txt ubuntu@backup:/home/ubuntu/
-  // scp ubuntu@backup:/home/ubuntu/ /Users/Tyler/foo.txt
-
-  scp(src: vscode.Uri, dest: vscode.Uri): Promise<void> {
-    Logger.info('scp', 'tsFs');
-
-    const { resourcePath: srcPath } = parseTsUri(src);
-    const { hostname: destHostName, resourcePath: destPath } = parseTsUri(dest);
-
-    const command = `scp ${srcPath} ${destHostName}:${destPath}`;
-
-    return new Promise((resolve, reject) => {
-      exec(command, (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
-  }
+  async rename(): Promise<void> {}
 }

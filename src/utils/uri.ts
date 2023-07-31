@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import { Uri } from 'vscode';
 import { escapeSpace } from './string';
 
 export interface TsUri {
@@ -15,7 +15,7 @@ export interface TsUri {
  * |> resourcePath: /home/amalie
  */
 
-export function parseTsUri(uri: vscode.Uri): TsUri {
+export function parseTsUri(uri: Uri): TsUri {
   switch (uri.scheme) {
     case 'ts': {
       let hostPath = uri.path;
@@ -28,7 +28,9 @@ export function parseTsUri(uri: vscode.Uri): TsUri {
       const [hostname, ...pathSegments] = segments;
 
       let resourcePath = decodeURIComponent(pathSegments.join('/'));
-      if (resourcePath !== '~') {
+      if (resourcePath === '~') {
+        resourcePath = '.'; // required for sftp
+      } else {
         resourcePath = `/${escapeSpace(resourcePath)}`;
       }
 
@@ -37,4 +39,18 @@ export function parseTsUri(uri: vscode.Uri): TsUri {
     default:
       throw new Error(`Unsupported scheme: ${uri.scheme}`);
   }
+}
+
+interface TsUriParams {
+  tailnet: string;
+  hostname: string;
+  resourcePath: string;
+}
+
+export function createTsUri({ tailnet, hostname, resourcePath }: TsUriParams): Uri {
+  return Uri.joinPath(
+    Uri.from({ scheme: 'ts', authority: tailnet, path: '/' }),
+    hostname,
+    ...resourcePath.split('/')
+  );
 }

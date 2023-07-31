@@ -32,6 +32,10 @@ const baseConfig = {
         exclude: /node_modules/,
       },
       {
+        test: /\.node$/,
+        loader: 'node-loader',
+      },
+      {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader', 'postcss-loader'],
       },

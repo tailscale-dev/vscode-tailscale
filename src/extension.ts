@@ -10,7 +10,6 @@ import { FileExplorer, NodeExplorerProvider, PeerTree } from './node-explorer-pr
 
 import { TSFileSystemProvider } from './ts-file-system-provider';
 import { ConfigManager } from './config-manager';
-import { SSH } from './utils/ssh';
 import { parseTsUri } from './utils/uri';
 
 let tailscaleInstance: Tailscale;
@@ -21,7 +20,6 @@ export async function activate(context: vscode.ExtensionContext) {
   tailscaleInstance = await Tailscale.withInit(vscode);
 
   const configManager = ConfigManager.withGlobalStorageUri(context.globalStorageUri);
-  const ssh = new SSH(configManager);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
@@ -80,7 +78,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const nodeExplorerProvider = new NodeExplorerProvider(
     tailscaleInstance,
     configManager,
-    ssh,
+    tsFileSystemProvider,
     updateNodeExplorerTailnetName
   );
 

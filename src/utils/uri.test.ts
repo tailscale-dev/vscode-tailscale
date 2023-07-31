@@ -1,35 +1,69 @@
-import { test, expect, vi } from 'vitest';
-import { parseTsUri } from './uri';
-import { URI } from 'vscode-uri';
+import { test, expect, describe, vi } from 'vitest';
+import { createTsUri, parseTsUri } from './uri';
+import { URI, Utils } from 'vscode-uri';
 
-vi.mock('vscode');
-
-test('parses ts URIs correctly', () => {
-  const testUri = URI.parse('ts://tailnet-scales/foo/home/amalie');
-  const expected = {
-    hostname: 'foo',
-    tailnet: 'tailnet-scales',
-    resourcePath: '/home/amalie',
+vi.mock('vscode', async () => {
+  return {
+    Uri: {
+      parse: (uri: string) => URI.parse(uri),
+      from: (params: { scheme: string; authority: string; path: string }) => URI.from(params),
+      joinPath: (uri: URI, ...paths: string[]) => Utils.joinPath(uri, ...paths),
+    },
   };
-
-  const result = parseTsUri(testUri);
-  expect(result).toEqual(expected);
 });
 
-test('throws an error when scheme is not supported', () => {
-  const testUri = URI.parse('http://example.com');
+describe('', () => {
+  test('parses ts URIs correctly', () => {
+    const testUri = URI.parse('ts://tails-scales/foo/home/amalie');
+    const expected = {
+      hostname: 'foo',
+      tailnet: 'tails-scales',
+      resourcePath: '/home/amalie',
+    };
 
-  expect(() => parseTsUri(testUri)).toThrow('Unsupported scheme: http');
+    const result = parseTsUri(testUri);
+    expect(result).toEqual(expected);
+  });
+
+  test('throws an error when scheme is not supported', () => {
+    const testUri = URI.parse('http://example.com');
+
+    expect(() => parseTsUri(testUri)).toThrow('Unsupported scheme: http');
+  });
+
+  test('correctly returns ~ as a resourcePath', () => {
+    const testUri = URI.parse('ts://tails-scales/foo/~');
+    const expected = {
+      hostname: 'foo',
+      tailnet: 'tails-scales',
+      resourcePath: '.',
+    };
+
+    const result = parseTsUri(testUri);
+    expect(result).toEqual(expected);
+  });
 });
 
-test('correctly returns ~ as a resourcePath', () => {
-  const testUri = URI.parse('ts://tailnet-scales/foo/~');
-  const expected = {
-    hostname: 'foo',
-    tailnet: 'tailnet-scales',
-    resourcePath: '~',
-  };
+describe('createTsUri', () => {
+  test('creates ts URIs correctly', () => {
+    const expected = URI.parse('ts://tails-scales/foo/home/amalie');
+    const params = {
+      hostname: 'foo',
+      tailnet: 'tails-scales',
+      resourcePath: '/home/amalie',
+    };
 
-  const result = parseTsUri(testUri);
-  expect(result).toEqual(expected);
+    expect(createTsUri(params)).toEqual(expected);
+  });
+
+  test('creates ts URIs correctly', () => {
+    const expected = URI.parse('ts://tails-scales/foo/~');
+    const params = {
+      hostname: 'foo',
+      tailnet: 'tails-scales',
+      resourcePath: '~',
+    };
+
+    expect(createTsUri(params)).toEqual(expected);
+  });
 });

@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import { Uri } from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -24,7 +24,7 @@ export class ConfigManager {
     }
   }
 
-  static withGlobalStorageUri(globalStorageUri: vscode.Uri) {
+  static withGlobalStorageUri(globalStorageUri: Uri) {
     const globalStoragePath = globalStorageUri.fsPath;
 
     if (!fs.existsSync(globalStoragePath)) {
