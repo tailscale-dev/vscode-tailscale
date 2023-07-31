@@ -7,6 +7,7 @@ import { TSFileSystemProvider } from './ts-file-system-provider';
 import { SSH } from './utils/ssh';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
+import { parseTsUri } from './utils/uri';
 
 export class NodeExplorerProvider
   implements
@@ -173,7 +174,7 @@ export class NodeExplorerProvider
     vscode.commands.registerCommand(
       'tailscale.node.openRemoteCodeAtLocation',
       async (file: FileExplorer) => {
-        const { hostname, resourcePath } = this.fsProvider.extractHostAndPath(file.uri);
+        const { hostname, resourcePath } = parseTsUri(file.uri);
         if (!hostname || !resourcePath) {
           return;
         }
