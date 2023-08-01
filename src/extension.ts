@@ -62,14 +62,31 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  const nodeExplorerProvider = new NodeExplorerProvider(tailscaleInstance, configManager, ssh);
+  // eslint-disable-next-line prefer-const
+  let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer>;
+
+  function updateNodeExplorerTailnetName(name: string) {
+    nodeExplorerView.title = name;
+  }
+
+  const createNodeExplorerView = (): vscode.TreeView<PeerTree | FileExplorer> => {
+    return vscode.window.createTreeView('tailscale-node-explorer-view', {
+      treeDataProvider: nodeExplorerProvider,
+      showCollapseAll: true,
+      dragAndDropController: nodeExplorerProvider,
+    });
+  };
+
+  const nodeExplorerProvider = new NodeExplorerProvider(
+    tailscaleInstance,
+    configManager,
+    ssh,
+    updateNodeExplorerTailnetName
+  );
+
+  nodeExplorerView = createNodeExplorerView();
   vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
-  const view = vscode.window.createTreeView('tailscale-node-explorer-view', {
-    treeDataProvider: nodeExplorerProvider,
-    showCollapseAll: true,
-    dragAndDropController: nodeExplorerProvider,
-  });
-  context.subscriptions.push(view);
+  context.subscriptions.push(nodeExplorerView);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {

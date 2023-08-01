@@ -170,6 +170,7 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           st.Self.ID,
 			HostName:     st.Self.HostName,
 			TailscaleIPs: st.Self.TailscaleIPs,
+			TailnetName:  st.CurrentTailnet.Name,
 		}
 		capabilities := st.Self.Capabilities
 		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||

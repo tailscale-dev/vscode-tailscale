@@ -70,6 +70,7 @@ export interface RelayError {
 interface PeerStatus {
   DNSName: string;
   Online: boolean;
+  TailnetName: string;
 }
 
 export interface ServeConfig {
