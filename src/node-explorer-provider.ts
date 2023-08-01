@@ -3,11 +3,12 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
-import { TSFileSystemProvider } from './ts-file-system-provider';
+import { SFTPFileSystemProvider } from './sftp-file-system-provider';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
 import { createTsUri, parseTsUri } from './utils/uri';
 import { getUsername } from './utils/host';
+import { SSHFileSystemProvider } from './ssh-file-system-provider';
 
 export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTreeItem> {
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
@@ -29,7 +30,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   constructor(
     private readonly ts: Tailscale,
     private readonly configManager: ConfigManager,
-    private fsProvider: TSFileSystemProvider,
+    private fsProvider: SFTPFileSystemProvider | SSHFileSystemProvider,
     private updateNodeExplorerTailnetName: (title: string) => void
   ) {
     this.registerCopyHostnameCommand();
@@ -66,10 +67,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       let rootDir = hosts?.[element.HostName]?.rootDir;
       let dirDesc = rootDir;
       try {
-        const sftp = await this.fsProvider.manager.getSftp(element.HostName);
-        if (!sftp) throw new Error('Failed to establish SFTP connection');
-
-        const homeDir = await sftp.getHomeDirectory();
+        const homeDir = await this.fsProvider.getHomeDirectory(element.HostName);
 
         if (rootDir && rootDir !== '~') {
           dirDesc = trimPathPrefix(rootDir, homeDir);
@@ -157,11 +155,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         });
 
         try {
-          const sftp = await this.fsProvider.manager.getSftp(hostname);
-          if (!sftp) throw new Error('Failed to establish SFTP connection');
-
-          await sftp.createDirectory(`${resourcePath}/${dirName}`);
-          // await vscode.workspace.fs.createDirectory(newUri);
+          await vscode.workspace.fs.createDirectory(newUri);
           this._onDidChangeTreeData.fire([node]);
         } catch (e) {
           vscode.window.showErrorMessage(`Could not create directory: ${e}`);

@@ -5,7 +5,7 @@ import { parseTsUri } from './utils/uri';
 
 import { SshConnectionManager } from './ssh-connection-manager';
 
-export class TSFileSystemProvider implements vscode.FileSystemProvider {
+export class SFTPFileSystemProvider implements vscode.FileSystemProvider {
   public manager: SshConnectionManager;
 
   constructor(configManager: ConfigManager) {
@@ -58,6 +58,13 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
       Logger.error(`createDirectory: ${err}`, 'tsFs');
       throw err;
     }
+  }
+
+  async getHomeDirectory(hostname: string): Promise<string> {
+    const sftp = await this.manager.getSftp(hostname);
+    if (!sftp) throw new Error('Failed to establish SFTP connection');
+
+    return await sftp.getHomeDirectory();
   }
 
   async readFile(uri: vscode.Uri): Promise<Uint8Array> {

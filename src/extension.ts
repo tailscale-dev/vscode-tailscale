@@ -8,9 +8,11 @@ import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
 import { FileExplorer, NodeExplorerProvider, PeerTree } from './node-explorer-provider';
 
-import { TSFileSystemProvider } from './ts-file-system-provider';
+import { SFTPFileSystemProvider } from './sftp-file-system-provider';
 import { ConfigManager } from './config-manager';
 import { parseTsUri } from './utils/uri';
+import { EXTENSION_NS } from './constants';
+import { SSHFileSystemProvider } from './ssh-file-system-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -53,9 +55,15 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
-  const tsFileSystemProvider = new TSFileSystemProvider(configManager);
+  const connMethod = vscode.workspace
+    .getConfiguration(EXTENSION_NS)
+    .get('nodeExplorer.connectionMethod');
+
+  const FileSystemProvider = connMethod === 'ssh' ? SSHFileSystemProvider : SFTPFileSystemProvider;
+  const fileSystemProvider = new FileSystemProvider(configManager);
+
   context.subscriptions.push(
-    vscode.workspace.registerFileSystemProvider('ts', tsFileSystemProvider, {
+    vscode.workspace.registerFileSystemProvider('ts', fileSystemProvider, {
       isCaseSensitive: true,
     })
   );
@@ -78,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const nodeExplorerProvider = new NodeExplorerProvider(
     tailscaleInstance,
     configManager,
-    tsFileSystemProvider,
+    fileSystemProvider,
     updateNodeExplorerTailnetName
   );
 

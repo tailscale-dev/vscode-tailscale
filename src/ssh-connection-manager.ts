@@ -20,7 +20,7 @@ export class SshConnectionManager {
     const key = this.formatKey(hostname, username);
 
     if (this.connections.has(key)) {
-      return this.connections.get(key);
+      return this.connections.get(key) as ssh2.Client;
     }
 
     const conn = new ssh2.Client();

@@ -345,6 +345,15 @@
             "default": false,
             "markdownDescription": "(IN DEVELOPMENT) Enable the Tailscale Node Explorer view."
           },
+          "tailscale.nodeExplorer.connectionMethod": {
+            "type": "string",
+            "enum": [
+              "ssh",
+              "sftp"
+            ],
+            "default": "ssh",
+            "markdownDescription": "The connection method to use interacting with the File system view within the Node Explorer view."
+          },
           "tailscale.ssh.defaultUsername": {
             "type": "string",
             "default": null,
