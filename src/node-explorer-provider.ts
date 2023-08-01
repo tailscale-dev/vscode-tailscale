@@ -318,6 +318,7 @@ export class PeerTree extends PeerBaseTreeItem {
   public HostName: string;
   public TailscaleIPs: string[];
   public TailnetName: string;
+  public DNSName: string;
 
   public constructor(p: Peer) {
     super(p.HostName);
@@ -326,6 +327,7 @@ export class PeerTree extends PeerBaseTreeItem {
     this.HostName = p.HostName;
     this.TailscaleIPs = p.TailscaleIPs;
     this.TailnetName = p.TailnetName;
+    this.DNSName = p.DNSName;
 
     this.iconPath = {
       light: path.join(
@@ -346,8 +348,13 @@ export class PeerTree extends PeerBaseTreeItem {
       ),
     };
 
+    const displayDNSName = this.DNSName.replace(/\.$/, '');
+
     if (p.Online) {
       this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+      this.tooltip = displayDNSName;
+    } else {
+      this.tooltip = `${displayDNSName} is offline`;
     }
   }
 

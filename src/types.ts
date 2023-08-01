@@ -28,6 +28,7 @@ export interface Peer {
   sshHostKeys?: string[];
   ShareeNode?: boolean;
   TailnetName: string;
+  DNSName: string;
 }
 
 interface CurrentTailnet {
