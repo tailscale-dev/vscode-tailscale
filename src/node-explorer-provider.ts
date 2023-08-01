@@ -34,7 +34,8 @@ export class NodeExplorerProvider
   constructor(
     private readonly ts: Tailscale,
     private readonly configManager: ConfigManager,
-    private ssh: SSH
+    private ssh: SSH,
+    private updateNodeExplorerTailnetName: (title: string) => void
   ) {
     this.fsProvider = new TSFileSystemProvider();
 
@@ -111,6 +112,9 @@ export class NodeExplorerProvider
           // TODO: return a proper error
           return [];
         }
+
+        this.updateNodeExplorerTailnetName(status.Self.TailnetName);
+
         status.Peers?.forEach((p) => {
           this.peers[p.HostName] = p;
           peers.push(new PeerTree({ ...p }));
