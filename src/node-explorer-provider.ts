@@ -3,17 +3,13 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
-import { TSFileSystemProvider } from './ts-file-system-provider';
-import { SSH } from './utils/ssh';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
-import { parseTsUri } from './utils/uri';
+import { createTsUri, parseTsUri } from './utils/uri';
+import { getUsername } from './utils/host';
+import { FileSystemProvider } from './filesystem-provider';
 
-export class NodeExplorerProvider
-  implements
-    vscode.TreeDataProvider<PeerBaseTreeItem>,
-    vscode.TreeDragAndDropController<PeerBaseTreeItem>
-{
+export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTreeItem> {
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
   dragMimeTypes = [];
 
@@ -29,24 +25,22 @@ export class NodeExplorerProvider
   }
 
   private peers: { [hostName: string]: Peer } = {};
-  private fsProvider: TSFileSystemProvider;
 
   constructor(
     private readonly ts: Tailscale,
     private readonly configManager: ConfigManager,
-    private ssh: SSH,
+    private fsProvider: FileSystemProvider,
     private updateNodeExplorerTailnetName: (title: string) => void
   ) {
-    this.fsProvider = new TSFileSystemProvider();
-
-    this.registerDeleteCommand();
+    this.registerCopyHostnameCommand();
     this.registerCopyIPv4Command();
     this.registerCopyIPv6Command();
-    this.registerCopyHostnameCommand();
-    this.registerOpenTerminalCommand();
+    this.registerCreateDirectoryCommand();
+    this.registerDeleteCommand();
+    this.registerOpenNodeDetailsCommand();
     this.registerOpenRemoteCodeCommand();
     this.registerOpenRemoteCodeLocationCommand();
-    this.registerOpenNodeDetailsCommand();
+    this.registerOpenTerminalCommand();
     this.registerRefresh();
   }
 
@@ -72,7 +66,8 @@ export class NodeExplorerProvider
       let rootDir = hosts?.[element.HostName]?.rootDir;
       let dirDesc = rootDir;
       try {
-        const homeDir = (await this.ssh.executeCommand(element.HostName, 'echo', ['~'])).trim();
+        const homeDir = await this.fsProvider.getHomeDirectory(element.HostName);
+
         if (rootDir && rootDir !== '~') {
           dirDesc = trimPathPrefix(rootDir, homeDir);
         } else {
@@ -85,13 +80,13 @@ export class NodeExplorerProvider
         rootDir = '~';
         dirDesc = '~';
       }
-      // This method of building the Uri cleans up the path, removing any
-      // leading or trailing slashes.
-      const uri = vscode.Uri.joinPath(
-        vscode.Uri.from({ scheme: 'ts', authority: element.TailnetName, path: '/' }),
-        element.HostName,
-        ...rootDir.split('/')
-      );
+
+      const uri = createTsUri({
+        tailnet: element.TailnetName,
+        hostname: element.HostName,
+        resourcePath: rootDir,
+      });
+
       return [
         new FileExplorer(
           'File explorer',
@@ -129,49 +124,43 @@ export class NodeExplorerProvider
     }
   }
 
-  public async handleDrop(target: FileExplorer, dataTransfer: vscode.DataTransfer): Promise<void> {
-    // TODO: figure out why the progress bar doesn't show up
-    await vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Window,
-        cancellable: false,
-        title: 'Tailscale',
-      },
-      async (progress) => {
-        dataTransfer.forEach(async ({ value }) => {
-          const uri = vscode.Uri.parse(value);
-
-          try {
-            await this.fsProvider.scp(uri, target?.uri);
-          } catch (e) {
-            vscode.window.showErrorMessage(`unable to copy ${uri} to ${target?.uri}`);
-            console.error(`Error copying ${uri} to ${target?.uri}: ${e}`);
-          }
-
-          progress.report({ increment: 100 });
-          this._onDidChangeTreeData.fire([target]);
-        });
-      }
-    );
-
-    if (!target) {
-      return;
-    }
-  }
-
-  public async handleDrag(
-    source: PeerTree[],
-    treeDataTransfer: vscode.DataTransfer,
-    _: vscode.CancellationToken
-  ): Promise<void> {
-    treeDataTransfer.set(
-      'application/vnd.code.tree.testViewDragAndDrop',
-      new vscode.DataTransferItem(source)
-    );
-  }
-
   registerDeleteCommand() {
     vscode.commands.registerCommand('tailscale.node.fs.delete', this.delete.bind(this));
+  }
+
+  registerCreateDirectoryCommand() {
+    vscode.commands.registerCommand(
+      'tailscale.node.fs.createDirectory',
+      async (node: FileExplorer) => {
+        const { hostname, tailnet, resourcePath } = parseTsUri(node.uri);
+        if (!hostname || !resourcePath) {
+          return;
+        }
+
+        // TODO: validate input
+        const dirName = await vscode.window.showInputBox({
+          prompt: 'Enter a name for the new directory',
+          placeHolder: 'New directory',
+        });
+
+        if (!dirName) {
+          return;
+        }
+
+        const newUri = createTsUri({
+          tailnet,
+          hostname,
+          resourcePath: `${resourcePath}/${dirName}`,
+        });
+
+        try {
+          await vscode.workspace.fs.createDirectory(newUri);
+          this._onDidChangeTreeData.fire([node]);
+        } catch (e) {
+          vscode.window.showErrorMessage(`Could not create directory: ${e}`);
+        }
+      }
+    );
   }
 
   registerOpenRemoteCodeLocationCommand() {
@@ -222,7 +211,7 @@ export class NodeExplorerProvider
   registerOpenTerminalCommand() {
     vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerTree) => {
       const t = vscode.window.createTerminal(node.HostName);
-      t.sendText(`ssh ${this.ssh.sshHostnameWithUser(node.HostName)}`);
+      t.sendText(`ssh ${getUsername(this.configManager, node.HostName)}@${node.HostName}`);
       t.show();
     });
   }

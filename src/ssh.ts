@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import * as vscode from 'vscode';
-import { Logger } from '../logger';
-import { ConfigManager } from '../config-manager';
+import { Logger } from './logger';
+import { ConfigManager } from './config-manager';
 
 export class SSH {
   constructor(private readonly configManager?: ConfigManager) {}

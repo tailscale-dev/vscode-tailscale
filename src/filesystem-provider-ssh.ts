@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import { Logger } from './logger';
-import { SSH } from './utils/ssh';
+import { SSH } from './ssh';
 import { ConfigManager } from './config-manager';
 import { escapeSpace } from './utils/string';
 import { parseTsUri } from './utils/uri';
+import { fileSorter } from './filesystem-provider';
 
-export class TSFileSystemProvider implements vscode.FileSystemProvider {
+export class FileSystemProviderSSH implements vscode.FileSystemProvider {
   private ssh: SSH;
 
   constructor(configManager?: ConfigManager) {
@@ -23,7 +24,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
-    Logger.info(`stat: ${uri.toString()}`, 'tsFs');
+    Logger.info(`stat: ${uri.toString()}`, 'tsFs-ssh');
     const { hostname, resourcePath } = parseTsUri(uri);
 
     if (!hostname) {
@@ -47,11 +48,11 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-    Logger.info(`readDirectory: ${uri.toString()}`, 'tsFs');
+    Logger.info(`readDirectory: ${uri.toString()}`, 'tsFs-ssh');
 
     const { hostname, resourcePath } = parseTsUri(uri);
-    Logger.info(`hostname: ${hostname}`, 'tsFs');
-    Logger.info(`remotePath: ${resourcePath}`, 'tsFs');
+    Logger.info(`hostname: ${hostname}`, 'tsFs-ssh');
+    Logger.info(`remotePath: ${resourcePath}`, 'tsFs-ssh');
 
     if (!hostname) {
       throw new Error('hostname is undefined');
@@ -71,21 +72,15 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
       files.push([name, type]);
     }
 
-    return files.sort((a, b) => {
-      if (a[1] === vscode.FileType.Directory && b[1] !== vscode.FileType.Directory) {
-        return -1;
-      }
-      if (a[1] !== vscode.FileType.Directory && b[1] === vscode.FileType.Directory) {
-        return 1;
-      }
+    return files.sort(fileSorter);
+  }
 
-      // If same type, sort by name
-      return a[0].localeCompare(b[0]);
-    });
+  async getHomeDirectory(hostname: string): Promise<string> {
+    return (await this.ssh.executeCommand(hostname, 'echo', ['~'])).trim();
   }
 
   async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-    Logger.info(`readFile: ${uri.toString()}`, 'tsFs-readFile');
+    Logger.info(`readFile: ${uri.toString()}`, 'tsFs-ssh');
     const { hostname, resourcePath } = parseTsUri(uri);
 
     if (!hostname) {
@@ -102,7 +97,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     content: Uint8Array,
     options: { create: boolean; overwrite: boolean }
   ): Promise<void> {
-    Logger.info(`writeFile: ${uri.toString()}`, 'tsFs');
+    Logger.info(`writeFile: ${uri.toString()}`, 'tsFs-ssh');
 
     const { hostname, resourcePath } = parseTsUri(uri);
 
@@ -120,7 +115,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async delete(uri: vscode.Uri, options: { recursive: boolean }): Promise<void> {
-    Logger.info(`delete: ${uri.toString()}`, 'tsFs');
+    Logger.info(`delete: ${uri.toString()}`, 'tsFs-ssh');
 
     const { hostname, resourcePath } = parseTsUri(uri);
 
@@ -135,7 +130,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async createDirectory(uri: vscode.Uri): Promise<void> {
-    Logger.info(`createDirectory: ${uri.toString()}`, 'tsFs');
+    Logger.info(`createDirectory: ${uri.toString()}`, 'tsFs-ssh');
 
     const { hostname, resourcePath } = parseTsUri(uri);
 
@@ -151,7 +146,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
     newUri: vscode.Uri,
     options: { overwrite: boolean }
   ): Promise<void> {
-    Logger.info('rename', 'tsFs');
+    Logger.info('rename', 'tsFs-ssh');
 
     const { hostname: oldHost, resourcePath: oldPath } = parseTsUri(oldUri);
     const { hostname: newHost, resourcePath: newPath } = parseTsUri(newUri);
@@ -176,7 +171,7 @@ export class TSFileSystemProvider implements vscode.FileSystemProvider {
   // scp ubuntu@backup:/home/ubuntu/ /Users/Tyler/foo.txt
 
   scp(src: vscode.Uri, dest: vscode.Uri): Promise<void> {
-    Logger.info('scp', 'tsFs');
+    Logger.info('scp', 'tsFs-ssh');
 
     const { resourcePath: srcPath } = parseTsUri(src);
     const { hostname: destHostName, resourcePath: destPath } = parseTsUri(dest);

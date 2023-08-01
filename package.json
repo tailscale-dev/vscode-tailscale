@@ -268,6 +268,10 @@
         "title": "Delete"
       },
       {
+        "command": "tailscale.node.fs.createDirectory",
+        "title": "Create Directory"
+      },
+      {
         "command": "tailscale.node.setUsername",
         "title": "Change SSH username"
       },
@@ -341,6 +345,15 @@
             "default": false,
             "markdownDescription": "(IN DEVELOPMENT) Enable the Tailscale Node Explorer view."
           },
+          "tailscale.nodeExplorer.connectionMethod": {
+            "type": "string",
+            "enum": [
+              "ssh",
+              "sftp"
+            ],
+            "default": "ssh",
+            "markdownDescription": "The connection method to use interacting with the File system view within the Node Explorer view."
+          },
           "tailscale.ssh.defaultUsername": {
             "type": "string",
             "default": null,
@@ -349,6 +362,12 @@
             "examples": [
               "amelie"
             ]
+          },
+          "tailscale.ssh.connectionTimeout": {
+            "type": "number",
+            "default": 30000,
+            "markdownDescription": "The connection timeout for SSH connections in milliseconds.",
+            "scope": "window"
           }
         }
       }
@@ -372,6 +391,7 @@
     "@types/node": "16.11.68",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
+    "@types/ssh2": "^1.11.13",
     "@types/vscode": "^1.74.0",
     "@types/vscode-webview": "^1.57.1",
     "@typescript-eslint/eslint-plugin": "^6.1.0",
@@ -391,11 +411,13 @@
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
     "node-fetch": "^3.3.1",
+    "node-loader": "^2.0.0",
     "postcss": "^8.4.26",
     "postcss-loader": "^7.3.3",
     "prettier": "^3.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "ssh2": "^1.14.0",
     "style-loader": "^3.3.3",
     "swr": "^2.2.0",
     "tailwindcss": "^3.3.3",

@@ -8,10 +8,13 @@ import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
 import { FileExplorer, NodeExplorerProvider, PeerTree } from './node-explorer-provider';
 
-import { TSFileSystemProvider } from './ts-file-system-provider';
+import { FileSystemProviderSFTP } from './filesystem-provider-sftp';
 import { ConfigManager } from './config-manager';
-import { SSH } from './utils/ssh';
 import { parseTsUri } from './utils/uri';
+import { EXTENSION_NS } from './constants';
+import { FileSystemProviderSSH } from './filesystem-provider-ssh';
+import { WithFSTiming } from './filesystem-provider-timing';
+import { FileSystemProvider } from './filesystem-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -21,7 +24,6 @@ export async function activate(context: vscode.ExtensionContext) {
   tailscaleInstance = await Tailscale.withInit(vscode);
 
   const configManager = ConfigManager.withGlobalStorageUri(context.globalStorageUri);
-  const ssh = new SSH(configManager);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
@@ -55,9 +57,16 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
-  const tsFileSystemProvider = new TSFileSystemProvider(configManager);
+  const connMethod = vscode.workspace
+    .getConfiguration(EXTENSION_NS)
+    .get('nodeExplorer.connectionMethod');
+
+  const Provider = connMethod === 'ssh' ? FileSystemProviderSSH : FileSystemProviderSFTP;
+  let fileSystemProvider: FileSystemProvider = new Provider(configManager);
+  fileSystemProvider = new WithFSTiming(fileSystemProvider);
+
   context.subscriptions.push(
-    vscode.workspace.registerFileSystemProvider('ts', tsFileSystemProvider, {
+    vscode.workspace.registerFileSystemProvider('ts', fileSystemProvider, {
       isCaseSensitive: true,
     })
   );
@@ -80,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const nodeExplorerProvider = new NodeExplorerProvider(
     tailscaleInstance,
     configManager,
-    ssh,
+    fileSystemProvider,
     updateNodeExplorerTailnetName
   );
 
