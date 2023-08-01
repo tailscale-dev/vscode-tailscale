@@ -34,15 +34,22 @@ type serveStatus struct {
 	Errors       []Error `json:",omitempty"`
 }
 
+type currentTailnet struct {
+	Name            string
+	MagicDNSSuffix  string
+	MagicDNSEnabled bool
+}
+
 type peerStatus struct {
 	DNSName string
 	Online  bool
 
 	// For node explorer
-	ID           tailcfg.StableNodeID
-	HostName     string
-	TailscaleIPs []netip.Addr
-	TailnetName  string
+	ID             tailcfg.StableNodeID
+	HostName       string
+	TailscaleIPs   []netip.Addr
+	TailnetName    string
+	CurrentTailnet currentTailnet
 }
 
 // TODO(marwan): since this endpoint serves both the Node Explorer and Funnel,
@@ -170,7 +177,11 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           st.Self.ID,
 			HostName:     st.Self.HostName,
 			TailscaleIPs: st.Self.TailscaleIPs,
-			TailnetName:  st.CurrentTailnet.Name,
+			CurrentTailnet: currentTailnet{
+				Name:            st.CurrentTailnet.Name,
+				MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
+				MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
+			},
 		}
 		capabilities := st.Self.Capabilities
 		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||

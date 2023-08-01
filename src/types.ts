@@ -33,6 +33,8 @@ export interface Peer {
 
 interface CurrentTailnet {
   Name: string;
+  MagicDNSEnabled: boolean;
+  MagicDNSSuffix?: string;
 }
 
 export interface Status extends WithErrors {
@@ -70,7 +72,7 @@ export interface RelayError {
 interface PeerStatus {
   DNSName: string;
   Online: boolean;
-  TailnetName: string;
+  CurrentTailnet: CurrentTailnet;
 }
 
 export interface ServeConfig {

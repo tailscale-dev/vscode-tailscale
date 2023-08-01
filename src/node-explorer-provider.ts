@@ -8,6 +8,7 @@ import { Logger } from './logger';
 import { createTsUri, parseTsUri } from './utils/uri';
 import { getUsername } from './utils/host';
 import { FileSystemProvider } from './filesystem-provider';
+import { trimSuffix } from './utils';
 
 export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTreeItem> {
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
@@ -108,7 +109,17 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           return [];
         }
 
-        this.updateNodeExplorerTailnetName(status.Self.TailnetName);
+        if (
+          status.Self.CurrentTailnet.Name.includes('@') &&
+          status.Self.CurrentTailnet.MagicDNSEnabled &&
+          status.Self.CurrentTailnet.MagicDNSSuffix
+        ) {
+          this.updateNodeExplorerTailnetName(
+            trimSuffix(status.Self.CurrentTailnet.MagicDNSSuffix, '.')
+          );
+        } else {
+          this.updateNodeExplorerTailnetName(status.Self.CurrentTailnet.Name);
+        }
 
         status.Peers?.forEach((p) => {
           this.peers[p.HostName] = p;
@@ -341,7 +352,7 @@ export class PeerTree extends PeerBaseTreeItem {
       ),
     };
 
-    const displayDNSName = this.DNSName.replace(/\.$/, '');
+    const displayDNSName = trimSuffix(this.DNSName, '.');
 
     if (p.Online) {
       this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
