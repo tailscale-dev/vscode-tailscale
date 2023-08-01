@@ -319,13 +319,13 @@ export class PeerTree extends PeerBaseTreeItem {
   public TailscaleIPs: string[];
   public TailnetName: string;
 
-  public constructor(obj: Peer) {
-    super(obj.HostName);
+  public constructor(p: Peer) {
+    super(p.HostName);
 
-    this.ID = obj.ID;
-    this.HostName = obj.HostName;
-    this.TailscaleIPs = obj.TailscaleIPs;
-    this.TailnetName = obj.TailnetName;
+    this.ID = p.ID;
+    this.HostName = p.HostName;
+    this.TailscaleIPs = p.TailscaleIPs;
+    this.TailnetName = p.TailnetName;
 
     this.iconPath = {
       light: path.join(
@@ -334,7 +334,7 @@ export class PeerTree extends PeerBaseTreeItem {
         '..',
         'resources',
         'light',
-        obj.Online === true ? 'online.svg' : 'offline.svg'
+        p.Online === true ? 'online.svg' : 'offline.svg'
       ),
       dark: path.join(
         __filename,
@@ -342,11 +342,13 @@ export class PeerTree extends PeerBaseTreeItem {
         '..',
         'resources',
         'dark',
-        obj.Online === true ? 'online.svg' : 'offline.svg'
+        p.Online === true ? 'online.svg' : 'offline.svg'
       ),
     };
 
-    this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+    if (p.Online) {
+      this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+    }
   }
 
   contextValue = 'tailscale-peer-item';
