@@ -410,7 +410,7 @@
     "glob": "^10.3.3",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
-    "node-fetch": "^3.3.1",
+    "node-fetch": "^3.3.2",
     "node-loader": "^2.0.0",
     "postcss": "^8.4.26",
     "postcss-loader": "^7.3.3",
