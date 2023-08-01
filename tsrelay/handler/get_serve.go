@@ -28,7 +28,7 @@ type serveStatus struct {
 	ServeConfig  *ipn.ServeConfig
 	Services     map[uint16]string
 	BackendState string
-	Self         *peerStatus
+	Self         *selfStatus
 	Peers        []*peerStatus
 	FunnelPorts  []int
 	Errors       []Error `json:",omitempty"`
@@ -40,16 +40,22 @@ type currentTailnet struct {
 	MagicDNSEnabled bool
 }
 
+type selfStatus struct {
+	peerStatus
+	CurrentTailnet currentTailnet
+}
+
 type peerStatus struct {
-	DNSName string
-	Online  bool
+	DNSName    string
+	Online     bool
+	ServerName string
 
 	// For node explorer
-	ID             tailcfg.StableNodeID
-	HostName       string
-	TailscaleIPs   []netip.Addr
-	TailnetName    string
-	CurrentTailnet currentTailnet
+	ID           tailcfg.StableNodeID
+	HostName     string
+	TailscaleIPs []netip.Addr
+	TailnetName  string
+	IsExternal   bool
 }
 
 // TODO(marwan): since this endpoint serves both the Node Explorer and Funnel,
@@ -125,13 +131,24 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 		if p.ShareeNode {
 			continue
 		}
+
+		ServerName := p.HostName
+		if p.DNSName != "" {
+			parts := strings.SplitN(p.DNSName, ".", 2)
+			ServerName = parts[0]
+		}
+
+		DNSNameNoRootLabel := strings.TrimSuffix(p.DNSName, ".")
+		IsExternal := !strings.HasSuffix(DNSNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
+
 		s.Peers = append(s.Peers, &peerStatus{
 			DNSName:      p.DNSName,
+			ServerName:   ServerName,
 			Online:       p.Online,
 			ID:           p.ID,
 			HostName:     p.HostName,
 			TailscaleIPs: p.TailscaleIPs,
-			TailnetName:  st.CurrentTailnet.Name,
+			IsExternal:   IsExternal,
 		})
 	}
 
@@ -171,12 +188,14 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 	}
 
 	if st.Self != nil {
-		s.Self = &peerStatus{
-			DNSName:      st.Self.DNSName,
-			Online:       st.Self.Online,
-			ID:           st.Self.ID,
-			HostName:     st.Self.HostName,
-			TailscaleIPs: st.Self.TailscaleIPs,
+		s.Self = &selfStatus{
+			peerStatus: peerStatus{
+				DNSName:      st.Self.DNSName,
+				Online:       st.Self.Online,
+				ID:           st.Self.ID,
+				HostName:     st.Self.HostName,
+				TailscaleIPs: st.Self.TailscaleIPs,
+			},
 			CurrentTailnet: currentTailnet{
 				Name:            st.CurrentTailnet.Name,
 				MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,

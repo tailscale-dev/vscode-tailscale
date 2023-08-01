@@ -21,13 +21,14 @@ export interface Handlers {
 
 export interface Peer {
   ID: string;
+  ServerName: string;
   HostName: string;
   Active?: boolean;
+  IsExternal: boolean;
   Online?: boolean;
   TailscaleIPs: string[];
   sshHostKeys?: string[];
   ShareeNode?: boolean;
-  TailnetName: string;
   DNSName: string;
 }
 

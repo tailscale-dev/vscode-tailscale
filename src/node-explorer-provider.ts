@@ -321,17 +321,20 @@ export class PeerTree extends PeerBaseTreeItem {
   public ID: string;
   public HostName: string;
   public TailscaleIPs: string[];
-  public TailnetName: string;
   public DNSName: string;
 
   public constructor(p: Peer) {
-    super(p.HostName);
+    super(p.ServerName);
 
     this.ID = p.ID;
     this.HostName = p.HostName;
     this.TailscaleIPs = p.TailscaleIPs;
-    this.TailnetName = p.TailnetName;
     this.DNSName = p.DNSName;
+
+    if (p.IsExternal) {
+      const re = new RegExp('^' + p.ServerName + '\\.');
+      this.description = trimSuffix(this.DNSName.replace(re, ''), '.');
+    }
 
     this.iconPath = {
       light: path.join(
