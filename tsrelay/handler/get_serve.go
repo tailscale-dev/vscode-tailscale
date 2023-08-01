@@ -129,6 +129,12 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 	}
 
 	sort.Slice(s.Peers, func(i, j int) bool {
+		if s.Peers[i].Online && !s.Peers[j].Online {
+			return true
+		}
+		if s.Peers[j].Online && !s.Peers[i].Online {
+			return false
+		}
 		return s.Peers[i].HostName < s.Peers[j].HostName
 	})
 
