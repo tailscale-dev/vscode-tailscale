@@ -356,7 +356,7 @@
           },
           "tailscale.ssh.connectionTimeout": {
             "type": "number",
-            "default": 5000,
+            "default": 30000,
             "markdownDescription": "The connection timeout for SSH connections in milliseconds.",
             "scope": "window"
           }

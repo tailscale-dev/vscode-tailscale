@@ -27,10 +27,13 @@ export function parseTsUri(uri: Uri): TsUri {
       const segments = hostPath.split('/');
       const [hostname, ...pathSegments] = segments;
 
+      if (pathSegments[0] === '~') {
+        pathSegments[0] = '.';
+      }
+
       let resourcePath = decodeURIComponent(pathSegments.join('/'));
-      if (resourcePath === '~') {
-        resourcePath = '.'; // required for sftp
-      } else {
+
+      if (!resourcePath.startsWith('.')) {
         resourcePath = `/${escapeSpace(resourcePath)}`;
       }
 

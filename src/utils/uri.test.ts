@@ -12,7 +12,7 @@ vi.mock('vscode', async () => {
   };
 });
 
-describe('', () => {
+describe('parseTsUri', () => {
   test('parses ts URIs correctly', () => {
     const testUri = URI.parse('ts://tails-scales/foo/home/amalie');
     const expected = {
@@ -37,6 +37,18 @@ describe('', () => {
       hostname: 'foo',
       tailnet: 'tails-scales',
       resourcePath: '.',
+    };
+
+    const result = parseTsUri(testUri);
+    expect(result).toEqual(expected);
+  });
+
+  test('correctly returns ~ in a deeply nested resourcePath', () => {
+    const testUri = URI.parse('ts://tails-scales/foo/~/bar/baz');
+    const expected = {
+      hostname: 'foo',
+      tailnet: 'tails-scales',
+      resourcePath: './bar/baz',
     };
 
     const result = parseTsUri(testUri);

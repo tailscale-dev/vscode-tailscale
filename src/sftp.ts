@@ -46,6 +46,7 @@ export class Sftp {
 
   async createDirectory(path: string): Promise<void> {
     const sftp = await this.getSftp();
+    // handle supplying attributes to mkdir
     return util.promisify(sftp.mkdir).call(sftp, path);
   }
 

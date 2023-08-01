@@ -20,7 +20,7 @@ export class SshConnectionManager {
     const key = this.formatKey(hostname, username);
 
     if (this.connections.has(key)) {
-      return this.connections.get(key) as ssh2.Client;
+      return this.connections.get(key);
     }
 
     const conn = new ssh2.Client();
@@ -34,9 +34,13 @@ export class SshConnectionManager {
           conn.on('close', () => {
             this.connections.delete(key);
           });
+
+          // this might require a brower to open and the user to authenticate
           conn.connect(config);
         }),
         new Promise((_, reject) =>
+          // TODO: how does Tailscale re-authentication effect this?
+          // TODO: can we cancel the connection attempt?
           setTimeout(
             () => reject(new Error('Connection timeout')),
             vscode.workspace.getConfiguration(EXTENSION_NS).get('ssh.connectionTimeout')
