@@ -32,7 +32,7 @@ export class Sftp {
   }
 
   async stat(path: string): Promise<vscode.FileStat> {
-    Logger.info(`stat: ${path}`, 'tsFs');
+    Logger.info(`stat: ${path}`, 'sftp');
     const sftp = await this.getSftp();
     const s = await util.promisify(sftp.stat).call(sftp, path);
 

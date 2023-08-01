@@ -3,12 +3,11 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
-import { SFTPFileSystemProvider } from './sftp-file-system-provider';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
 import { createTsUri, parseTsUri } from './utils/uri';
 import { getUsername } from './utils/host';
-import { SSHFileSystemProvider } from './ssh-file-system-provider';
+import { FileSystemProvider } from './filesystem-provider';
 
 export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTreeItem> {
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
@@ -30,7 +29,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   constructor(
     private readonly ts: Tailscale,
     private readonly configManager: ConfigManager,
-    private fsProvider: SFTPFileSystemProvider | SSHFileSystemProvider,
+    private fsProvider: FileSystemProvider,
     private updateNodeExplorerTailnetName: (title: string) => void
   ) {
     this.registerCopyHostnameCommand();
