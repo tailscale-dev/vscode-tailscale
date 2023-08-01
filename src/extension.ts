@@ -66,7 +66,7 @@ export async function activate(context: vscode.ExtensionContext) {
   let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer>;
 
   function updateNodeExplorerTailnetName(name: string) {
-    nodeExplorerView.title = `Nodes (${name})`;
+    nodeExplorerView.title = name;
   }
 
   const createNodeExplorerView = (): vscode.TreeView<PeerTree | FileExplorer> => {

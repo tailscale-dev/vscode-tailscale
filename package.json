@@ -307,7 +307,7 @@
       "tailscale-nodes-explorer": [
         {
           "id": "tailscale-node-explorer-view",
-          "name": "Nodes",
+          "name": "",
           "when": "config.tailscale.nodeExplorer.enabled"
         }
       ]
