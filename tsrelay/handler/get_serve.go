@@ -135,11 +135,17 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 		ServerName := p.HostName
 		if p.DNSName != "" {
 			parts := strings.SplitN(p.DNSName, ".", 2)
-			ServerName = parts[0]
+			if len(parts) > 0 {
+				ServerName = parts[0]
+			}
 		}
 
-		DNSNameNoRootLabel := strings.TrimSuffix(p.DNSName, ".")
-		IsExternal := !strings.HasSuffix(DNSNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
+		// removes the root label/trailing period from the DNSName
+		// before: "amalie.foo.ts.net.", after: "amalie.foo.ts.net"
+		dnsNameNoRootLabel := strings.TrimSuffix(p.DNSName, ".")
+
+		// if the DNSName does not end with the magic DNS suffix, it is an external peer
+		isExternal := !strings.HasSuffix(dnsNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
 
 		s.Peers = append(s.Peers, &peerStatus{
 			DNSName:      p.DNSName,
@@ -148,7 +154,7 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           p.ID,
 			HostName:     p.HostName,
 			TailscaleIPs: p.TailscaleIPs,
-			IsExternal:   IsExternal,
+			IsExternal:   isExternal,
 		})
 	}
 
