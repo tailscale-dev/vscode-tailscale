@@ -52,6 +52,8 @@ export interface ServeStatus extends WithErrors {
     [port: number]: string;
   };
   BackendState: string;
+  // TODO: Self is optional in the API, which might not be
+  // correct. We need to settle on it being optional or always present.
   Self: PeerStatus;
   Peers?: Peer[];
 }

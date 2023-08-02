@@ -109,6 +109,8 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           return [];
         }
 
+        // If the MagicDNS is enabled, and the tailnet name is an
+        // email address (includes an @), use the MagicDNSName
         if (
           status.Self.CurrentTailnet.Name.includes('@') &&
           status.Self.CurrentTailnet.MagicDNSEnabled &&
