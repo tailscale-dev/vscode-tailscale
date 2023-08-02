@@ -109,6 +109,8 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           return [];
         }
 
+        let tailnetName = status.Self.CurrentTailnet.Name;
+
         // If the MagicDNS is enabled, and the tailnet name is an
         // email address (includes an @), use the MagicDNSName
         if (
@@ -116,12 +118,14 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           status.Self.CurrentTailnet.MagicDNSEnabled &&
           status.Self.CurrentTailnet.MagicDNSSuffix
         ) {
-          this.updateNodeExplorerTailnetName(
-            trimSuffix(status.Self.CurrentTailnet.MagicDNSSuffix, '.')
-          );
-        } else {
-          this.updateNodeExplorerTailnetName(status.Self.CurrentTailnet.Name);
+          const name = trimSuffix(status.Self.CurrentTailnet.MagicDNSSuffix, '.');
+
+          if (name) {
+            tailnetName = name;
+          }
         }
+
+        this.updateNodeExplorerTailnetName(tailnetName);
 
         status.Peers?.forEach((p) => {
           this.peers[p.HostName] = p;
