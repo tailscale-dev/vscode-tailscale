@@ -438,6 +438,6 @@ export class Tailscale {
       this._vscode.env.clipboard.writeText(`https://${hostname}`);
     }
 
-    await this._vscode.commands.executeCommand('tailscale-serve-view.refresh');
+    await this._vscode.commands.executeCommand('serve-view.refresh');
   }
 }

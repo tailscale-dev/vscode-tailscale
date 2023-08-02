@@ -10,6 +10,12 @@ import { getUsername } from './utils/host';
 import { FileSystemProvider } from './filesystem-provider';
 import { trimSuffix } from './utils';
 
+/**
+ * Anatomy of the TreeView
+ *
+ * ├── PeerRoot
+ * │   ├── PeerFileExplorer
+ */
 export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTreeItem> {
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
   dragMimeTypes = [];
@@ -64,7 +70,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     }
 
     // Node root
-    if (element instanceof PeerTree) {
+    if (element instanceof PeerRoot) {
       if (!element.SSHEnabled) {
         return [
           new ErrorItem({
@@ -113,7 +119,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     } else {
       // Peer List
 
-      const peers: PeerTree[] = [];
+      const peers: PeerRoot[] = [];
       let hasErr = false;
       try {
         const status = await this.ts.getPeers();
@@ -166,7 +172,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         this.updateNodeExplorerDisplayName(displayName);
 
         status.Peers?.forEach((p) => {
-          peers.push(new PeerTree({ ...p }, status.CurrentTailnet.Name));
+          peers.push(new PeerRoot({ ...p }, status.CurrentTailnet.Name));
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
@@ -244,7 +250,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerCopyIPv4Command() {
-    vscode.commands.registerCommand('tailscale.node.copyIPv4', async (node: PeerTree) => {
+    vscode.commands.registerCommand('tailscale.node.copyIPv4', async (node: PeerRoot) => {
       const ip = node.TailscaleIPs[0];
 
       if (!ip) {
@@ -258,7 +264,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerCopyIPv6Command() {
-    vscode.commands.registerCommand('tailscale.node.copyIPv6', async (node: PeerTree) => {
+    vscode.commands.registerCommand('tailscale.node.copyIPv6', async (node: PeerRoot) => {
       const ip = node.TailscaleIPs[1];
       await vscode.env.clipboard.writeText(ip);
       vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
@@ -266,7 +272,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerCopyHostnameCommand() {
-    vscode.commands.registerCommand('tailscale.node.copyHostname', async (node: PeerTree) => {
+    vscode.commands.registerCommand('tailscale.node.copyHostname', async (node: PeerRoot) => {
       const name = node.HostName;
       await vscode.env.clipboard.writeText(name);
       vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
@@ -274,7 +280,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerOpenTerminalCommand() {
-    vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerTree) => {
+    vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerRoot) => {
       const t = vscode.window.createTerminal(node.HostName);
       t.sendText(`ssh ${getUsername(this.configManager, node.HostName)}@${node.HostName}`);
       t.show();
@@ -282,13 +288,13 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerOpenRemoteCodeCommand() {
-    vscode.commands.registerCommand('tailscale.node.openRemoteCode', async (node: PeerTree) => {
+    vscode.commands.registerCommand('tailscale.node.openRemoteCode', async (node: PeerRoot) => {
       this.openRemoteCodeWindow(node.HostName, false);
     });
   }
 
   registerOpenNodeDetailsCommand() {
-    vscode.commands.registerCommand('tailscale.node.openDetailsLink', async (node: PeerTree) => {
+    vscode.commands.registerCommand('tailscale.node.openDetailsLink', async (node: PeerRoot) => {
       vscode.env.openExternal(
         vscode.Uri.parse(`https://login.tailscale.com/admin/machines/${node.TailscaleIPs[0]}`)
       );
@@ -374,11 +380,11 @@ export class FileExplorer extends vscode.TreeItem {
       };
     }
 
-    this.contextValue = `file-explorer-item${context ? '-' : ''}${context}`;
+    this.contextValue = `peer-file-explorer${context && `-${context}`}`;
   }
 }
 
-export class PeerTree extends PeerBaseTreeItem {
+export class PeerRoot extends PeerBaseTreeItem {
   public ID: string;
   public HostName: string;
   public TailscaleIPs: string[];
@@ -432,7 +438,7 @@ export class PeerTree extends PeerBaseTreeItem {
     }
   }
 
-  contextValue = 'tailscale-peer-item';
+  contextValue = 'peer-root';
 }
 
 export class PeerDetailTreeItem extends PeerBaseTreeItem {

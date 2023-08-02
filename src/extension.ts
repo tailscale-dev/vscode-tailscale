@@ -6,7 +6,7 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
-import { FileExplorer, NodeExplorerProvider, PeerTree, ErrorItem } from './node-explorer-provider';
+import { FileExplorer, NodeExplorerProvider, PeerRoot, ErrorItem } from './node-explorer-provider';
 
 import { FileSystemProviderSFTP } from './filesystem-provider-sftp';
 import { ConfigManager } from './config-manager';
@@ -72,13 +72,13 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // eslint-disable-next-line prefer-const
-  let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer | ErrorItem>;
+  let nodeExplorerView: vscode.TreeView<PeerRoot | FileExplorer | ErrorItem>;
 
   function updateNodeExplorerDisplayName(name: string) {
     nodeExplorerView.title = name;
   }
 
-  const createNodeExplorerView = (): vscode.TreeView<PeerTree | FileExplorer | ErrorItem> => {
+  const createNodeExplorerView = (): vscode.TreeView<PeerRoot | FileExplorer | ErrorItem> => {
     return vscode.window.createTreeView('tailscale-node-explorer-view', {
       treeDataProvider: nodeExplorerProvider,
       showCollapseAll: true,
@@ -94,7 +94,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   nodeExplorerView = createNodeExplorerView();
-  vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
+  vscode.window.registerTreeDataProvider('node-explorer-view', nodeExplorerProvider);
   context.subscriptions.push(nodeExplorerView);
 
   context.subscriptions.push(
@@ -123,7 +123,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openFunnelPanel', () => {
-      vscode.commands.executeCommand('tailscale-serve-view.focus');
+      vscode.commands.executeCommand('serve-view.focus');
     })
   );
 
@@ -134,7 +134,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.node.setUsername', async (node: PeerTree) => {
+    vscode.commands.registerCommand('tailscale.node.setUsername', async (node: PeerRoot) => {
       const username = await vscode.window.showInputBox({
         prompt: `Enter the username to use for ${node.HostName}`,
         value: configManager.config?.hosts?.[node.HostName]?.user,
@@ -151,12 +151,12 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'tailscale.node.setRootDir',
-      async (node: PeerTree | FileExplorer | ErrorItem) => {
+      async (node: PeerRoot | FileExplorer | ErrorItem) => {
         let hostname: string;
 
         if (node instanceof FileExplorer) {
           hostname = parseTsUri(node.uri).hostname;
-        } else if (node instanceof PeerTree) {
+        } else if (node instanceof PeerRoot) {
           hostname = node.HostName;
         } else {
           throw new Error(`invalid node type: ${typeof node}`);
@@ -182,7 +182,7 @@ export async function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  vscode.window.registerWebviewViewProvider('tailscale-serve-view', servePanelProvider);
+  vscode.window.registerWebviewViewProvider('serve-view', servePanelProvider);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.sharePortOverTunnel', async () => {
@@ -237,7 +237,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.reloadServePanel', async () => {
       await vscode.commands.executeCommand('workbench.action.closePanel');
-      await vscode.commands.executeCommand('tailscale-serve-view.focus');
+      await vscode.commands.executeCommand('serve-view.focus');
       setTimeout(() => {
         vscode.commands.executeCommand('workbench.action.toggleDevTools');
       }, 500);
