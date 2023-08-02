@@ -103,10 +103,13 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       const peers: PeerTree[] = [];
       try {
         const status = await this.ts.serveStatus(true);
-        if (status.Errors && status.Errors.length) {
-          // TODO: return a proper error
-          return [];
-        }
+        // TODO: return a proper error
+        // Commented out because of funnel related errors
+        // TODO: make two separate endpoints or we'd have
+        // to filter out any funnel related errors here.
+        // if (status.Errors && status.Errors.length) {
+        //   return [];
+        // }
 
         this.updateNodeExplorerTailnetName(status.Self.TailnetName);
 
