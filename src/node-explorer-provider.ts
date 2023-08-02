@@ -378,11 +378,13 @@ export class PeerDetailTreeItem extends PeerBaseTreeItem {
 export class NoPeersItem extends vscode.TreeItem {
   constructor(label: string) {
     super(label);
+    this.iconPath = new vscode.ThemeIcon('link-external');
     this.command = {
       command: 'tailscale.openExternal',
       title: 'Add node',
       arguments: ['https://tailscale.com/kb/1017/install/'],
     };
+    this.tooltip = 'Open Link';
   }
 }
 
