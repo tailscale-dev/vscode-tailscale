@@ -31,7 +31,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     private readonly ts: Tailscale,
     private readonly configManager: ConfigManager,
     private fsProvider: FileSystemProvider,
-    private updateNodeExplorerTailnetName: (title: string) => void
+    private updateNodeExplorerDisplayName: (title: string) => void
   ) {
     this.registerCopyHostnameCommand();
     this.registerCopyIPv4Command();
@@ -87,7 +87,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       }
 
       const uri = createTsUri({
-        tailnet: element.CurrentTailnet.Name,
+        tailnet: element.tailnetName,
         hostname: element.HostName,
         resourcePath: rootDir,
       });
@@ -117,7 +117,10 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         //   return [];
         // }
 
-        let tailnetName = status.CurrentTailnet.Name;
+        // displayName is the name that shows up at the top of
+        // the node explorer. It can either be the Tailent Name
+        // or the MagicDNSName
+        let displayName = status.CurrentTailnet.Name;
 
         // If the MagicDNS is enabled, and the tailnet name is an
         // email address (includes an @), use the MagicDNSName as
@@ -131,15 +134,15 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           const name = trimSuffix(status.CurrentTailnet.MagicDNSSuffix, '.');
 
           if (name) {
-            tailnetName = name;
+            displayName = name;
           }
         }
 
-        this.updateNodeExplorerTailnetName(tailnetName);
+        this.updateNodeExplorerDisplayName(displayName);
 
         status.Peers?.forEach((p) => {
           this.peers[p.HostName] = p;
-          peers.push(new PeerTree({ ...p }, status.CurrentTailnet));
+          peers.push(new PeerTree({ ...p }, status.CurrentTailnet.Name));
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
@@ -350,16 +353,16 @@ export class PeerTree extends PeerBaseTreeItem {
   public HostName: string;
   public TailscaleIPs: string[];
   public DNSName: string;
-  public CurrentTailnet: CurrentTailnet;
+  public tailnetName: string;
 
-  public constructor(p: Peer, currentTailnet: CurrentTailnet) {
+  public constructor(p: Peer, tailnetName: string) {
     super(p.ServerName);
 
     this.ID = p.ID;
     this.HostName = p.HostName;
     this.TailscaleIPs = p.TailscaleIPs;
     this.DNSName = p.DNSName;
-    this.CurrentTailnet = currentTailnet;
+    this.tailnetName = tailnetName;
 
     if (p.IsExternal) {
       // localapi currently does not return the tailnet name for a node,
