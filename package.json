@@ -282,6 +282,10 @@
       {
         "command": "tailscale.node.openRemoteCodeAtLocation",
         "title": "Attach VS Code"
+      },
+      {
+        "command": "tailscale.openExternal",
+        "title": "Open External Link"
       }
     ],
     "viewsContainers": {

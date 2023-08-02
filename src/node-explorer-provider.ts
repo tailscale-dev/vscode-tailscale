@@ -51,6 +51,10 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
+    if (element instanceof NoPeersItem) {
+      return [];
+    }
+
     // File Explorer
     if (element instanceof FileExplorer) {
       const dirents = await vscode.workspace.fs.readDirectory(element.uri);
@@ -101,6 +105,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       // Peer List
 
       const peers: PeerTree[] = [];
+      let hasErr = false;
       try {
         const status = await this.ts.serveStatus(true);
         if (status.Errors && status.Errors.length) {
@@ -116,8 +121,13 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
+        hasErr = true;
         vscode.window.showErrorMessage(`unable to fetch status ${e.message}`);
         console.error(`Error fetching status: ${e}`);
+      }
+
+      if (!hasErr && !peers.length) {
+        return [new NoPeersItem('Add your first node')];
       }
 
       return peers;
@@ -362,6 +372,17 @@ export class PeerDetailTreeItem extends PeerBaseTreeItem {
     if (contextValue) {
       this.contextValue = contextValue;
     }
+  }
+}
+
+export class NoPeersItem extends vscode.TreeItem {
+  constructor(label: string) {
+    super(label);
+    this.command = {
+      command: 'tailscale.openExternal',
+      title: 'Add node',
+      arguments: ['https://tailscale.com/kb/1017/install/'],
+    };
   }
 }
 

@@ -6,7 +6,12 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
-import { FileExplorer, NodeExplorerProvider, PeerTree } from './node-explorer-provider';
+import {
+  FileExplorer,
+  NodeExplorerProvider,
+  PeerTree,
+  NoPeersItem,
+} from './node-explorer-provider';
 
 import { FileSystemProviderSFTP } from './filesystem-provider-sftp';
 import { ConfigManager } from './config-manager';
@@ -72,13 +77,13 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // eslint-disable-next-line prefer-const
-  let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer>;
+  let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer | NoPeersItem>;
 
   function updateNodeExplorerTailnetName(name: string) {
     nodeExplorerView.title = name;
   }
 
-  const createNodeExplorerView = (): vscode.TreeView<PeerTree | FileExplorer> => {
+  const createNodeExplorerView = (): vscode.TreeView<PeerTree | FileExplorer | NoPeersItem> => {
     return vscode.window.createTreeView('tailscale-node-explorer-view', {
       treeDataProvider: nodeExplorerProvider,
       showCollapseAll: true,
@@ -96,6 +101,13 @@ export async function activate(context: vscode.ExtensionContext) {
   nodeExplorerView = createNodeExplorerView();
   vscode.window.registerTreeDataProvider('tailscale-node-explorer-view', nodeExplorerProvider);
   context.subscriptions.push(nodeExplorerView);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.openExternal', (url: string) => {
+      Logger.info('called tailscale.openExternal', 'command');
+      vscode.env.openExternal(vscode.Uri.parse(url));
+    })
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {
@@ -144,7 +156,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'tailscale.node.setRootDir',
-      async (node: PeerTree | FileExplorer) => {
+      async (node: PeerTree | FileExplorer | NoPeersItem) => {
         let hostname: string;
 
         if (node instanceof FileExplorer) {
