@@ -21,22 +21,24 @@ export interface Handlers {
 
 export interface Peer {
   ID: string;
+  ServerName: string;
   HostName: string;
   Active?: boolean;
+  IsExternal: boolean;
   Online?: boolean;
   TailscaleIPs: string[];
   sshHostKeys?: string[];
   ShareeNode?: boolean;
-  TailnetName: string;
   DNSName: string;
 }
 
-interface CurrentTailnet {
+export interface CurrentTailnet {
   Name: string;
+  MagicDNSEnabled: boolean;
+  MagicDNSSuffix?: string;
 }
 
 export interface Status extends WithErrors {
-  CurrentTailnet: CurrentTailnet;
   Peer: {
     [key: string]: Peer;
   };
@@ -49,8 +51,11 @@ export interface ServeStatus extends WithErrors {
     [port: number]: string;
   };
   BackendState: string;
+  // TODO: Self is optional in the API, which might not be
+  // correct. We need to settle on it being optional or always present.
   Self: PeerStatus;
   Peers?: Peer[];
+  CurrentTailnet: CurrentTailnet;
 }
 
 export interface WithErrors {
@@ -70,7 +75,6 @@ export interface RelayError {
 interface PeerStatus {
   DNSName: string;
   Online: boolean;
-  TailnetName: string;
 }
 
 export interface ServeConfig {

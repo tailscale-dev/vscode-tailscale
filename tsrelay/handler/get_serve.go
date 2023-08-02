@@ -25,24 +25,32 @@ import (
 // to reduce serialization size in addition
 // to some helper fields for the typescript frontend
 type serveStatus struct {
-	ServeConfig  *ipn.ServeConfig
-	Services     map[uint16]string
-	BackendState string
-	Self         *peerStatus
-	Peers        []*peerStatus
-	FunnelPorts  []int
-	Errors       []Error `json:",omitempty"`
+	ServeConfig    *ipn.ServeConfig
+	Services       map[uint16]string
+	BackendState   string
+	Self           *peerStatus
+	Peers          []*peerStatus
+	CurrentTailnet *currentTailnet
+	FunnelPorts    []int
+	Errors         []Error `json:",omitempty"`
+}
+
+type currentTailnet struct {
+	Name            string
+	MagicDNSSuffix  string
+	MagicDNSEnabled bool
 }
 
 type peerStatus struct {
-	DNSName string
-	Online  bool
+	DNSName    string
+	Online     bool
+	ServerName string
 
 	// For node explorer
 	ID           tailcfg.StableNodeID
 	HostName     string
 	TailscaleIPs []netip.Addr
-	TailnetName  string
+	IsExternal   bool
 }
 
 // TODO(marwan): since this endpoint serves both the Node Explorer and Funnel,
@@ -118,13 +126,30 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 		if p.ShareeNode {
 			continue
 		}
+
+		ServerName := p.HostName
+		if p.DNSName != "" {
+			parts := strings.SplitN(p.DNSName, ".", 2)
+			if len(parts) > 0 {
+				ServerName = parts[0]
+			}
+		}
+
+		// removes the root label/trailing period from the DNSName
+		// before: "amalie.foo.ts.net.", after: "amalie.foo.ts.net"
+		dnsNameNoRootLabel := strings.TrimSuffix(p.DNSName, ".")
+
+		// if the DNSName does not end with the magic DNS suffix, it is an external peer
+		isExternal := !strings.HasSuffix(dnsNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
+
 		s.Peers = append(s.Peers, &peerStatus{
 			DNSName:      p.DNSName,
+			ServerName:   ServerName,
 			Online:       p.Online,
 			ID:           p.ID,
 			HostName:     p.HostName,
 			TailscaleIPs: p.TailscaleIPs,
-			TailnetName:  st.CurrentTailnet.Name,
+			IsExternal:   isExternal,
 		})
 	}
 
@@ -170,8 +195,14 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           st.Self.ID,
 			HostName:     st.Self.HostName,
 			TailscaleIPs: st.Self.TailscaleIPs,
-			TailnetName:  st.CurrentTailnet.Name,
 		}
+
+		s.CurrentTailnet = &currentTailnet{
+			Name:            st.CurrentTailnet.Name,
+			MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
+			MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
+		}
+
 		capabilities := st.Self.Capabilities
 		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||
 			!slices.Contains(capabilities, tailcfg.NodeAttrFunnel) {
