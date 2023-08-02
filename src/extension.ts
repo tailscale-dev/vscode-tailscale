@@ -79,7 +79,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // eslint-disable-next-line prefer-const
   let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer | NoPeersItem>;
 
-  function updateNodeExplorerTailnetName(name: string) {
+  function updateNodeExplorerDisplayName(name: string) {
     nodeExplorerView.title = name;
   }
 
@@ -95,7 +95,7 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance,
     configManager,
     fileSystemProvider,
-    updateNodeExplorerTailnetName
+    updateNodeExplorerDisplayName
   );
 
   nodeExplorerView = createNodeExplorerView();
