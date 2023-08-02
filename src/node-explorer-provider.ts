@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Peer } from './types';
+import { CurrentTailnet, Peer } from './types';
 import { Tailscale } from './tailscale/cli';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
@@ -83,7 +83,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       }
 
       const uri = createTsUri({
-        tailnet: element.TailnetName,
+        tailnet: element.CurrentTailnet.Name,
         hostname: element.HostName,
         resourcePath: rootDir,
       });
@@ -131,7 +131,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
         status.Peers?.forEach((p) => {
           this.peers[p.HostName] = p;
-          peers.push(new PeerTree({ ...p }));
+          peers.push(new PeerTree({ ...p }, status.CurrentTailnet));
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
@@ -329,17 +329,17 @@ export class PeerTree extends PeerBaseTreeItem {
   public ID: string;
   public HostName: string;
   public TailscaleIPs: string[];
-  public TailnetName: string;
   public DNSName: string;
+  public CurrentTailnet: CurrentTailnet;
 
-  public constructor(p: Peer) {
+  public constructor(p: Peer, currentTailnet: CurrentTailnet) {
     super(p.ServerName);
 
     this.ID = p.ID;
     this.HostName = p.HostName;
     this.TailscaleIPs = p.TailscaleIPs;
-    this.TailnetName = p.TailnetName;
     this.DNSName = p.DNSName;
+    this.CurrentTailnet = currentTailnet;
 
     if (p.IsExternal) {
       // localapi currently does not return the tailnet name for a node,

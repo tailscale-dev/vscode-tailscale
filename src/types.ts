@@ -29,7 +29,6 @@ export interface Peer {
   TailscaleIPs: string[];
   sshHostKeys?: string[];
   ShareeNode?: boolean;
-  TailnetName: string;
   DNSName: string;
 }
 
@@ -76,7 +75,6 @@ export interface RelayError {
 interface PeerStatus {
   DNSName: string;
   Online: boolean;
-  TailnetName: string;
 }
 
 export interface ServeConfig {

@@ -50,7 +50,6 @@ type peerStatus struct {
 	ID           tailcfg.StableNodeID
 	HostName     string
 	TailscaleIPs []netip.Addr
-	TailnetName  string
 	IsExternal   bool
 }
 
@@ -150,7 +149,6 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           p.ID,
 			HostName:     p.HostName,
 			TailscaleIPs: p.TailscaleIPs,
-			TailnetName:  st.CurrentTailnet.Name,
 			IsExternal:   isExternal,
 		})
 	}
@@ -197,7 +195,6 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           st.Self.ID,
 			HostName:     st.Self.HostName,
 			TailscaleIPs: st.Self.TailscaleIPs,
-			TailnetName:  st.CurrentTailnet.Name,
 		}
 
 		s.CurrentTailnet = &currentTailnet{
