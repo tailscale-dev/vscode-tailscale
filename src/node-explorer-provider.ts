@@ -109,16 +109,18 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           return [];
         }
 
-        let tailnetName = status.Self.CurrentTailnet.Name;
+        let tailnetName = status.CurrentTailnet.Name;
 
         // If the MagicDNS is enabled, and the tailnet name is an
-        // email address (includes an @), use the MagicDNSName
+        // email address (includes an @), use the MagicDNSName as
+        // it makes more sense to show the MagicDNS name for multi-user
+        // tailnets using a shared domain.
         if (
-          status.Self.CurrentTailnet.Name.includes('@') &&
-          status.Self.CurrentTailnet.MagicDNSEnabled &&
-          status.Self.CurrentTailnet.MagicDNSSuffix
+          status.CurrentTailnet.Name.includes('@') &&
+          status.CurrentTailnet.MagicDNSEnabled &&
+          status.CurrentTailnet.MagicDNSSuffix
         ) {
-          const name = trimSuffix(status.Self.CurrentTailnet.MagicDNSSuffix, '.');
+          const name = trimSuffix(status.CurrentTailnet.MagicDNSSuffix, '.');
 
           if (name) {
             tailnetName = name;
@@ -327,6 +329,7 @@ export class PeerTree extends PeerBaseTreeItem {
   public ID: string;
   public HostName: string;
   public TailscaleIPs: string[];
+  public TailnetName: string;
   public DNSName: string;
 
   public constructor(p: Peer) {
@@ -335,9 +338,12 @@ export class PeerTree extends PeerBaseTreeItem {
     this.ID = p.ID;
     this.HostName = p.HostName;
     this.TailscaleIPs = p.TailscaleIPs;
+    this.TailnetName = p.TailnetName;
     this.DNSName = p.DNSName;
 
     if (p.IsExternal) {
+      // localapi currently does not return the tailnet name for a node,
+      // so this is what we have to do to determine it.
       const re = new RegExp('^' + p.ServerName + '\\.');
       this.description = trimSuffix(this.DNSName.replace(re, ''), '.');
     }

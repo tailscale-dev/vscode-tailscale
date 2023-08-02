@@ -29,17 +29,17 @@ export interface Peer {
   TailscaleIPs: string[];
   sshHostKeys?: string[];
   ShareeNode?: boolean;
+  TailnetName: string;
   DNSName: string;
 }
 
-interface CurrentTailnet {
+export interface CurrentTailnet {
   Name: string;
   MagicDNSEnabled: boolean;
   MagicDNSSuffix?: string;
 }
 
 export interface Status extends WithErrors {
-  CurrentTailnet: CurrentTailnet;
   Peer: {
     [key: string]: Peer;
   };
@@ -56,6 +56,7 @@ export interface ServeStatus extends WithErrors {
   // correct. We need to settle on it being optional or always present.
   Self: PeerStatus;
   Peers?: Peer[];
+  CurrentTailnet: CurrentTailnet;
 }
 
 export interface WithErrors {
@@ -75,7 +76,7 @@ export interface RelayError {
 interface PeerStatus {
   DNSName: string;
   Online: boolean;
-  CurrentTailnet: CurrentTailnet;
+  TailnetName: string;
 }
 
 export interface ServeConfig {

@@ -25,24 +25,20 @@ import (
 // to reduce serialization size in addition
 // to some helper fields for the typescript frontend
 type serveStatus struct {
-	ServeConfig  *ipn.ServeConfig
-	Services     map[uint16]string
-	BackendState string
-	Self         *selfStatus
-	Peers        []*peerStatus
-	FunnelPorts  []int
-	Errors       []Error `json:",omitempty"`
+	ServeConfig    *ipn.ServeConfig
+	Services       map[uint16]string
+	BackendState   string
+	Self           *peerStatus
+	Peers          []*peerStatus
+	CurrentTailnet *currentTailnet
+	FunnelPorts    []int
+	Errors         []Error `json:",omitempty"`
 }
 
 type currentTailnet struct {
 	Name            string
 	MagicDNSSuffix  string
 	MagicDNSEnabled bool
-}
-
-type selfStatus struct {
-	peerStatus
-	CurrentTailnet currentTailnet
 }
 
 type peerStatus struct {
@@ -154,6 +150,7 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           p.ID,
 			HostName:     p.HostName,
 			TailscaleIPs: p.TailscaleIPs,
+			TailnetName:  st.CurrentTailnet.Name,
 			IsExternal:   isExternal,
 		})
 	}
@@ -194,20 +191,21 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 	}
 
 	if st.Self != nil {
-		s.Self = &selfStatus{
-			peerStatus: peerStatus{
-				DNSName:      st.Self.DNSName,
-				Online:       st.Self.Online,
-				ID:           st.Self.ID,
-				HostName:     st.Self.HostName,
-				TailscaleIPs: st.Self.TailscaleIPs,
-			},
-			CurrentTailnet: currentTailnet{
-				Name:            st.CurrentTailnet.Name,
-				MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
-				MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
-			},
+		s.Self = &peerStatus{
+			DNSName:      st.Self.DNSName,
+			Online:       st.Self.Online,
+			ID:           st.Self.ID,
+			HostName:     st.Self.HostName,
+			TailscaleIPs: st.Self.TailscaleIPs,
+			TailnetName:  st.CurrentTailnet.Name,
 		}
+
+		s.CurrentTailnet = &currentTailnet{
+			Name:            st.CurrentTailnet.Name,
+			MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
+			MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
+		}
+
 		capabilities := st.Self.Capabilities
 		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||
 			!slices.Contains(capabilities, tailcfg.NodeAttrFunnel) {
