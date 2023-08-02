@@ -253,6 +253,13 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
   async delete(file: FileExplorer) {
     try {
+      const msg = `Are you sure you want to delete ${
+        file.type === vscode.FileType.Directory ? 'this directory' : 'this file'
+      }? This action cannot be undone.`;
+      const answer = await vscode.window.showInformationMessage(msg, { modal: true }, 'Yes');
+      if (answer !== 'Yes') {
+        return;
+      }
       await vscode.workspace.fs.delete(file.uri);
       vscode.window.showInformationMessage(`${file.label} deleted successfully.`);
 
