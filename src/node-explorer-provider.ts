@@ -114,9 +114,11 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           status.Self.CurrentTailnet.MagicDNSEnabled &&
           status.Self.CurrentTailnet.MagicDNSSuffix
         ) {
-          this.updateNodeExplorerTailnetName(
-            trimSuffix(status.Self.CurrentTailnet.MagicDNSSuffix, '.')
-          );
+          const name = trimSuffix(status.Self.CurrentTailnet.MagicDNSSuffix, '.');
+
+          if (name) {
+            this.updateNodeExplorerTailnetName(name);
+          }
         } else {
           this.updateNodeExplorerTailnetName(status.Self.CurrentTailnet.Name);
         }
