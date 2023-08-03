@@ -16,7 +16,7 @@ import (
 // to reduce serialization size in addition
 // to some helper fields for the typescript frontend
 type getPeersResponse struct {
-	Peers          []*peerStatus
+	PeerGroups     []*peerGroup
 	CurrentTailnet *currentTailnet
 	Errors         []Error `json:",omitempty"`
 }
@@ -25,6 +25,11 @@ type currentTailnet struct {
 	Name            string
 	MagicDNSSuffix  string
 	MagicDNSEnabled bool
+}
+
+type peerGroup struct {
+	Name  string
+	Peers []*peerStatus
 }
 
 func (h *handler) getPeersHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +69,12 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		return nil, err
 	}
 
-	s := getPeersResponse{Peers: make([]*peerStatus, 0, len(st.Peer))}
+	s := getPeersResponse{
+		PeerGroups: []*peerGroup{
+			{Name: "My nodes"},
+			{Name: "All nodes"},
+		},
+	}
 
 	if st.BackendState == "NeedsLogin" || (st.Self != nil && !st.Self.Online) {
 		s.Errors = append(s.Errors, Error{
@@ -109,7 +119,7 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		if addr == "" && len(p.TailscaleIPs) > 0 {
 			addr = p.TailscaleIPs[0].String()
 		}
-		s.Peers = append(s.Peers, &peerStatus{
+		peer := &peerStatus{
 			DNSName:      p.DNSName,
 			ServerName:   serverName,
 			Online:       p.Online,
@@ -119,18 +129,36 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 			IsExternal:   isExternal,
 			SSHEnabled:   len(p.SSH_HostKeys) > 0,
 			Address:      addr,
-		})
+		}
+		if p.UserID == st.Self.UserID {
+			s.PeerGroups[0].Peers = append(s.PeerGroups[0].Peers, peer)
+		} else {
+			s.PeerGroups[1].Peers = append(s.PeerGroups[1].Peers, peer)
+		}
 	}
 
-	sort.Slice(s.Peers, func(i, j int) bool {
-		if s.Peers[i].Online && !s.Peers[j].Online {
-			return true
-		}
-		if s.Peers[j].Online && !s.Peers[i].Online {
-			return false
-		}
-		return s.Peers[i].HostName < s.Peers[j].HostName
-	})
+	myNodes := len(s.PeerGroups[0].Peers)
+	allNodes := len(s.PeerGroups[1].Peers)
+	if myNodes == 0 && allNodes > 0 {
+		s.PeerGroups = s.PeerGroups[1:]
+	} else if allNodes == 0 && myNodes > 0 {
+		s.PeerGroups = s.PeerGroups[0:1]
+	} else if myNodes == 0 && allNodes == 0 {
+		s.PeerGroups = nil
+	}
+
+	for _, pg := range s.PeerGroups {
+		peers := pg.Peers
+		sort.Slice(peers, func(i, j int) bool {
+			if peers[i].Online && !peers[j].Online {
+				return true
+			}
+			if peers[j].Online && !peers[i].Online {
+				return false
+			}
+			return peers[i].HostName < peers[j].HostName
+		})
+	}
 
 	return &s, nil
 }
