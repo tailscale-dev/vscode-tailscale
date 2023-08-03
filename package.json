@@ -274,7 +274,7 @@
       },
       {
         "command": "tailscale.node.fs.createDirectory",
-        "title": "Create Directory"
+        "title": "Create directory"
       },
       {
         "command": "tailscale.node.setUsername",
