@@ -41,7 +41,12 @@ export interface CurrentTailnet {
 
 export interface PeersResponse extends WithErrors {
   CurrentTailnet: CurrentTailnet;
-  Peers?: Peer[];
+  PeerGroups: PeerGroup[];
+}
+
+export interface PeerGroup {
+  Name: string;
+  Peers: Peer[];
 }
 
 export interface ServeStatus extends WithErrors {

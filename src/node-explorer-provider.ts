@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Peer } from './types';
+import { Peer, PeerGroup } from './types';
 import { Tailscale } from './tailscale/cli';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
@@ -59,6 +59,12 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
     if (element instanceof ErrorItem) {
       return [];
+    }
+
+    if (element instanceof PeerGroupItem) {
+      return element.peerGroup.Peers.map((p) => {
+        return new PeerRoot({ ...p }, element.tailnetName);
+      });
     }
 
     // File Explorer
@@ -120,7 +126,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     } else {
       // Peer List
 
-      const peers: PeerRoot[] = [];
+      const groups: PeerGroupItem[] = [];
       let hasErr = false;
       try {
         const status = await this.ts.getPeers();
@@ -172,9 +178,20 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
         this.updateNodeExplorerDisplayName(displayName);
 
-        status.Peers?.forEach((p) => {
-          peers.push(new PeerRoot({ ...p }, status.CurrentTailnet.Name));
-        });
+        // If we only have a single group, don't indent it.
+        // Just directly render all nodes. Trust TSRelay to
+        // not send a group with empty peers.
+        if (status.PeerGroups?.length == 1) {
+          return status.PeerGroups[0].Peers.map((p) => {
+            return new PeerRoot({ ...p }, status.CurrentTailnet.Name);
+          });
+          // Otherwise, go through each group (could be zero) and
+          // create each category.
+        } else {
+          status.PeerGroups?.forEach((pg) => {
+            groups.push(new PeerGroupItem(pg, status.CurrentTailnet.Name));
+          });
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
         hasErr = true;
@@ -182,7 +199,8 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         console.error(`Error fetching status: ${e}`);
       }
 
-      if (!hasErr && !peers.length) {
+      // If there are no groups at all, render an onboarding item.
+      if (!hasErr && !groups.length) {
         return [
           new ErrorItem({
             label: 'Add your first node',
@@ -192,7 +210,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         ];
       }
 
-      return peers;
+      return groups;
     }
   }
 
@@ -447,6 +465,17 @@ export class PeerRoot extends PeerBaseTreeItem {
   }
 
   contextValue = 'peer-root';
+}
+
+export class PeerGroupItem extends PeerBaseTreeItem {
+  public constructor(
+    public readonly peerGroup: PeerGroup,
+    public readonly tailnetName: string
+  ) {
+    super(peerGroup.Name);
+    this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+  }
+  contextValue = 'peer-group-item';
 }
 
 export class PeerDetailTreeItem extends PeerBaseTreeItem {
