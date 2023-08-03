@@ -200,6 +200,11 @@
           "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer/"
         },
         {
+          "command": "tailscale.node.fs.rename",
+          "group": "4_fileAction@1",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
+        },
+        {
           "command": "tailscale.node.fs.delete",
           "group": "4_fileAction@2",
           "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
@@ -276,6 +281,10 @@
       {
         "command": "tailscale.node.fs.delete",
         "title": "Delete"
+      },
+      {
+        "command": "tailscale.node.fs.rename",
+        "title": "Rename"
       },
       {
         "command": "tailscale.node.fs.createDirectory",

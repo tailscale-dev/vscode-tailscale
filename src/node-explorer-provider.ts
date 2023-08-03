@@ -2,6 +2,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Peer, PeerGroup } from './types';
+import { Utils } from 'vscode-uri';
 import { Tailscale } from './tailscale/cli';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
@@ -43,6 +44,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     this.registerCopyIPv6Command();
     this.registerCreateDirectoryCommand();
     this.registerDeleteCommand();
+    this.registerRenameCommand();
     this.registerOpenNodeDetailsCommand();
     this.registerOpenRemoteCodeCommand();
     this.registerOpenRemoteCodeLocationCommand();
@@ -215,7 +217,50 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerDeleteCommand() {
-    vscode.commands.registerCommand('tailscale.node.fs.delete', this.delete.bind(this));
+    vscode.commands.registerCommand('tailscale.node.fs.delete', async (file: FileExplorer) => {
+      try {
+        const msg = `Are you sure you want to delete ${
+          file.type === vscode.FileType.Directory ? 'this directory' : 'this file'
+        }? This action cannot be undone.`;
+
+        const answer = await vscode.window.showInformationMessage(msg, { modal: true }, 'Yes');
+
+        if (answer !== 'Yes') {
+          return;
+        }
+
+        await vscode.workspace.fs.delete(file.uri);
+        vscode.window.showInformationMessage(`${file.label} deleted successfully.`);
+
+        this._onDidChangeTreeData.fire([undefined]);
+      } catch (e) {
+        vscode.window.showErrorMessage(`Could not delete ${file.label}: ${e}`);
+      }
+    });
+  }
+
+  registerRenameCommand() {
+    vscode.commands.registerCommand('tailscale.node.fs.rename', async (node: FileExplorer) => {
+      const source = node.uri;
+
+      const newName = await vscode.window.showInputBox({
+        prompt: 'Enter a new name for the file',
+        value: path.basename(source.path),
+      });
+
+      if (!newName) {
+        return;
+      }
+
+      try {
+        const target = Utils.joinPath(source, '..', newName);
+        await vscode.workspace.fs.rename(source, target);
+
+        this._onDidChangeTreeData.fire([undefined]);
+      } catch (e) {
+        vscode.window.showErrorMessage(`Could not rename: ${e}`);
+      }
+    });
   }
 
   registerCreateDirectoryCommand() {
@@ -342,34 +387,6 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       vscode.Uri.from({ scheme: 'vscode-remote', authority: `ssh-remote+${host}`, path }),
       { forceNewWindow: !reuseWindow }
     );
-  }
-
-  async delete(file: FileExplorer) {
-    try {
-      const msg = `Are you sure you want to delete ${
-        file.type === vscode.FileType.Directory ? 'this directory' : 'this file'
-      }? This action cannot be undone.`;
-      const answer = await vscode.window.showInformationMessage(msg, { modal: true }, 'Yes');
-      if (answer !== 'Yes') {
-        return;
-      }
-      await vscode.workspace.fs.delete(file.uri);
-      vscode.window.showInformationMessage(`${file.label} deleted successfully.`);
-
-      const normalizedPath = path.normalize(file.uri.toString());
-      const parentDir = path.dirname(normalizedPath);
-      const dirName = path.basename(parentDir);
-
-      const parentFileExplorerItem = new FileExplorer(
-        dirName,
-        vscode.Uri.parse(parentDir),
-        vscode.FileType.Directory
-      );
-
-      this._onDidChangeTreeData.fire([parentFileExplorerItem]);
-    } catch (e) {
-      vscode.window.showErrorMessage(`Could not delete ${file.label}: ${e}`);
-    }
   }
 }
 
