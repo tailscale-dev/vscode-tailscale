@@ -64,20 +64,21 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		return nil, err
 	}
 
+	s := getPeersResponse{Peers: make([]*peerStatus, 0, len(st.Peer))}
+
 	if st.BackendState == "NeedsLogin" || (st.Self != nil && !st.Self.Online) {
-		return nil, RelayError{
-			statusCode: http.StatusServiceUnavailable,
-			Errors:     []Error{{Type: Offline}},
-		}
+		s.Errors = append(s.Errors, Error{
+			Type: Offline,
+		})
 	}
 
-	s := getPeersResponse{
-		CurrentTailnet: &currentTailnet{
+	// CurrentTailnet can be offline when you are logged out
+	if st.CurrentTailnet != nil {
+		s.CurrentTailnet = &currentTailnet{
 			Name:            st.CurrentTailnet.Name,
 			MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
 			MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
-		},
-		Peers: make([]*peerStatus, 0, len(st.Peer)),
+		}
 	}
 
 	for _, p := range st.Peer {
