@@ -79,7 +79,7 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const createNodeExplorerView = (): vscode.TreeView<PeerRoot | FileExplorer | ErrorItem> => {
-    return vscode.window.createTreeView('tailscale-node-explorer-view', {
+    return vscode.window.createTreeView('node-explorer-view', {
       treeDataProvider: nodeExplorerProvider,
       showCollapseAll: true,
       dragAndDropController: nodeExplorerProvider,

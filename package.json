@@ -190,8 +190,13 @@
           "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-root/"
         },
         {
+          "command": "tailscale.node.fs.createDirectory",
+          "group": "3_dirActions@1",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer/"
+        },
+        {
           "command": "tailscale.node.fs.delete",
-          "group": "4_fileAction@1",
+          "group": "4_fileAction@2",
           "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
         }
       ]
