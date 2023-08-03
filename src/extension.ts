@@ -6,12 +6,7 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
-import {
-  FileExplorer,
-  NodeExplorerProvider,
-  PeerTree,
-  NoPeersItem,
-} from './node-explorer-provider';
+import { FileExplorer, NodeExplorerProvider, PeerTree, ErrorItem } from './node-explorer-provider';
 
 import { FileSystemProviderSFTP } from './filesystem-provider-sftp';
 import { ConfigManager } from './config-manager';
@@ -77,13 +72,13 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // eslint-disable-next-line prefer-const
-  let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer | NoPeersItem>;
+  let nodeExplorerView: vscode.TreeView<PeerTree | FileExplorer | ErrorItem>;
 
   function updateNodeExplorerDisplayName(name: string) {
     nodeExplorerView.title = name;
   }
 
-  const createNodeExplorerView = (): vscode.TreeView<PeerTree | FileExplorer | NoPeersItem> => {
+  const createNodeExplorerView = (): vscode.TreeView<PeerTree | FileExplorer | ErrorItem> => {
     return vscode.window.createTreeView('tailscale-node-explorer-view', {
       treeDataProvider: nodeExplorerProvider,
       showCollapseAll: true,
@@ -156,7 +151,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'tailscale.node.setRootDir',
-      async (node: PeerTree | FileExplorer | NoPeersItem) => {
+      async (node: PeerTree | FileExplorer | ErrorItem) => {
         let hostname: string;
 
         if (node instanceof FileExplorer) {
