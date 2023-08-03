@@ -16,7 +16,7 @@ describe('parseTsUri', () => {
   test('parses ts URIs correctly', () => {
     const testUri = URI.parse('ts://tails-scales/foo/home/amalie');
     const expected = {
-      hostname: 'foo',
+      address: 'foo',
       tailnet: 'tails-scales',
       resourcePath: '/home/amalie',
     };
@@ -34,7 +34,7 @@ describe('parseTsUri', () => {
   test('correctly returns ~ as a resourcePath', () => {
     const testUri = URI.parse('ts://tails-scales/foo/~');
     const expected = {
-      hostname: 'foo',
+      address: 'foo',
       tailnet: 'tails-scales',
       resourcePath: '.',
     };
@@ -46,7 +46,7 @@ describe('parseTsUri', () => {
   test('correctly returns ~ in a deeply nested resourcePath', () => {
     const testUri = URI.parse('ts://tails-scales/foo/~/bar/baz');
     const expected = {
-      hostname: 'foo',
+      address: 'foo',
       tailnet: 'tails-scales',
       resourcePath: './bar/baz',
     };
@@ -60,7 +60,7 @@ describe('createTsUri', () => {
   test('creates ts URIs correctly', () => {
     const expected = URI.parse('ts://tails-scales/foo/home/amalie');
     const params = {
-      hostname: 'foo',
+      address: 'foo',
       tailnet: 'tails-scales',
       resourcePath: '/home/amalie',
     };
@@ -71,7 +71,7 @@ describe('createTsUri', () => {
   test('creates ts URIs correctly', () => {
     const expected = URI.parse('ts://tails-scales/foo/~');
     const params = {
-      hostname: 'foo',
+      address: 'foo',
       tailnet: 'tails-scales',
       resourcePath: '~',
     };
