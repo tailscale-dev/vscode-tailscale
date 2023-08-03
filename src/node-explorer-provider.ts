@@ -272,33 +272,25 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           return;
         }
 
-        let targetPath = resourcePath;
-
         // TODO: validate input
-        const targetName = await vscode.window.showInputBox({
+        const dirName = await vscode.window.showInputBox({
           prompt: 'Enter a name for the new directory',
           placeHolder: 'New directory',
         });
 
-        if (!targetName) {
+        if (!dirName) {
           return;
-        }
-
-        if (node.type !== vscode.FileType.Directory) {
-          targetPath = path.dirname(resourcePath);
         }
 
         const newUri = createTsUri({
           tailnet,
           address,
-          resourcePath: `${targetPath}/${targetName}`,
+          resourcePath: `${resourcePath}/${dirName}`,
         });
 
         try {
           await vscode.workspace.fs.createDirectory(newUri);
-          this._onDidChangeTreeData.fire([
-            node.type !== vscode.FileType.Directory ? undefined : node,
-          ]);
+          this._onDidChangeTreeData.fire([node]);
         } catch (e) {
           vscode.window.showErrorMessage(`Could not create directory: ${e}`);
         }
