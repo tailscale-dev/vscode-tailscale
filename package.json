@@ -355,7 +355,7 @@
               "ssh",
               "sftp"
             ],
-            "default": "ssh",
+            "default": "sftp",
             "markdownDescription": "The connection method to use interacting with the File system view within the Node Explorer view."
           },
           "tailscale.ssh.defaultUsername": {
