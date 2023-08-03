@@ -11,8 +11,6 @@ import { FileExplorer, NodeExplorerProvider, PeerRoot, ErrorItem } from './node-
 import { FileSystemProviderSFTP } from './filesystem-provider-sftp';
 import { ConfigManager } from './config-manager';
 import { parseTsUri } from './utils/uri';
-import { EXTENSION_NS } from './constants';
-import { FileSystemProviderSSH } from './filesystem-provider-ssh';
 import { WithFSTiming } from './filesystem-provider-timing';
 import { FileSystemProvider } from './filesystem-provider';
 
@@ -57,12 +55,7 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
-  const connMethod = vscode.workspace
-    .getConfiguration(EXTENSION_NS)
-    .get('nodeExplorer.connectionMethod');
-
-  const Provider = connMethod === 'ssh' ? FileSystemProviderSSH : FileSystemProviderSFTP;
-  let fileSystemProvider: FileSystemProvider = new Provider(configManager);
+  let fileSystemProvider: FileSystemProvider = new FileSystemProviderSFTP(configManager);
   fileSystemProvider = new WithFSTiming(fileSystemProvider);
 
   context.subscriptions.push(
