@@ -20,8 +20,9 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
   dragMimeTypes = [];
 
-  private _onDidChangeTreeData: vscode.EventEmitter<(PeerBaseTreeItem | undefined)[] | undefined> =
-    new vscode.EventEmitter<PeerBaseTreeItem[] | undefined>();
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    (PeerBaseTreeItem | FileExplorer | undefined)[] | undefined
+  > = new vscode.EventEmitter<PeerBaseTreeItem[] | undefined>();
 
   // We want to use an array as the event type, but the API for this is currently being finalized. Until it's finalized, use any.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -302,9 +303,12 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerRefresh(): void {
-    vscode.commands.registerCommand('tailscale.nodeExplorer.refresh', () => {
-      this._onDidChangeTreeData.fire(undefined);
-    });
+    vscode.commands.registerCommand(
+      'tailscale.nodeExplorer.refresh',
+      (f: FileExplorer | undefined) => {
+        this._onDidChangeTreeData.fire([f]);
+      }
+    );
   }
 
   openRemoteCodeWindow(host: string, reuseWindow: boolean) {
