@@ -115,84 +115,84 @@
         {
           "command": "tailscale.refreshServe",
           "group": "overflow",
-          "when": "view == tailscale-serve-view"
+          "when": "view == serve-view"
         },
         {
           "command": "tailscale.resetServe",
           "group": "overflow",
-          "when": "view == tailscale-serve-view"
+          "when": "view == serve-view"
         },
         {
           "command": "tailscale.openAdminConsole",
           "group": "overflow",
-          "when": "view == tailscale-serve-view || view == tailscale-node-explorer-view"
+          "when": "view == serve-view || view == node-explorer-view"
         },
         {
           "command": "tailscale.nodeExplorer.refresh",
           "group": "navigation",
-          "when": "view == tailscale-node-explorer-view"
+          "when": "view == node-explorer-view"
         }
       ],
       "view/item/context": [
         {
           "command": "tailscale.node.openTerminal",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "inline"
         },
         {
           "command": "tailscale.node.openTerminal",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "1_action@1"
         },
         {
           "command": "tailscale.node.openRemoteCode",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "1_action@2"
         },
         {
           "command": "tailscale.node.openRemoteCode",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "inline"
         },
         {
           "command": "tailscale.node.setUsername",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "2_settings@3"
         },
         {
           "command": "tailscale.node.setRootDir",
-          "when": "(view == tailscale-node-explorer-view && viewItem == tailscale-peer-item) || (view == tailscale-node-explorer-view && viewItem =~ /^file-explorer-item-root/)",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem =~ /^peer-file-explorer-root/)",
           "group": "2_settings@3"
         },
         {
           "command": "tailscale.node.copyIPv4",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "3_copy@1"
         },
         {
           "command": "tailscale.node.copyIPv6",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "3_copy@1"
         },
         {
           "command": "tailscale.node.copyHostname",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item",
+          "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "3_copy@1"
         },
         {
           "command": "tailscale.node.openDetailsLink",
           "group": "4_control@1",
-          "when": "view == tailscale-node-explorer-view && viewItem == tailscale-peer-item"
+          "when": "view == node-explorer-view && viewItem == peer-root"
         },
         {
           "command": "tailscale.node.openRemoteCodeAtLocation",
           "group": "1_action@2",
-          "when": "view == tailscale-node-explorer-view && viewItem =~ /^file-explorer-item-root/"
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-root/"
         },
         {
           "command": "tailscale.node.fs.delete",
-          "group": "2_fileAction@2",
-          "when": "view == tailscale-node-explorer-view && viewItem =~ /^file-explorer-item-child/"
+          "group": "4_fileAction@1",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
         }
       ]
     },
@@ -307,14 +307,14 @@
     "views": {
       "tailscale-serve-panel": [
         {
-          "id": "tailscale-serve-view",
+          "id": "serve-view",
           "name": "Funnel",
           "type": "webview"
         }
       ],
       "tailscale-nodes-explorer": [
         {
-          "id": "tailscale-node-explorer-view",
+          "id": "node-explorer-view",
           "name": "",
           "when": "config.tailscale.nodeExplorer.enabled"
         }
