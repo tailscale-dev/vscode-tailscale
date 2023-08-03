@@ -426,7 +426,7 @@ export class PeerTree extends PeerBaseTreeItem {
 
     if (p.Online) {
       this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-      this.tooltip = displayDNSName;
+      this.tooltip = `${displayDNSName} is online`;
     } else {
       this.tooltip = `${displayDNSName} is offline`;
     }
