@@ -105,6 +105,10 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		// if the DNSName does not end with the magic DNS suffix, it is an external peer
 		isExternal := !strings.HasSuffix(dnsNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
 
+		addr := p.DNSName
+		if addr == "" && len(p.TailscaleIPs) > 0 {
+			addr = p.TailscaleIPs[0].String()
+		}
 		s.Peers = append(s.Peers, &peerStatus{
 			DNSName:      p.DNSName,
 			ServerName:   serverName,
@@ -114,6 +118,7 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 			TailscaleIPs: p.TailscaleIPs,
 			IsExternal:   isExternal,
 			SSHEnabled:   len(p.SSH_HostKeys) > 0,
+			Address:      addr,
 		})
 	}
 

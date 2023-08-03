@@ -30,6 +30,7 @@ export interface Peer {
   ShareeNode?: boolean;
   DNSName: string;
   SSHEnabled: boolean;
+  Address: string;
 }
 
 export interface CurrentTailnet {

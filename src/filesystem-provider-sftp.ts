@@ -74,22 +74,22 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
 
   async rename(): Promise<void> {}
 
-  async getHomeDirectory(hostname: string): Promise<string> {
-    const sftp = await this.manager.getSftp(hostname);
+  async getHomeDirectory(address: string): Promise<string> {
+    const sftp = await this.manager.getSftp(address);
     if (!sftp) throw new Error('Failed to establish SFTP connection');
 
     return await sftp.getHomeDirectory();
   }
 
   async getParsedUriAndSftp(uri: vscode.Uri) {
-    const { hostname, resourcePath } = parseTsUri(uri);
-    const sftp = await this.manager.getSftp(hostname);
+    const { address, resourcePath } = parseTsUri(uri);
+    const sftp = await this.manager.getSftp(address);
 
     if (!sftp) {
       throw new Error('Unable to establish SFTP connection');
     }
 
-    return { hostname, resourcePath, sftp };
+    return { address, resourcePath, sftp };
   }
 }
 
