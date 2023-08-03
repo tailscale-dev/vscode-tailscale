@@ -2,7 +2,7 @@ import { Uri } from 'vscode';
 import { escapeSpace } from './string';
 
 export interface TsUri {
-  hostname: string;
+  address: string;
   tailnet: string;
   resourcePath: string;
 }
@@ -25,7 +25,7 @@ export function parseTsUri(uri: Uri): TsUri {
       }
 
       const segments = hostPath.split('/');
-      const [hostname, ...pathSegments] = segments;
+      const [address, ...pathSegments] = segments;
 
       if (pathSegments[0] === '~') {
         pathSegments[0] = '.';
@@ -37,7 +37,7 @@ export function parseTsUri(uri: Uri): TsUri {
         resourcePath = `/${escapeSpace(resourcePath)}`;
       }
 
-      return { hostname, tailnet: uri.authority, resourcePath };
+      return { address, tailnet: uri.authority, resourcePath };
     }
     default:
       throw new Error(`Unsupported scheme: ${uri.scheme}`);
@@ -46,14 +46,14 @@ export function parseTsUri(uri: Uri): TsUri {
 
 interface TsUriParams {
   tailnet: string;
-  hostname: string;
+  address: string;
   resourcePath: string;
 }
 
-export function createTsUri({ tailnet, hostname, resourcePath }: TsUriParams): Uri {
+export function createTsUri({ tailnet, address, resourcePath }: TsUriParams): Uri {
   return Uri.joinPath(
     Uri.from({ scheme: 'ts', authority: tailnet, path: '/' }),
-    hostname,
+    address,
     ...resourcePath.split('/')
   );
 }

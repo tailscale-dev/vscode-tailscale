@@ -82,10 +82,10 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         ];
       }
       const { hosts } = this.configManager?.config || {};
-      let rootDir = hosts?.[element.HostName]?.rootDir;
+      let rootDir = hosts?.[element.Address]?.rootDir;
       let dirDesc = rootDir;
       try {
-        const homeDir = await this.fsProvider.getHomeDirectory(element.HostName);
+        const homeDir = await this.fsProvider.getHomeDirectory(element.Address);
 
         if (rootDir && rootDir !== '~') {
           dirDesc = trimPathPrefix(rootDir, homeDir);
@@ -102,7 +102,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
       const uri = createTsUri({
         tailnet: element.tailnetName,
-        hostname: element.HostName,
+        address: element.Address,
         resourcePath: rootDir,
       });
 
@@ -203,8 +203,8 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     vscode.commands.registerCommand(
       'tailscale.node.fs.createDirectory',
       async (node: FileExplorer) => {
-        const { hostname, tailnet, resourcePath } = parseTsUri(node.uri);
-        if (!hostname || !resourcePath) {
+        const { address, tailnet, resourcePath } = parseTsUri(node.uri);
+        if (!address || !resourcePath) {
           return;
         }
 
@@ -220,7 +220,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
         const newUri = createTsUri({
           tailnet,
-          hostname,
+          address,
           resourcePath: `${resourcePath}/${dirName}`,
         });
 
@@ -238,7 +238,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     vscode.commands.registerCommand(
       'tailscale.node.openRemoteCodeAtLocation',
       async (file: FileExplorer) => {
-        const { hostname, resourcePath } = parseTsUri(file.uri);
+        const { address: hostname, resourcePath } = parseTsUri(file.uri);
         if (!hostname || !resourcePath) {
           return;
         }
@@ -281,15 +281,15 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
   registerOpenTerminalCommand() {
     vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerRoot) => {
-      const t = vscode.window.createTerminal(node.HostName);
-      t.sendText(`ssh ${getUsername(this.configManager, node.HostName)}@${node.HostName}`);
+      const t = vscode.window.createTerminal(node.Address);
+      t.sendText(`ssh ${getUsername(this.configManager, node.Address)}@${node.Address}`);
       t.show();
     });
   }
 
   registerOpenRemoteCodeCommand() {
     vscode.commands.registerCommand('tailscale.node.openRemoteCode', async (node: PeerRoot) => {
-      this.openRemoteCodeWindow(node.HostName, false);
+      this.openRemoteCodeWindow(node.Address, false);
     });
   }
 
@@ -391,11 +391,15 @@ export class PeerRoot extends PeerBaseTreeItem {
   public DNSName: string;
   public SSHEnabled: boolean;
   public tailnetName: string;
+  public Address: string;
+  public ServerName: string;
 
   public constructor(p: Peer, tailnetName: string) {
     super(p.ServerName);
 
     this.ID = p.ID;
+    this.ServerName = p.ServerName;
+    this.Address = p.Address;
     this.HostName = p.HostName;
     this.TailscaleIPs = p.TailscaleIPs;
     this.DNSName = p.DNSName;

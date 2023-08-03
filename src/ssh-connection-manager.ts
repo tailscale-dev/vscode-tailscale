@@ -5,6 +5,7 @@ import { ConfigManager } from './config-manager';
 import { getUsername } from './utils/host';
 import { Sftp } from './sftp';
 import { EXTENSION_NS } from './constants';
+import { Logger } from './logger';
 
 export class SshConnectionManager {
   private connections: Map<string, ssh2.Client>;
@@ -56,23 +57,26 @@ export class SshConnectionManager {
       if (err instanceof Error) {
         message = err.message;
       }
-      vscode.window.showErrorMessage(
-        `Failed to connect to ${hostname} with username ${username}: ${message}`
-      );
+
+      const logmsg = `Failed to connect to ${hostname} with username ${username}: ${message}`;
+      Logger.error(logmsg, `ssh-conn-manager`);
+      if (!this.isAuthenticationError(err)) {
+        vscode.window.showErrorMessage(logmsg);
+      }
       throw err;
     }
   }
 
-  async getSftp(hostname: string): Promise<Sftp | undefined> {
+  async getSftp(address: string): Promise<Sftp | undefined> {
     try {
-      const conn = await this.getConnection(hostname);
+      const conn = await this.getConnection(address);
       return new Sftp(conn);
     } catch (err) {
       if (this.isAuthenticationError(err)) {
-        const username = await this.promptForUsername(hostname);
+        const username = await this.promptForUsername(address);
 
         if (username) {
-          return await this.getSftp(hostname);
+          return await this.getSftp(address);
         }
 
         this.showUsernameRequiredError();
@@ -96,13 +100,13 @@ export class SshConnectionManager {
     throw new Error(msg);
   }
 
-  async promptForUsername(hostname: string): Promise<string | undefined> {
+  async promptForUsername(address: string): Promise<string | undefined> {
     const username = await vscode.window.showInputBox({
-      prompt: `Please enter a valid username for host "${hostname}"`,
+      prompt: `Please enter a valid username for host "${address}"`,
     });
 
     if (username && this.configManager) {
-      this.configManager.setForHost(hostname, 'user', username);
+      this.configManager.setForHost(address, 'user', username);
     }
 
     return username;

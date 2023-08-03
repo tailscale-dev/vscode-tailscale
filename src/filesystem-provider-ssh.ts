@@ -25,13 +25,13 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
 
   async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
     Logger.info(`stat: ${uri.toString()}`, 'tsFs-ssh');
-    const { hostname, resourcePath } = parseTsUri(uri);
+    const { address, resourcePath } = parseTsUri(uri);
 
-    if (!hostname) {
-      throw new Error('hostname is undefined');
+    if (!address) {
+      throw new Error('address is undefined');
     }
 
-    const s = await this.ssh.runCommandAndPromptForUsername(hostname, 'stat', [
+    const s = await this.ssh.runCommandAndPromptForUsername(address, 'stat', [
       '-L',
       '-c',
       `'{\\"type\\": \\"%F\\", \\"size\\": %s, \\"ctime\\": %Z, \\"mtime\\": %Y}'`,
@@ -50,15 +50,15 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
     Logger.info(`readDirectory: ${uri.toString()}`, 'tsFs-ssh');
 
-    const { hostname, resourcePath } = parseTsUri(uri);
-    Logger.info(`hostname: ${hostname}`, 'tsFs-ssh');
+    const { address, resourcePath } = parseTsUri(uri);
+    Logger.info(`hostname: ${address}`, 'tsFs-ssh');
     Logger.info(`remotePath: ${resourcePath}`, 'tsFs-ssh');
 
-    if (!hostname) {
+    if (!address) {
       throw new Error('hostname is undefined');
     }
 
-    const s = await this.ssh.runCommandAndPromptForUsername(hostname, 'ls', ['-Ap', resourcePath]);
+    const s = await this.ssh.runCommandAndPromptForUsername(address, 'ls', ['-Ap', resourcePath]);
 
     const lines = s.trim();
     const files: [string, vscode.FileType][] = [];
@@ -76,18 +76,18 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
   }
 
   async getHomeDirectory(hostname: string): Promise<string> {
-    return (await this.ssh.executeCommand(hostname, 'echo', ['~'])).trim();
+    return (await this.ssh.runCommandAndPromptForUsername(hostname, 'echo', ['~'])).trim();
   }
 
   async readFile(uri: vscode.Uri): Promise<Uint8Array> {
     Logger.info(`readFile: ${uri.toString()}`, 'tsFs-ssh');
-    const { hostname, resourcePath } = parseTsUri(uri);
+    const { address, resourcePath } = parseTsUri(uri);
 
-    if (!hostname) {
+    if (!address) {
       throw new Error('hostname is undefined');
     }
 
-    const s = await this.ssh.runCommandAndPromptForUsername(hostname, 'cat', [resourcePath]);
+    const s = await this.ssh.runCommandAndPromptForUsername(address, 'cat', [resourcePath]);
     const buffer = Buffer.from(s, 'binary');
     return new Uint8Array(buffer);
   }
@@ -99,17 +99,17 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
   ): Promise<void> {
     Logger.info(`writeFile: ${uri.toString()}`, 'tsFs-ssh');
 
-    const { hostname, resourcePath } = parseTsUri(uri);
+    const { address, resourcePath } = parseTsUri(uri);
 
     if (!options.create && !options.overwrite) {
       throw vscode.FileSystemError.FileExists(uri);
     }
 
-    if (!hostname) {
+    if (!address) {
       throw new Error('hostname is undefined');
     }
 
-    await this.ssh.runCommandAndPromptForUsername(hostname, 'tee', [resourcePath], {
+    await this.ssh.runCommandAndPromptForUsername(address, 'tee', [resourcePath], {
       stdin: content.toString(),
     });
   }
@@ -117,13 +117,13 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
   async delete(uri: vscode.Uri, options: { recursive: boolean }): Promise<void> {
     Logger.info(`delete: ${uri.toString()}`, 'tsFs-ssh');
 
-    const { hostname, resourcePath } = parseTsUri(uri);
+    const { address, resourcePath } = parseTsUri(uri);
 
-    if (!hostname) {
+    if (!address) {
       throw new Error('hostname is undefined');
     }
 
-    await this.ssh.runCommandAndPromptForUsername(hostname, 'rm', [
+    await this.ssh.runCommandAndPromptForUsername(address, 'rm', [
       `${options.recursive ? '-r' : ''}`,
       resourcePath,
     ]);
@@ -132,13 +132,13 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
   async createDirectory(uri: vscode.Uri): Promise<void> {
     Logger.info(`createDirectory: ${uri.toString()}`, 'tsFs-ssh');
 
-    const { hostname, resourcePath } = parseTsUri(uri);
+    const { address, resourcePath } = parseTsUri(uri);
 
-    if (!hostname) {
+    if (!address) {
       throw new Error('hostname is undefined');
     }
 
-    await this.ssh.runCommandAndPromptForUsername(hostname, 'mkdir', ['-p', resourcePath]);
+    await this.ssh.runCommandAndPromptForUsername(address, 'mkdir', ['-p', resourcePath]);
   }
 
   async rename(
@@ -148,18 +148,18 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
   ): Promise<void> {
     Logger.info('rename', 'tsFs-ssh');
 
-    const { hostname: oldHost, resourcePath: oldPath } = parseTsUri(oldUri);
-    const { hostname: newHost, resourcePath: newPath } = parseTsUri(newUri);
+    const { address: oldAddr, resourcePath: oldPath } = parseTsUri(oldUri);
+    const { address: newAddr, resourcePath: newPath } = parseTsUri(newUri);
 
-    if (!oldHost) {
+    if (!oldAddr) {
       throw new Error('hostname is undefined');
     }
 
-    if (oldHost !== newHost) {
+    if (oldAddr !== newAddr) {
       throw new Error('Cannot rename files across different hosts.');
     }
 
-    await this.ssh.runCommandAndPromptForUsername(oldHost, 'mv', [
+    await this.ssh.runCommandAndPromptForUsername(oldAddr, 'mv', [
       `${options.overwrite ? '-f' : ''}`,
       oldPath,
       newPath,
@@ -174,9 +174,9 @@ export class FileSystemProviderSSH implements vscode.FileSystemProvider {
     Logger.info('scp', 'tsFs-ssh');
 
     const { resourcePath: srcPath } = parseTsUri(src);
-    const { hostname: destHostName, resourcePath: destPath } = parseTsUri(dest);
+    const { address: destAddr, resourcePath: destPath } = parseTsUri(dest);
 
-    const command = `scp ${srcPath} ${destHostName}:${destPath}`;
+    const command = `scp ${srcPath} ${destAddr}:${destPath}`;
 
     return new Promise((resolve, reject) => {
       exec(command, (error) => {

@@ -136,15 +136,15 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.node.setUsername', async (node: PeerRoot) => {
       const username = await vscode.window.showInputBox({
-        prompt: `Enter the username to use for ${node.HostName}`,
-        value: configManager.config?.hosts?.[node.HostName]?.user,
+        prompt: `Enter the username to use for ${node.ServerName}`,
+        value: configManager.config?.hosts?.[node.Address]?.user,
       });
 
       if (!username) {
         return;
       }
 
-      configManager.setForHost(node.HostName, 'user', username);
+      configManager.setForHost(node.Address, 'user', username);
     })
   );
 
@@ -152,19 +152,19 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       'tailscale.node.setRootDir',
       async (node: PeerRoot | FileExplorer | ErrorItem) => {
-        let hostname: string;
+        let address: string;
 
         if (node instanceof FileExplorer) {
-          hostname = parseTsUri(node.uri).hostname;
+          address = parseTsUri(node.uri).address;
         } else if (node instanceof PeerRoot) {
-          hostname = node.HostName;
+          address = node.Address;
         } else {
           throw new Error(`invalid node type: ${typeof node}`);
         }
 
         const dir = await vscode.window.showInputBox({
-          prompt: `Enter the root directory to use for ${hostname}`,
-          value: configManager.config?.hosts?.[hostname]?.rootDir || '~',
+          prompt: `Enter the root directory to use for ${address}`,
+          value: configManager.config?.hosts?.[address]?.rootDir || '~',
         });
 
         if (!dir) {
@@ -176,7 +176,7 @@ export async function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        configManager.setForHost(hostname, 'rootDir', dir);
+        configManager.setForHost(address, 'rootDir', dir);
         nodeExplorerProvider.refreshAll();
       }
     )

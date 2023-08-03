@@ -43,6 +43,11 @@ type peerStatus struct {
 	TailscaleIPs []netip.Addr
 	IsExternal   bool
 	SSHEnabled   bool
+
+	// The address you can use to connect/ssh. Either DNSName or IPv4.
+	// You can connect in various ways but some are not stable. For example
+	// HostName works unless you change your machine's name.
+	Address string
 }
 
 func (h *handler) getServeHandler(w http.ResponseWriter, r *http.Request) {
