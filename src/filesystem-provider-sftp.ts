@@ -23,6 +23,7 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
   }
 
   readDirectory = withFileSystemErrorHandling(
+    'readDirectory',
     async (uri: vscode.Uri): Promise<[string, vscode.FileType][]> => {
       const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
       const files = await sftp.readDirectory(resourcePath);
@@ -30,27 +31,36 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
     }
   );
 
-  stat = withFileSystemErrorHandling(async (uri: vscode.Uri): Promise<vscode.FileStat> => {
+  stat = withFileSystemErrorHandling('stat', async (uri: vscode.Uri): Promise<vscode.FileStat> => {
     const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
     return await sftp.stat(resourcePath);
   });
 
-  createDirectory = withFileSystemErrorHandling(async (uri: vscode.Uri): Promise<void> => {
-    const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
-    return await sftp.createDirectory(resourcePath);
-  });
+  createDirectory = withFileSystemErrorHandling(
+    'createDirectory',
+    async (uri: vscode.Uri): Promise<void> => {
+      const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
+      return await sftp.createDirectory(resourcePath);
+    }
+  );
 
-  readFile = withFileSystemErrorHandling(async (uri: vscode.Uri): Promise<Uint8Array> => {
-    const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
-    return await sftp.readFile(resourcePath);
-  });
+  readFile = withFileSystemErrorHandling(
+    'readFile',
+    async (uri: vscode.Uri): Promise<Uint8Array> => {
+      const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
+      return await sftp.readFile(resourcePath);
+    }
+  );
 
-  writeFile = withFileSystemErrorHandling(async (uri: vscode.Uri, content: Uint8Array) => {
-    const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
-    return await sftp.writeFile(resourcePath, content);
-  });
+  writeFile = withFileSystemErrorHandling(
+    'writeFile',
+    async (uri: vscode.Uri, content: Uint8Array) => {
+      const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
+      return await sftp.writeFile(resourcePath, content);
+    }
+  );
 
-  delete = withFileSystemErrorHandling(async (uri: vscode.Uri): Promise<void> => {
+  delete = withFileSystemErrorHandling('delete', async (uri: vscode.Uri): Promise<void> => {
     const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
 
     const deleteRecursively = async (path: string) => {
@@ -72,7 +82,12 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
     return await deleteRecursively(resourcePath);
   });
 
-  async rename(): Promise<void> {}
+  rename = withFileSystemErrorHandling('rename', async (source: vscode.Uri, target: vscode.Uri) => {
+    const { resourcePath: sourcePath, sftp } = await this.getParsedUriAndSftp(source);
+    const { resourcePath: targetPath } = parseTsUri(target);
+
+    return await sftp.rename(sourcePath, targetPath);
+  });
 
   async getHomeDirectory(address: string): Promise<string> {
     const sftp = await this.manager.getSftp(address);
@@ -99,16 +114,20 @@ type FileSystemMethod<TArgs extends unknown[], TResult> = (
 ) => Promise<TResult>;
 
 function withFileSystemErrorHandling<TArgs extends unknown[], TResult>(
+  actionName: string,
   fn: FileSystemMethod<TArgs, TResult>
 ): FileSystemMethod<TArgs, TResult> {
   return async (uri: vscode.Uri, ...args: TArgs): Promise<TResult> => {
-    Logger.info(`${fn.name}: ${uri}`, 'tsFs-sftp');
+    Logger.info(`${actionName}: ${uri}`, 'tsFs-sftp');
 
     try {
       return await fn(uri, ...args);
     } catch (error) {
       const message = getErrorMessage(error);
-      Logger.error(`${fn.name}: ${error}`, 'tsFs-sftp');
+
+      if (error instanceof vscode.FileSystemError) {
+        throw error;
+      }
 
       if (message.includes('no such file or directory')) {
         throw vscode.FileSystemError.FileNotFound();
@@ -119,7 +138,8 @@ function withFileSystemErrorHandling<TArgs extends unknown[], TResult>(
       }
 
       if (message.includes('file already exists')) {
-        throw vscode.FileSystemError.FileExists();
+        const message = `Unable to move/copy`;
+        throw vscode.FileSystemError.FileExists(message);
       }
 
       if (message.includes('EISDIR')) {
@@ -137,6 +157,8 @@ function withFileSystemErrorHandling<TArgs extends unknown[], TResult>(
       ) {
         throw vscode.FileSystemError.Unavailable();
       }
+
+      Logger.error(`${actionName}: ${error}`, 'tsFs-sftp');
 
       throw error;
     }
