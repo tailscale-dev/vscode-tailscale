@@ -9,7 +9,7 @@ import (
 	"tailscale.com/ipn/ipnstate"
 )
 
-func (h *handler) getConfigs(ctx context.Context, withPeers bool) (*ipnstate.Status, *ipn.ServeConfig, error) {
+func (h *handler) getConfigs(ctx context.Context) (*ipnstate.Status, *ipn.ServeConfig, error) {
 	var (
 		st *ipnstate.Status
 		sc *ipn.ServeConfig
@@ -25,11 +25,7 @@ func (h *handler) getConfigs(ctx context.Context, withPeers bool) (*ipnstate.Sta
 	})
 	g.Go(func() error {
 		var err error
-		if withPeers {
-			st, err = h.lc.Status(ctx)
-		} else {
-			st, err = h.lc.StatusWithoutPeers(ctx)
-		}
+		st, err = h.lc.StatusWithoutPeers(ctx)
 		if err != nil {
 			return fmt.Errorf("error getting status: %w", err)
 		}

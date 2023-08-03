@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,40 +24,29 @@ import (
 // to reduce serialization size in addition
 // to some helper fields for the typescript frontend
 type serveStatus struct {
-	ServeConfig    *ipn.ServeConfig
-	Services       map[uint16]string
-	BackendState   string
-	Self           *peerStatus
-	Peers          []*peerStatus
-	CurrentTailnet *currentTailnet
-	FunnelPorts    []int
-	Errors         []Error `json:",omitempty"`
-}
-
-type currentTailnet struct {
-	Name            string
-	MagicDNSSuffix  string
-	MagicDNSEnabled bool
+	ServeConfig  *ipn.ServeConfig
+	Services     map[uint16]string
+	BackendState string
+	Self         *peerStatus
+	FunnelPorts  []int
+	Errors       []Error `json:",omitempty"`
 }
 
 type peerStatus struct {
-	DNSName    string
-	Online     bool
-	ServerName string
+	DNSName string
+	Online  bool
 
 	// For node explorer
 	ID           tailcfg.StableNodeID
+	ServerName   string
 	HostName     string
 	TailscaleIPs []netip.Addr
 	IsExternal   bool
+	SSHEnabled   bool
 }
 
-// TODO(marwan): since this endpoint serves both the Node Explorer and Funnel,
-// we should either:
-// 1. Pass a "with-config" option and change endpoint to be a generic /status. Or,
-// 2. Make a new endpoint if the logic ends up being overly complex for one endpoint.
 func (h *handler) getServeHandler(w http.ResponseWriter, r *http.Request) {
-	s, err := h.getServe(r.Context(), r.Body, r.FormValue("with-peers") == "1")
+	s, err := h.getServe(r.Context(), r.Body)
 	if err != nil {
 		var re RelayError
 		if errors.As(err, &re) {
@@ -74,7 +62,7 @@ func (h *handler) getServeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s)
 }
 
-func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) (*serveStatus, error) {
+func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, error) {
 	if h.requiresRestart {
 		return nil, RelayError{
 			statusCode: http.StatusPreconditionFailed,
@@ -98,7 +86,7 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 		}
 	}()
 
-	st, sc, err := h.getConfigs(ctx, withPeers)
+	st, sc, err := h.getConfigs(ctx)
 	if err != nil {
 		var oe *net.OpError
 		if errors.As(err, &oe) && oe.Op == "dial" {
@@ -115,53 +103,7 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 		Services:     make(map[uint16]string),
 		BackendState: st.BackendState,
 		FunnelPorts:  []int{},
-		Peers:        make([]*peerStatus, 0, len(st.Peer)),
 	}
-
-	for _, p := range st.Peer {
-		// ShareeNode indicates this node exists in the netmap because
-		// it's owned by a shared-to user and that node might connect
-		// to us. These nodes are hidden by "tailscale status", but present
-		// in JSON output so we should filter out.
-		if p.ShareeNode {
-			continue
-		}
-
-		ServerName := p.HostName
-		if p.DNSName != "" {
-			parts := strings.SplitN(p.DNSName, ".", 2)
-			if len(parts) > 0 {
-				ServerName = parts[0]
-			}
-		}
-
-		// removes the root label/trailing period from the DNSName
-		// before: "amalie.foo.ts.net.", after: "amalie.foo.ts.net"
-		dnsNameNoRootLabel := strings.TrimSuffix(p.DNSName, ".")
-
-		// if the DNSName does not end with the magic DNS suffix, it is an external peer
-		isExternal := !strings.HasSuffix(dnsNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
-
-		s.Peers = append(s.Peers, &peerStatus{
-			DNSName:      p.DNSName,
-			ServerName:   ServerName,
-			Online:       p.Online,
-			ID:           p.ID,
-			HostName:     p.HostName,
-			TailscaleIPs: p.TailscaleIPs,
-			IsExternal:   isExternal,
-		})
-	}
-
-	sort.Slice(s.Peers, func(i, j int) bool {
-		if s.Peers[i].Online && !s.Peers[j].Online {
-			return true
-		}
-		if s.Peers[j].Online && !s.Peers[i].Online {
-			return false
-		}
-		return s.Peers[i].HostName < s.Peers[j].HostName
-	})
 
 	wg.Wait()
 	if sc != nil {
@@ -195,12 +137,6 @@ func (h *handler) getServe(ctx context.Context, body io.Reader, withPeers bool) 
 			ID:           st.Self.ID,
 			HostName:     st.Self.HostName,
 			TailscaleIPs: st.Self.TailscaleIPs,
-		}
-
-		s.CurrentTailnet = &currentTailnet{
-			Name:            st.CurrentTailnet.Name,
-			MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
-			MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
 		}
 
 		capabilities := st.Self.Capabilities

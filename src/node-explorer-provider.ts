@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { CurrentTailnet, Peer } from './types';
+import { Peer } from './types';
 import { Tailscale } from './tailscale/cli';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
@@ -24,8 +24,6 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   refreshAll() {
     this._onDidChangeTreeData.fire(undefined);
   }
-
-  private peers: { [hostName: string]: Peer } = {};
 
   constructor(
     private readonly ts: Tailscale,
@@ -52,7 +50,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
-    if (element instanceof NoPeersItem) {
+    if (element instanceof ErrorItem) {
       return [];
     }
 
@@ -67,6 +65,16 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
     // Node root
     if (element instanceof PeerTree) {
+      if (!element.SSHEnabled) {
+        return [
+          new ErrorItem({
+            label: 'Enable Tailsale SSH',
+            iconPath: 'link-external',
+            link: 'https://tailscale.com/kb/1193/tailscale-ssh/#prerequisites',
+            tooltip: 'You need Tailscale SSH in order to use the File Explorer with this node.',
+          }),
+        ];
+      }
       const { hosts } = this.configManager?.config || {};
       let rootDir = hosts?.[element.HostName]?.rootDir;
       let dirDesc = rootDir;
@@ -108,14 +116,31 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       const peers: PeerTree[] = [];
       let hasErr = false;
       try {
-        const status = await this.ts.serveStatus(true);
-        // TODO: return a proper error
-        // Commented out because of funnel related errors
-        // TODO: make two separate endpoints or we'd have
-        // to filter out any funnel related errors here.
-        // if (status.Errors && status.Errors.length) {
-        //   return [];
-        // }
+        const status = await this.ts.getPeers();
+        if (status.Errors && status.Errors.length) {
+          for (let index = 0; index < status.Errors.length; index++) {
+            const err = status.Errors[index];
+            switch (err.Type) {
+              case 'NOT_RUNNING':
+                return [
+                  new ErrorItem({
+                    label: 'Tailscale may not be installed. Install now',
+                    iconPath: 'link-external',
+                    link: 'https://tailscale.com/download',
+                  }),
+                ];
+              case 'OFFLINE':
+                return [
+                  new ErrorItem({
+                    label: 'Tailscale is not running',
+                    iconPath: 'alert',
+                    tooltip: 'Make sure that Tailscale is signed in and enabled',
+                  }),
+                ];
+            }
+          }
+          return [];
+        }
 
         // displayName is the name that shows up at the top of
         // the node explorer. It can either be the Tailent Name
@@ -141,7 +166,6 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         this.updateNodeExplorerDisplayName(displayName);
 
         status.Peers?.forEach((p) => {
-          this.peers[p.HostName] = p;
           peers.push(new PeerTree({ ...p }, status.CurrentTailnet.Name));
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,7 +176,13 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       }
 
       if (!hasErr && !peers.length) {
-        return [new NoPeersItem('Add your first node')];
+        return [
+          new ErrorItem({
+            label: 'Add your first node',
+            iconPath: 'link-external',
+            link: 'https://tailscale.com/kb/1017/install/',
+          }),
+        ];
       }
 
       return peers;
@@ -353,6 +383,7 @@ export class PeerTree extends PeerBaseTreeItem {
   public HostName: string;
   public TailscaleIPs: string[];
   public DNSName: string;
+  public SSHEnabled: boolean;
   public tailnetName: string;
 
   public constructor(p: Peer, tailnetName: string) {
@@ -362,6 +393,7 @@ export class PeerTree extends PeerBaseTreeItem {
     this.HostName = p.HostName;
     this.TailscaleIPs = p.TailscaleIPs;
     this.DNSName = p.DNSName;
+    this.SSHEnabled = p.SSHEnabled;
     this.tailnetName = tailnetName;
 
     if (p.IsExternal) {
@@ -414,16 +446,20 @@ export class PeerDetailTreeItem extends PeerBaseTreeItem {
   }
 }
 
-export class NoPeersItem extends vscode.TreeItem {
-  constructor(label: string) {
-    super(label);
-    this.iconPath = new vscode.ThemeIcon('link-external');
-    this.command = {
-      command: 'tailscale.openExternal',
-      title: 'Add node',
-      arguments: ['https://tailscale.com/kb/1017/install/'],
-    };
-    this.tooltip = 'Open Link';
+export class ErrorItem extends vscode.TreeItem {
+  constructor(opts: { label: string; iconPath?: string; link?: string; tooltip?: string }) {
+    super(opts.label);
+    if (opts.iconPath) {
+      this.iconPath = new vscode.ThemeIcon(opts.iconPath);
+    }
+    if (opts.link) {
+      this.command = {
+        command: 'tailscale.openExternal',
+        title: 'Open External Link',
+        arguments: [opts.link],
+      };
+    }
+    this.tooltip = opts.tooltip ?? 'Open Link';
   }
 }
 

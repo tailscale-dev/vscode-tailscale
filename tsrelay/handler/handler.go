@@ -39,7 +39,7 @@ type handler struct {
 func newHandler(h *handler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(h.authMiddleware)
-	r.Get("/localapi/v0/status", h.getStatusHandler)
+	r.Get("/peers", h.getPeersHandler)
 	r.Get("/serve", h.getServeHandler)
 	r.Post("/serve", h.createServeHandler)
 	r.Delete("/serve", h.deleteServeHandler)

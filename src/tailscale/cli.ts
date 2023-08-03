@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import * as WebSocket from 'ws';
-import type { ServeParams, ServeStatus, TSRelayDetails, Status } from '../types';
+import type { ServeParams, ServeStatus, TSRelayDetails, PeersResponse } from '../types';
 import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
@@ -238,41 +238,36 @@ export class Tailscale {
     }
   }
 
-  async status() {
+  async serveStatus(): Promise<ServeStatus> {
     if (!this.url) {
       throw new Error('uninitialized client');
     }
     try {
-      const resp = await fetch(`${this.url}/localapi/v0/status`, {
-        headers: {
-          Authorization: 'Basic ' + this.authkey,
-        },
-      });
-
-      const status = (await resp.json()) as Status;
-      return status;
-    } catch (e) {
-      Logger.error(`error calling status: ${e}`);
-      throw e;
-    }
-  }
-
-  async serveStatus(withPeers?: boolean): Promise<ServeStatus> {
-    if (!this.url) {
-      throw new Error('uninitialized client');
-    }
-    try {
-      const u = new URL(`${this.url}/serve`);
-      if (withPeers) {
-        u.searchParams.append('with-peers', '1');
-      }
-      const resp = await fetch(u, {
+      const resp = await fetch(`${this.url}/serve`, {
         headers: {
           Authorization: 'Basic ' + this.authkey,
         },
       });
 
       const status = (await resp.json()) as ServeStatus;
+      return status;
+    } catch (e) {
+      Logger.error(`error calling serve: ${JSON.stringify(e, null, 2)}`);
+      throw e;
+    }
+  }
+
+  async getPeers(): Promise<PeersResponse> {
+    if (!this.url) {
+      throw new Error('uninitialized client');
+    }
+    try {
+      const resp = await fetch(`${this.url}/peers`, {
+        headers: {
+          Authorization: 'Basic ' + this.authkey,
+        },
+      });
+      const status = (await resp.json()) as PeersResponse;
       return status;
     } catch (e) {
       Logger.error(`error calling serve: ${JSON.stringify(e, null, 2)}`);
