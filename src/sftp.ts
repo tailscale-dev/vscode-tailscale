@@ -1,7 +1,6 @@
 import * as ssh2 from 'ssh2';
 import * as util from 'util';
 import * as vscode from 'vscode';
-import { Logger } from './logger';
 
 export class Sftp {
   private sftpPromise: Promise<ssh2.SFTPWrapper>;
@@ -32,7 +31,6 @@ export class Sftp {
   }
 
   async stat(path: string): Promise<vscode.FileStat> {
-    Logger.info(`stat: ${path}`, 'sftp');
     const sftp = await this.getSftp();
     const s = await util.promisify(sftp.stat).call(sftp, path);
 
@@ -69,6 +67,11 @@ export class Sftp {
   async rename(oldPath: string, newPath: string): Promise<void> {
     const sftp = await this.getSftp();
     return util.promisify(sftp.rename).call(sftp, oldPath, newPath);
+  }
+
+  async rmdir(path: string): Promise<void> {
+    const sftp = await this.getSftp();
+    return util.promisify(sftp.rmdir).call(sftp, path);
   }
 
   convertFileType(stats: ssh2.Stats): vscode.FileType {
