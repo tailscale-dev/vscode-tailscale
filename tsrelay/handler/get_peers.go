@@ -64,6 +64,13 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		return nil, err
 	}
 
+	if st.BackendState == "NeedsLogin" || (st.Self != nil && !st.Self.Online) {
+		return nil, RelayError{
+			statusCode: http.StatusServiceUnavailable,
+			Errors:     []Error{{Type: Offline}},
+		}
+	}
+
 	s := getPeersResponse{
 		CurrentTailnet: &currentTailnet{
 			Name:            st.CurrentTailnet.Name,
@@ -118,12 +125,6 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		}
 		return s.Peers[i].HostName < s.Peers[j].HostName
 	})
-
-	if st.BackendState == "NeedsLogin" || (st.Self != nil && !st.Self.Online) {
-		s.Errors = append(s.Errors, Error{
-			Type: Offline,
-		})
-	}
 
 	return &s, nil
 }
