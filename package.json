@@ -170,6 +170,11 @@
           "group": "3_copy@1"
         },
         {
+          "command": "tailscale.nodeExplorer.refresh",
+          "group": "inline",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-root/"
+        },
+        {
           "command": "tailscale.node.copyIPv6",
           "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "3_copy@1"
