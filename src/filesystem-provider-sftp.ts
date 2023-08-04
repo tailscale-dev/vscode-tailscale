@@ -64,6 +64,14 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
     const { resourcePath, sftp } = await this.getParsedUriAndSftp(uri);
 
     const deleteRecursively = async (path: string) => {
+      const st = await sftp.stat(path);
+
+      // short circuit for files
+      if (st.type === vscode.FileType.File) {
+        await sftp.delete(path);
+        return;
+      }
+
       const files = await sftp.readDirectory(path);
 
       for (const [file, fileType] of files) {
