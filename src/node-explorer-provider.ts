@@ -44,6 +44,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     this.registerCopyIPv6Command();
     this.registerCreateDirectoryCommand();
     this.registerDeleteCommand();
+    this.registerCreateFileCommand();
     this.registerRenameCommand();
     this.registerOpenNodeDetailsCommand();
     this.registerOpenRemoteCodeCommand();
@@ -235,6 +236,45 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
         this._onDidChangeTreeData.fire([undefined]);
       } catch (e) {
         vscode.window.showErrorMessage(`Could not delete ${file.label}: ${e}`);
+      }
+    });
+  }
+
+  registerCreateFileCommand() {
+    vscode.commands.registerCommand('tailscale.node.fs.createFile', async (node: FileExplorer) => {
+      const { address, tailnet, resourcePath } = parseTsUri(node.uri);
+      if (!address || !resourcePath) {
+        return;
+      }
+
+      let targetPath = resourcePath;
+
+      const targetName = await vscode.window.showInputBox({
+        prompt: 'Enter a name for the new file',
+        placeHolder: 'New file.txt',
+      });
+
+      if (!targetName) {
+        return;
+      }
+
+      if (node.type !== vscode.FileType.Directory) {
+        targetPath = path.dirname(resourcePath);
+      }
+
+      const newUri = createTsUri({
+        tailnet,
+        address,
+        resourcePath: `${targetPath}/${targetName}`,
+      });
+
+      try {
+        await vscode.workspace.fs.writeFile(newUri, new Uint8Array());
+        this._onDidChangeTreeData.fire([
+          node.type !== vscode.FileType.Directory ? undefined : node,
+        ]);
+      } catch (e) {
+        vscode.window.showErrorMessage(`Could not create directory: ${e}`);
       }
     });
   }

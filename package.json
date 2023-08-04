@@ -196,8 +196,13 @@
         },
         {
           "command": "tailscale.node.fs.createDirectory",
-          "group": "3_dirActions@1",
+          "group": "3_dirAction@1",
           "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer/"
+        },
+        {
+          "command": "tailscale.node.fs.createFile",
+          "group": "3_dirAction@2",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
         },
         {
           "command": "tailscale.node.fs.rename",
@@ -280,15 +285,23 @@
       },
       {
         "command": "tailscale.node.fs.delete",
-        "title": "Delete"
+        "title": "Delete",
+        "icon": "$(trash)"
       },
       {
         "command": "tailscale.node.fs.rename",
-        "title": "Rename"
+        "title": "Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "tailscale.node.fs.createFile",
+        "title": "New file",
+        "icon": "$(new-file)"
       },
       {
         "command": "tailscale.node.fs.createDirectory",
-        "title": "Create directory"
+        "title": "New directory",
+        "icon": "$(new-folder)"
       },
       {
         "command": "tailscale.node.setUsername",
