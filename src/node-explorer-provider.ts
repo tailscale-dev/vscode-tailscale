@@ -75,7 +75,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       const dirents = await vscode.workspace.fs.readDirectory(element.uri);
       return dirents.map(([name, type]) => {
         const childUri = element.uri.with({ path: `${element.uri.path}/${name}` });
-        return new FileExplorer(name, childUri, type, 'child');
+        return new FileExplorer(name, childUri, type);
       });
     }
 
@@ -468,7 +468,9 @@ export class FileExplorer extends vscode.TreeItem {
       };
     }
 
-    this.contextValue = `peer-file-explorer${context && `-${context}`}`;
+    const typeDesc = type === vscode.FileType.File ? 'file' : 'dir';
+
+    this.contextValue = `peer-file-explorer-${typeDesc}${context && `-${context}`}`;
   }
 }
 
