@@ -2,15 +2,17 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Peer, PeerGroup } from './types';
-import { Utils } from 'vscode-uri';
 import { Tailscale } from './tailscale/cli';
 import { ConfigManager } from './config-manager';
 import { Logger } from './logger';
 import { createTsUri, parseTsUri } from './utils/uri';
-import { getUsername } from './utils/host';
 import { FileSystemProvider } from './filesystem-provider';
 import { trimSuffix } from './utils';
-import { resourceLimits } from 'worker_threads';
+import * as commands from './commands';
+
+export type EventEmitterType = vscode.EventEmitter<
+(PeerBaseTreeItem | FileExplorer | undefined)[] | undefined
+>;
 
 /**
  * Anatomy of the TreeView
@@ -18,13 +20,15 @@ import { resourceLimits } from 'worker_threads';
  * ├── PeerRoot
  * │   ├── PeerFileExplorer
  */
-export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTreeItem> {
+export class NodeExplorerProvider
+  implements
+    vscode.TreeDataProvider<PeerBaseTreeItem>,
+    vscode.TreeDragAndDropController<PeerBaseTreeItem>
+{
   dropMimeTypes = ['text/uri-list']; // add 'application/vnd.code.tree.testViewDragAndDrop' when we have file explorer
   dragMimeTypes = [];
 
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    (PeerBaseTreeItem | FileExplorer | undefined)[] | undefined
-  > = new vscode.EventEmitter<PeerBaseTreeItem[] | undefined>();
+  private _onDidChangeTreeData: EventEmitterType = new vscode.EventEmitter<PeerBaseTreeItem[] | undefined>();
 
   // We want to use an array as the event type, but the API for this is currently being finalized. Until it's finalized, use any.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,20 +42,18 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     private readonly ts: Tailscale,
     private readonly configManager: ConfigManager,
     private fsProvider: FileSystemProvider,
-    private updateNodeExplorerDisplayName: (title: string) => void
+    private updateNodeExplorerDisplayName: (title: string) => void,
+    private context: vscode.ExtensionContext
   ) {
-    this.registerCopyHostnameCommand();
-    this.registerCopyIPv4Command();
-    this.registerCopyIPv6Command();
-    this.registerCreateDirectoryCommand();
-    this.registerDeleteCommand();
-    this.registerCreateFileCommand();
-    this.registerRenameCommand();
-    this.registerOpenNodeDetailsCommand();
-    this.registerOpenRemoteCodeCommand();
-    this.registerOpenTerminalCommand();
-    this.registerRefresh();
-    this.registerOpenDocsLink();
+    context.subscriptions.push(
+      vscode.commands.registerCommand('tailscale.peer.copyIPv4', commands.PeerCopyIPv4Command),
+      vscode.commands.registerCommand('tailscale.peer.copyIPv6', commands.PeerCopyIPv6Command),
+      vscode.commands.registerCommand(
+        'tailscale.peer.fs.createDirectory',
+        commands.PeerFsCreateDirectoryCommand
+      ),
+      vscode.commands.registerCommand('tailscale.peer.fs.delete', commands.PeerFsDeleteCommand(this._onDidChangeTreeData))
+    );
   }
 
   onDidChangeFileDecorations?: vscode.Event<vscode.Uri | vscode.Uri[] | undefined> | undefined;
@@ -214,244 +216,6 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
       return groups;
     }
-  }
-
-  registerDeleteCommand() {
-    vscode.commands.registerCommand('tailscale.node.fs.delete', async (file: FileExplorer) => {
-      try {
-        const msg = `Are you sure you want to delete ${
-          file.type === vscode.FileType.Directory ? 'this directory' : 'this file'
-        }? This action cannot be undone.`;
-
-        const answer = await vscode.window.showInformationMessage(msg, { modal: true }, 'Yes');
-
-        if (answer !== 'Yes') {
-          return;
-        }
-
-        await vscode.workspace.fs.delete(file.uri);
-        vscode.window.showInformationMessage(`${file.label} deleted successfully.`);
-
-        this._onDidChangeTreeData.fire([undefined]);
-      } catch (e) {
-        vscode.window.showErrorMessage(`Could not delete ${file.label}: ${e}`);
-      }
-    });
-  }
-
-  registerCreateFileCommand() {
-    vscode.commands.registerCommand('tailscale.node.fs.createFile', async (node: FileExplorer) => {
-      const { address, tailnet, resourcePath } = parseTsUri(node.uri);
-      if (!address || !resourcePath) {
-        return;
-      }
-
-      let targetPath = resourcePath;
-
-      const targetName = await vscode.window.showInputBox({
-        prompt: 'Enter a name for the new file',
-        placeHolder: 'New file.txt',
-      });
-
-      if (!targetName) {
-        return;
-      }
-
-      if (node.type !== vscode.FileType.Directory) {
-        targetPath = path.dirname(resourcePath);
-      }
-
-      const newUri = createTsUri({
-        tailnet,
-        address,
-        resourcePath: `${targetPath}/${targetName}`,
-      });
-
-      try {
-        await vscode.workspace.fs.writeFile(newUri, new Uint8Array());
-        this._onDidChangeTreeData.fire([
-          node.type !== vscode.FileType.Directory ? undefined : node,
-        ]);
-      } catch (e) {
-        vscode.window.showErrorMessage(`Could not create directory: ${e}`);
-      }
-    });
-  }
-
-  registerRenameCommand() {
-    vscode.commands.registerCommand('tailscale.node.fs.rename', async (node: FileExplorer) => {
-      const source = node.uri;
-
-      const newName = await vscode.window.showInputBox({
-        prompt: 'Enter a new name for the file',
-        value: source.path.split('/').pop() || '',
-      });
-
-      if (!newName) {
-        return;
-      }
-
-      try {
-        const target = Utils.joinPath(source, '..', newName);
-        await vscode.workspace.fs.rename(source, target);
-
-        this._onDidChangeTreeData.fire([undefined]);
-      } catch (e) {
-        vscode.window.showErrorMessage(`Could not rename: ${e}`);
-      }
-    });
-  }
-
-  registerCreateDirectoryCommand() {
-    vscode.commands.registerCommand(
-      'tailscale.node.fs.createDirectory',
-      async (node: FileExplorer) => {
-        const { address, tailnet, resourcePath } = parseTsUri(node.uri);
-        if (!address || !resourcePath) {
-          return;
-        }
-
-        let targetPath = resourcePath;
-
-        // TODO: validate input
-        const targetName = await vscode.window.showInputBox({
-          prompt: 'Enter a name for the new directory',
-          placeHolder: 'New directory',
-        });
-
-        if (!targetName) {
-          return;
-        }
-
-        if (node.type !== vscode.FileType.Directory) {
-          const lastSlashIndex = resourcePath.lastIndexOf('/');
-          targetPath = resourcePath.substring(0, lastSlashIndex);
-        }
-
-        const newUri = createTsUri({
-          tailnet,
-          address,
-          resourcePath: `${targetPath}/${targetName}`,
-        });
-
-        try {
-          await vscode.workspace.fs.createDirectory(newUri);
-          this._onDidChangeTreeData.fire([
-            node.type !== vscode.FileType.Directory ? undefined : node,
-          ]);
-        } catch (e) {
-          vscode.window.showErrorMessage(`Could not create directory: ${e}`);
-        }
-      }
-    );
-  }
-
-  registerCopyIPv4Command() {
-    vscode.commands.registerCommand('tailscale.node.copyIPv4', async (node: PeerRoot) => {
-      const ip = node.TailscaleIPs[0];
-
-      if (!ip) {
-        vscode.window.showErrorMessage(`No IPv4 address found for ${node.HostName}.`);
-        return;
-      }
-
-      await vscode.env.clipboard.writeText(ip);
-      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
-    });
-  }
-
-  registerCopyIPv6Command() {
-    vscode.commands.registerCommand('tailscale.node.copyIPv6', async (node: PeerRoot) => {
-      const ip = node.TailscaleIPs[1];
-      await vscode.env.clipboard.writeText(ip);
-      vscode.window.showInformationMessage(`Copied ${ip} to clipboard.`);
-    });
-  }
-
-  registerCopyHostnameCommand() {
-    vscode.commands.registerCommand('tailscale.node.copyHostname', async (node: PeerRoot) => {
-      const name = node.HostName;
-      await vscode.env.clipboard.writeText(name);
-      vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
-    });
-  }
-
-  registerOpenTerminalCommand() {
-    vscode.commands.registerCommand(
-      'tailscale.node.openTerminal',
-      async (node: PeerRoot | FileExplorer) => {
-        const { addr, path } = extractAddrAndPath(node);
-
-        if (!addr) {
-          return;
-        }
-
-        const t = vscode.window.createTerminal(addr);
-        t.sendText(`ssh ${getUsername(this.configManager, addr)}@${addr}`);
-
-        if (path) {
-          t.sendText(`cd ${path}`);
-        }
-
-        t.show();
-      }
-    );
-  }
-
-  registerOpenRemoteCodeCommand() {
-    vscode.commands.registerCommand(
-      'tailscale.node.openRemoteCode',
-      async (node: PeerRoot | FileExplorer) => {
-        const { addr, path } = extractAddrAndPath(node);
-
-        if (node instanceof PeerRoot && addr) {
-          vscode.commands.executeCommand('vscode.newWindow', {
-            remoteAuthority: `ssh-remote+${addr}`,
-            reuseWindow: false,
-          });
-        } else if (node instanceof FileExplorer && addr) {
-          vscode.commands.executeCommand(
-            'vscode.openFolder',
-            vscode.Uri.from({
-              scheme: 'vscode-remote',
-              authority: `ssh-remote+${addr}`,
-              path,
-            }),
-            { forceNewWindow: true }
-          );
-        }
-      }
-    );
-  }
-
-  registerOpenNodeDetailsCommand() {
-    vscode.commands.registerCommand('tailscale.node.openDetailsLink', async (node: PeerRoot) => {
-      vscode.env.openExternal(
-        vscode.Uri.parse(`https://login.tailscale.com/admin/machines/${node.TailscaleIPs[0]}`)
-      );
-    });
-  }
-
-  registerRefresh(): void {
-    vscode.commands.registerCommand(
-      'tailscale.nodeExplorer.refresh',
-      (f: FileExplorer | undefined) => {
-        this._onDidChangeTreeData.fire([f]);
-      }
-    );
-  }
-
-  registerOpenDocsLink(): void {
-    vscode.commands.registerCommand('tailscale.node.openDocsLink', (e: PeerErrorItem) => {
-      Logger.info('called tailscale.openDocsLink', 'command');
-
-      if (!e.link) {
-        Logger.error('no link provided to openDocsLink', 'command');
-        return;
-      }
-
-      vscode.env.openExternal(vscode.Uri.parse(e.link));
-    });
   }
 }
 

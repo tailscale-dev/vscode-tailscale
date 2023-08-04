@@ -88,7 +88,8 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance,
     configManager,
     fileSystemProvider,
-    updateNodeExplorerDisplayName
+    updateNodeExplorerDisplayName,
+    context
   );
 
   nodeExplorerView = createNodeExplorerView();
@@ -125,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.node.setUsername', async (node: PeerRoot) => {
+    vscode.commands.registerCommand('tailscale.peer.setUsername', async (node: PeerRoot) => {
       const username = await vscode.window.showInputBox({
         prompt: `Enter the username to use for ${node.ServerName}`,
         value: configManager.config?.hosts?.[node.Address]?.user,
