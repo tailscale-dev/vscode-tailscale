@@ -10,6 +10,7 @@ import { createTsUri, parseTsUri } from './utils/uri';
 import { getUsername } from './utils/host';
 import { FileSystemProvider } from './filesystem-provider';
 import { trimSuffix } from './utils';
+import { resourceLimits } from 'worker_threads';
 
 /**
  * Anatomy of the TreeView
@@ -48,7 +49,6 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     this.registerRenameCommand();
     this.registerOpenNodeDetailsCommand();
     this.registerOpenRemoteCodeCommand();
-    this.registerOpenRemoteCodeLocationCommand();
     this.registerOpenTerminalCommand();
     this.registerRefresh();
   }
@@ -347,21 +347,6 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     );
   }
 
-  registerOpenRemoteCodeLocationCommand() {
-    vscode.commands.registerCommand(
-      'tailscale.node.openRemoteCodeAtLocation',
-      async (file: FileExplorer) => {
-        const { address: hostname, resourcePath } = parseTsUri(file.uri);
-        if (!hostname || !resourcePath) {
-          return;
-        }
-
-        // TODO: handle non-absolute paths
-        this.openRemoteCodeLocationWindow(hostname, resourcePath, false);
-      }
-    );
-  }
-
   registerCopyIPv4Command() {
     vscode.commands.registerCommand('tailscale.node.copyIPv4', async (node: PeerRoot) => {
       const ip = node.TailscaleIPs[0];
@@ -393,17 +378,51 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   registerOpenTerminalCommand() {
-    vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerRoot) => {
-      const t = vscode.window.createTerminal(node.Address);
-      t.sendText(`ssh ${getUsername(this.configManager, node.Address)}@${node.Address}`);
-      t.show();
-    });
+    vscode.commands.registerCommand(
+      'tailscale.node.openTerminal',
+      async (node: PeerRoot | FileExplorer) => {
+        const { addr, path } = extractAddrAndPath(node);
+
+        if (!addr) {
+          return;
+        }
+
+        const t = vscode.window.createTerminal(addr);
+        t.sendText(`ssh ${getUsername(this.configManager, addr)}@${addr}`);
+
+        if (path) {
+          t.sendText(`cd ${path}`);
+        }
+
+        t.show();
+      }
+    );
   }
 
   registerOpenRemoteCodeCommand() {
-    vscode.commands.registerCommand('tailscale.node.openRemoteCode', async (node: PeerRoot) => {
-      this.openRemoteCodeWindow(node.Address, false);
-    });
+    vscode.commands.registerCommand(
+      'tailscale.node.openRemoteCode',
+      async (node: PeerRoot | FileExplorer) => {
+        const { addr, path } = extractAddrAndPath(node);
+
+        if (node instanceof PeerRoot && addr) {
+          vscode.commands.executeCommand('vscode.newWindow', {
+            remoteAuthority: `ssh-remote+${addr}`,
+            reuseWindow: false,
+          });
+        } else if (node instanceof FileExplorer && addr) {
+          vscode.commands.executeCommand(
+            'vscode.openFolder',
+            vscode.Uri.from({
+              scheme: 'vscode-remote',
+              authority: `ssh-remote+${addr}`,
+              path,
+            }),
+            { forceNewWindow: true }
+          );
+        }
+      }
+    );
   }
 
   registerOpenNodeDetailsCommand() {
@@ -420,21 +439,6 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       (f: FileExplorer | undefined) => {
         this._onDidChangeTreeData.fire([f]);
       }
-    );
-  }
-
-  openRemoteCodeWindow(host: string, reuseWindow: boolean) {
-    vscode.commands.executeCommand('vscode.newWindow', {
-      remoteAuthority: `ssh-remote+${host}`,
-      reuseWindow,
-    });
-  }
-
-  openRemoteCodeLocationWindow(host: string, path: string, reuseWindow: boolean) {
-    vscode.commands.executeCommand(
-      'vscode.openFolder',
-      vscode.Uri.from({ scheme: 'vscode-remote', authority: `ssh-remote+${host}`, path }),
-      { forceNewWindow: !reuseWindow }
     );
   }
 }
@@ -581,4 +585,14 @@ function trimPathPrefix(s: string, prefix: string): string {
     return `~${s.slice(prefix.length)}`;
   }
   return s;
+}
+
+function extractAddrAndPath(node: PeerRoot | FileExplorer): { addr?: string; path?: string } {
+  if (node instanceof FileExplorer) {
+    const { address, resourcePath } = parseTsUri(node.uri);
+    return { addr: address, path: resourcePath };
+  } else if (node instanceof PeerRoot) {
+    return { addr: node.Address };
+  }
+  return {};
 }
