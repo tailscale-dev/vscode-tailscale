@@ -55,7 +55,10 @@ export class Sftp {
 
   async writeFile(path: string, data: Uint8Array | string): Promise<void> {
     const sftp = await this.getSftp();
-    const buffer = data instanceof Uint8Array ? Buffer.from(data.buffer) : data;
+    const buffer =
+      data instanceof Uint8Array
+        ? Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+        : Buffer.from(data);
     return util.promisify(sftp.writeFile).call(sftp, path, buffer);
   }
 
