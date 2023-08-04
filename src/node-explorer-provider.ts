@@ -285,7 +285,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
       const newName = await vscode.window.showInputBox({
         prompt: 'Enter a new name for the file',
-        value: path.basename(source.path),
+        value: source.path.split('/').pop() || '',
       });
 
       if (!newName) {
@@ -312,25 +312,34 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
           return;
         }
 
+        let targetPath = resourcePath;
+
         // TODO: validate input
-        const dirName = await vscode.window.showInputBox({
+        const targetName = await vscode.window.showInputBox({
           prompt: 'Enter a name for the new directory',
           placeHolder: 'New directory',
         });
 
-        if (!dirName) {
+        if (!targetName) {
           return;
+        }
+
+        if (node.type !== vscode.FileType.Directory) {
+          const lastSlashIndex = resourcePath.lastIndexOf('/');
+          targetPath = resourcePath.substring(0, lastSlashIndex);
         }
 
         const newUri = createTsUri({
           tailnet,
           address,
-          resourcePath: `${resourcePath}/${dirName}`,
+          resourcePath: `${targetPath}/${targetName}`,
         });
 
         try {
           await vscode.workspace.fs.createDirectory(newUri);
-          this._onDidChangeTreeData.fire([node]);
+          this._onDidChangeTreeData.fire([
+            node.type !== vscode.FileType.Directory ? undefined : node,
+          ]);
         } catch (e) {
           vscode.window.showErrorMessage(`Could not create directory: ${e}`);
         }
