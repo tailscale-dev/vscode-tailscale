@@ -16,16 +16,15 @@ export class SshConnectionManager {
     this.configManager = configManager;
   }
 
-  async getConnection(hostname: string): Promise<ssh2.Client> {
-    const username = getUsername(this.configManager, hostname);
-    const key = this.formatKey(hostname, username);
+  async getConnection(host: string, username: string): Promise<ssh2.Client> {
+    const key = this.formatKey(host, username);
 
     if (this.connections.has(key)) {
       return this.connections.get(key) as ssh2.Client;
     }
 
     const conn = new ssh2.Client();
-    const config = { host: hostname, username };
+    const config = { host, username };
 
     try {
       await Promise.race([
@@ -58,7 +57,7 @@ export class SshConnectionManager {
         message = err.message;
       }
 
-      const logmsg = `Failed to connect to ${hostname} with username ${username}: ${message}`;
+      const logmsg = `Failed to connect to ${host} with username ${username}: ${message}`;
       Logger.error(logmsg, `ssh-conn-manager`);
       if (!this.isAuthenticationError(err)) {
         vscode.window.showErrorMessage(logmsg);
@@ -68,17 +67,18 @@ export class SshConnectionManager {
   }
 
   async getSftp(address: string): Promise<Sftp | undefined> {
+    const username = getUsername(this.configManager, address);
     try {
-      const conn = await this.getConnection(address);
+      const conn = await this.getConnection(address, username);
       return new Sftp(conn);
     } catch (err) {
       if (this.isAuthenticationError(err)) {
-        const username = await this.promptForUsername(address);
-
-        if (username) {
+        vscode.window.showWarningMessage(
+          `The username '${username}' is not valid on host ${address}`
+        );
+        if (await this.promptForUsername(address)) {
           return await this.getSftp(address);
         }
-
         this.showUsernameRequiredError();
       }
       throw err;
