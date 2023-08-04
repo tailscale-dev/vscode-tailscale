@@ -180,7 +180,7 @@
           "group": "3_copy@1"
         },
         {
-          "command": "tailscale.node.copyHostname",
+          "command": "tailscale.node.copyDNSName",
           "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "3_copy@1"
         },
@@ -261,8 +261,8 @@
         "title": "Copy IPv6"
       },
       {
-        "command": "tailscale.node.copyHostname",
-        "title": "Copy hostname"
+        "command": "tailscale.node.copyDNSName",
+        "title": "Copy DNS name"
       },
       {
         "command": "tailscale.node.openTerminal",

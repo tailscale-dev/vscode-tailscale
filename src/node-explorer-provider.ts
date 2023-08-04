@@ -40,7 +40,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     private fsProvider: FileSystemProvider,
     private updateNodeExplorerDisplayName: (title: string) => void
   ) {
-    this.registerCopyHostnameCommand();
+    this.registerCopyDNSNameCommand();
     this.registerCopyIPv4Command();
     this.registerCopyIPv6Command();
     this.registerCreateDirectoryCommand();
@@ -368,9 +368,9 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     });
   }
 
-  registerCopyHostnameCommand() {
-    vscode.commands.registerCommand('tailscale.node.copyHostname', async (node: PeerRoot) => {
-      const name = node.HostName;
+  registerCopyDNSNameCommand() {
+    vscode.commands.registerCommand('tailscale.node.copyDNSName', async (node: PeerRoot) => {
+      const name = node.DNSName;
       await vscode.env.clipboard.writeText(name);
       vscode.window.showInformationMessage(`Copied ${name} to clipboard.`);
     });
