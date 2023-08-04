@@ -51,6 +51,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     this.registerOpenRemoteCodeCommand();
     this.registerOpenTerminalCommand();
     this.registerRefresh();
+    this.registerOpenDocsLink();
   }
 
   onDidChangeFileDecorations?: vscode.Event<vscode.Uri | vscode.Uri[] | undefined> | undefined;
@@ -60,7 +61,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
   }
 
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
-    if (element instanceof ErrorItem) {
+    if (element instanceof PeerErrorItem) {
       return [];
     }
 
@@ -83,9 +84,8 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
     if (element instanceof PeerRoot) {
       if (!element.SSHEnabled) {
         return [
-          new ErrorItem({
-            label: 'Enable Tailsale SSH',
-            iconPath: 'link-external',
+          new PeerErrorItem({
+            label: 'Enable Tailscale SSH',
             link: 'https://tailscale.com/kb/1193/tailscale-ssh/#prerequisites',
             tooltip: 'You need Tailscale SSH in order to use the File Explorer with this node.',
           }),
@@ -139,18 +139,17 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
             switch (err.Type) {
               case 'NOT_RUNNING':
                 return [
-                  new ErrorItem({
+                  new PeerErrorItem({
                     label: 'Tailscale may not be installed. Install now',
-                    iconPath: 'link-external',
                     link: 'https://tailscale.com/download',
                   }),
                 ];
               case 'OFFLINE':
                 return [
-                  new ErrorItem({
-                    label: 'Tailscale is not running',
-                    iconPath: 'alert',
-                    tooltip: 'Make sure that Tailscale is signed in and enabled',
+                  new PeerErrorItem({
+                    label: 'Tailscale offline. Log in and try again',
+                    tooltip: 'Make sure that Tailscale is installed and running',
+                    link: 'https://tailscale.com/download',
                   }),
                 ];
             }
@@ -205,9 +204,9 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       // If there are no groups at all, render an onboarding item.
       if (!hasErr && !groups.length) {
         return [
-          new ErrorItem({
+          new PeerErrorItem({
             label: 'Add your first node',
-            iconPath: 'link-external',
+            tooltip: 'Click to read the docs to learn how to add your first node',
             link: 'https://tailscale.com/kb/1017/install/',
           }),
         ];
@@ -441,6 +440,19 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
       }
     );
   }
+
+  registerOpenDocsLink(): void {
+    vscode.commands.registerCommand('tailscale.node.openDocsLink', (e: PeerErrorItem) => {
+      Logger.info('called tailscale.openDocsLink', 'command');
+
+      if (!e.link) {
+        Logger.error('no link provided to openDocsLink', 'command');
+        return;
+      }
+
+      vscode.env.openExternal(vscode.Uri.parse(e.link));
+    });
+  }
 }
 
 export class PeerBaseTreeItem extends vscode.TreeItem {
@@ -561,20 +573,19 @@ export class PeerDetailTreeItem extends PeerBaseTreeItem {
   }
 }
 
-export class ErrorItem extends vscode.TreeItem {
+export class PeerErrorItem extends vscode.TreeItem {
+  public link?: string;
+
   constructor(opts: { label: string; iconPath?: string; link?: string; tooltip?: string }) {
     super(opts.label);
-    if (opts.iconPath) {
-      this.iconPath = new vscode.ThemeIcon(opts.iconPath);
-    }
-    if (opts.link) {
-      this.command = {
-        command: 'tailscale.openExternal',
-        title: 'Open External Link',
-        arguments: [opts.link],
-      };
-    }
-    this.tooltip = opts.tooltip ?? 'Open Link';
+
+    this.link = opts.link;
+
+    this.iconPath = new vscode.ThemeIcon(opts?.iconPath || 'alert');
+
+    this.tooltip = opts.tooltip;
+
+    this.contextValue = `peer-error${opts.link && '-link'}`;
   }
 }
 

@@ -208,6 +208,11 @@
           "command": "tailscale.node.fs.delete",
           "group": "4_fileAction@2",
           "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-(dir|file)/"
+        },
+        {
+          "command": "tailscale.node.openDocsLink",
+          "group": "inline",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-error-link/"
         }
       ]
     },
@@ -309,6 +314,11 @@
       {
         "command": "tailscale.openExternal",
         "title": "Open External Link"
+      },
+      {
+        "command": "tailscale.node.openDocsLink",
+        "title": "Open Documentation",
+        "icon": "$(link-external)"
       }
     ],
     "viewsContainers": {

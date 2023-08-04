@@ -6,7 +6,12 @@ import { ADMIN_CONSOLE } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
-import { FileExplorer, NodeExplorerProvider, PeerRoot, ErrorItem } from './node-explorer-provider';
+import {
+  FileExplorer,
+  NodeExplorerProvider,
+  PeerRoot,
+  PeerErrorItem,
+} from './node-explorer-provider';
 
 import { FileSystemProviderSFTP } from './filesystem-provider-sftp';
 import { ConfigManager } from './config-manager';
@@ -65,13 +70,13 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // eslint-disable-next-line prefer-const
-  let nodeExplorerView: vscode.TreeView<PeerRoot | FileExplorer | ErrorItem>;
+  let nodeExplorerView: vscode.TreeView<PeerRoot | FileExplorer | PeerErrorItem>;
 
   function updateNodeExplorerDisplayName(name: string) {
     nodeExplorerView.title = name;
   }
 
-  const createNodeExplorerView = (): vscode.TreeView<PeerRoot | FileExplorer | ErrorItem> => {
+  const createNodeExplorerView = (): vscode.TreeView<PeerRoot | FileExplorer | PeerErrorItem> => {
     return vscode.window.createTreeView('node-explorer-view', {
       treeDataProvider: nodeExplorerProvider,
       showCollapseAll: true,
@@ -89,13 +94,6 @@ export async function activate(context: vscode.ExtensionContext) {
   nodeExplorerView = createNodeExplorerView();
   vscode.window.registerTreeDataProvider('node-explorer-view', nodeExplorerProvider);
   context.subscriptions.push(nodeExplorerView);
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('tailscale.openExternal', (url: string) => {
-      Logger.info('called tailscale.openExternal', 'command');
-      vscode.env.openExternal(vscode.Uri.parse(url));
-    })
-  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {
@@ -144,7 +142,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'tailscale.node.setRootDir',
-      async (node: PeerRoot | FileExplorer | ErrorItem) => {
+      async (node: PeerRoot | FileExplorer | PeerErrorItem) => {
         let address: string;
 
         if (node instanceof FileExplorer) {
