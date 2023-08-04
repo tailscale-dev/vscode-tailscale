@@ -136,23 +136,23 @@
       "view/item/context": [
         {
           "command": "tailscale.node.openTerminal",
-          "when": "view == node-explorer-view && viewItem == peer-root",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
           "group": "inline"
         },
         {
           "command": "tailscale.node.openTerminal",
-          "when": "view == node-explorer-view && viewItem == peer-root",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
           "group": "1_action@1"
         },
         {
           "command": "tailscale.node.openRemoteCode",
-          "when": "view == node-explorer-view && viewItem == peer-root",
-          "group": "1_action@2"
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
+          "group": "inline"
         },
         {
           "command": "tailscale.node.openRemoteCode",
-          "when": "view == node-explorer-view && viewItem == peer-root",
-          "group": "inline"
+          "group": "1_action@2",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)"
         },
         {
           "command": "tailscale.node.setUsername",
@@ -188,11 +188,6 @@
           "command": "tailscale.node.openDetailsLink",
           "group": "4_control@1",
           "when": "view == node-explorer-view && viewItem == peer-root"
-        },
-        {
-          "command": "tailscale.node.openRemoteCodeAtLocation",
-          "group": "1_action@2",
-          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-root/"
         },
         {
           "command": "tailscale.node.fs.createDirectory",
@@ -310,10 +305,6 @@
       {
         "command": "tailscale.node.setRootDir",
         "title": "Change root directory"
-      },
-      {
-        "command": "tailscale.node.openRemoteCodeAtLocation",
-        "title": "Attach VS Code"
       },
       {
         "command": "tailscale.openExternal",
