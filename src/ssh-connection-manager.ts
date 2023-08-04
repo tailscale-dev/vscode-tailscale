@@ -34,6 +34,12 @@ export class SshConnectionManager {
           conn.on('close', () => {
             this.connections.delete(key);
           });
+          conn.on('banner', (message) => {
+            const isWrongUser = message && message.includes(`failed to look up ${username}`);
+            if (isWrongUser) {
+              reject({ level: 'wrong-user' });
+            }
+          });
 
           // this might require a brower to open and the user to authenticate
           conn.connect(config);
@@ -73,9 +79,7 @@ export class SshConnectionManager {
       return new Sftp(conn);
     } catch (err) {
       if (this.isAuthenticationError(err)) {
-        vscode.window.showWarningMessage(
-          `The username '${username}' is not valid on host ${address}`
-        );
+        this.displayAuthenticationError(err.level, username, address);
         if (await this.promptForUsername(address)) {
           return await this.getSftp(address);
         }
@@ -85,12 +89,28 @@ export class SshConnectionManager {
     }
   }
 
+  async displayAuthenticationError(level: string, username: string, address: string) {
+    if (level === 'wrong-user') {
+      vscode.window.showWarningMessage(
+        `The username '${username}' is not valid on host ${address}`
+      );
+    } else {
+      const msg = `We couldn't connect to the node. Please check that the machine is online and your tailnet ACLs allow you to access it"`;
+      const action = await vscode.window.showWarningMessage(msg, 'Learn more');
+      if (action) {
+        vscode.env.openExternal(
+          vscode.Uri.parse('https://tailscale.com/kb/1265/vscode-extension/#troubleshooting')
+        );
+      }
+    }
+  }
+
   private isAuthenticationError(err: unknown): err is { level: string } {
     return (
       typeof err === 'object' &&
       err !== null &&
       'level' in err &&
-      err.level === 'client-authentication'
+      (err.level === 'client-authentication' || err.level === 'wrong-user')
     );
   }
 
