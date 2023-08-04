@@ -112,7 +112,7 @@ export class NodeExplorerProvider implements vscode.TreeDataProvider<PeerBaseTre
 
       const uri = createTsUri({
         tailnet: element.tailnetName,
-        address: element.Address,
+        address: element.ServerName,
         resourcePath: rootDir,
       });
 

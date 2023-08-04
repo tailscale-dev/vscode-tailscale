@@ -11,7 +11,7 @@ export interface TsUri {
  *
  * ts://tails-scales/foo/home/amalie
  * |> tailnet: tails-scales
- * |> hostname: foo
+ * |> address: foo
  * |> resourcePath: /home/amalie
  */
 
