@@ -197,22 +197,22 @@
         {
           "command": "tailscale.node.fs.createDirectory",
           "group": "3_dirAction@1",
-          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer/"
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-dir/"
         },
         {
           "command": "tailscale.node.fs.createFile",
           "group": "3_dirAction@2",
-          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-dir/"
         },
         {
           "command": "tailscale.node.fs.rename",
           "group": "4_fileAction@1",
-          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-(dir|file)/"
         },
         {
           "command": "tailscale.node.fs.delete",
           "group": "4_fileAction@2",
-          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-child/"
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-(dir|file)/"
         }
       ]
     },
