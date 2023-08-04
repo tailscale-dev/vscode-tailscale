@@ -347,8 +347,7 @@
       "tailscale-nodes-explorer": [
         {
           "id": "node-explorer-view",
-          "name": "",
-          "when": "config.tailscale.nodeExplorer.enabled"
+          "name": "Tailscale"
         }
       ]
     },
@@ -375,11 +374,6 @@
             "examples": [
               false
             ]
-          },
-          "tailscale.nodeExplorer.enabled": {
-            "type": "boolean",
-            "default": false,
-            "markdownDescription": "(IN DEVELOPMENT) Enable the Tailscale Node Explorer view."
           },
           "tailscale.ssh.defaultUsername": {
             "type": "string",
