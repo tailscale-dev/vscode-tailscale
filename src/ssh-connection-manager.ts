@@ -99,7 +99,7 @@ export class SshConnectionManager {
       const action = await vscode.window.showWarningMessage(msg, 'Learn more');
       if (action) {
         vscode.env.openExternal(
-          vscode.Uri.parse('https://tailscale.com/kb/1265/vscode-extension/#troubleshooting')
+          vscode.Uri.parse('https://tailscale.com/kb/1193/tailscale-ssh/#ensure-tailscale-ssh-is-permitted-in-acls')
         );
       }
     }
