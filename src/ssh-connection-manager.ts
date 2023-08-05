@@ -95,7 +95,7 @@ export class SshConnectionManager {
         `The username '${username}' is not valid on host ${address}`
       );
     } else {
-      const msg = `We couldn't connect to the node. Please check that the machine is online and your tailnet ACLs allow you to access it"`;
+      const msg = `We couldn't connect to the node. Ensure Tailscale SSH is permitted in ALCs, and the username is correct.`;
       const action = await vscode.window.showWarningMessage(msg, 'Learn more');
       if (action) {
         vscode.env.openExternal(
