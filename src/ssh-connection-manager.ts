@@ -16,16 +16,15 @@ export class SshConnectionManager {
     this.configManager = configManager;
   }
 
-  async getConnection(hostname: string): Promise<ssh2.Client> {
-    const username = getUsername(this.configManager, hostname);
-    const key = this.formatKey(hostname, username);
+  async getConnection(host: string, username: string): Promise<ssh2.Client> {
+    const key = this.formatKey(host, username);
 
     if (this.connections.has(key)) {
       return this.connections.get(key) as ssh2.Client;
     }
 
     const conn = new ssh2.Client();
-    const config = { host: hostname, username };
+    const config = { host, username };
 
     try {
       await Promise.race([
@@ -34,6 +33,12 @@ export class SshConnectionManager {
           conn.on('error', reject);
           conn.on('close', () => {
             this.connections.delete(key);
+          });
+          conn.on('banner', (message) => {
+            const isWrongUser = message && message.includes(`failed to look up ${username}`);
+            if (isWrongUser) {
+              reject({ level: 'wrong-user' });
+            }
           });
 
           // this might require a brower to open and the user to authenticate
@@ -58,7 +63,7 @@ export class SshConnectionManager {
         message = err.message;
       }
 
-      const logmsg = `Failed to connect to ${hostname} with username ${username}: ${message}`;
+      const logmsg = `Failed to connect to ${host} with username ${username}: ${message}`;
       Logger.error(logmsg, `ssh-conn-manager`);
       if (!this.isAuthenticationError(err)) {
         vscode.window.showErrorMessage(logmsg);
@@ -68,20 +73,36 @@ export class SshConnectionManager {
   }
 
   async getSftp(address: string): Promise<Sftp | undefined> {
+    const username = getUsername(this.configManager, address);
     try {
-      const conn = await this.getConnection(address);
+      const conn = await this.getConnection(address, username);
       return new Sftp(conn);
     } catch (err) {
       if (this.isAuthenticationError(err)) {
-        const username = await this.promptForUsername(address);
-
-        if (username) {
+        this.displayAuthenticationError(err.level, username, address);
+        if (await this.promptForUsername(address)) {
           return await this.getSftp(address);
         }
-
-        this.showUsernameRequiredError();
       }
       throw err;
+    }
+  }
+
+  async displayAuthenticationError(level: string, username: string, address: string) {
+    if (level === 'wrong-user') {
+      vscode.window.showWarningMessage(
+        `The username '${username}' is not valid on host ${address}`
+      );
+    } else {
+      const msg = `We couldn't connect to the node. Ensure Tailscale SSH is permitted in ALCs, and the username is correct.`;
+      const action = await vscode.window.showWarningMessage(msg, 'Learn more');
+      if (action) {
+        vscode.env.openExternal(
+          vscode.Uri.parse(
+            'https://tailscale.com/kb/1193/tailscale-ssh/#ensure-tailscale-ssh-is-permitted-in-acls'
+          )
+        );
+      }
     }
   }
 
@@ -90,14 +111,8 @@ export class SshConnectionManager {
       typeof err === 'object' &&
       err !== null &&
       'level' in err &&
-      err.level === 'client-authentication'
+      (err.level === 'client-authentication' || err.level === 'wrong-user')
     );
-  }
-
-  private async showUsernameRequiredError(): Promise<never> {
-    const msg = 'Username is required to connect to remote host';
-    vscode.window.showErrorMessage(msg);
-    throw new Error(msg);
   }
 
   async promptForUsername(address: string): Promise<string | undefined> {
