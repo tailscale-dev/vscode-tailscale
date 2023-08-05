@@ -83,7 +83,6 @@ export class SshConnectionManager {
         if (await this.promptForUsername(address)) {
           return await this.getSftp(address);
         }
-        this.showUsernameRequiredError();
       }
       throw err;
     }
@@ -99,7 +98,9 @@ export class SshConnectionManager {
       const action = await vscode.window.showWarningMessage(msg, 'Learn more');
       if (action) {
         vscode.env.openExternal(
-          vscode.Uri.parse('https://tailscale.com/kb/1193/tailscale-ssh/#ensure-tailscale-ssh-is-permitted-in-acls')
+          vscode.Uri.parse(
+            'https://tailscale.com/kb/1193/tailscale-ssh/#ensure-tailscale-ssh-is-permitted-in-acls'
+          )
         );
       }
     }
@@ -112,12 +113,6 @@ export class SshConnectionManager {
       'level' in err &&
       (err.level === 'client-authentication' || err.level === 'wrong-user')
     );
-  }
-
-  private async showUsernameRequiredError(): Promise<never> {
-    const msg = 'Username is required to connect to remote host';
-    vscode.window.showErrorMessage(msg);
-    throw new Error(msg);
   }
 
   async promptForUsername(address: string): Promise<string | undefined> {
