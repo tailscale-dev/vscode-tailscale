@@ -214,8 +214,30 @@ export class NodeExplorerProvider
     }
   }
 
-  refreshAll() {
-    this._onDidChangeTreeData.fire(undefined);
+  /**
+   * Refresh based on what target is provided.
+   *
+   * If no target is provided, refresh the entire tree
+   * If all targets are directories, call refresh on each target.
+   *
+   * TODO: If a target is a file, refresh the parent directory.
+   */
+  refresh(target?: FileExplorer | FileExplorer[]) {
+    if (Array.isArray(target)) {
+      if (target.every((item) => item.type === vscode.FileType.Directory)) {
+        for (const item of target) {
+          this._onDidChangeTreeData.fire([item]);
+        }
+      } else {
+        this._onDidChangeTreeData.fire(undefined);
+      }
+    } else if (target && target.type === vscode.FileType.Directory) {
+      // If 'target' is a single object
+      this._onDidChangeTreeData.fire([target]);
+    } else {
+      // If 'target' is undefined
+      this._onDidChangeTreeData.fire(undefined);
+    }
   }
 
   public async handleDrop(
@@ -241,8 +263,6 @@ export class NodeExplorerProvider
     }
 
     sources.forEach(({ value }, mimeType) => {
-      console.log('mimeType', mimeType);
-
       switch (mimeType) {
         case 'application/vnd.code.tree.tsFileEntry':
           return this.transferFile(value.uri, target);
@@ -266,29 +286,69 @@ export class NodeExplorerProvider
    */
   async moveFile(source: vscode.Uri, target: FileExplorer) {
     const { address: sourceAddr } = parseTsUri(source);
-    const { address: targetAddr } = parseTsUri(target.uri);
+    const { address: targetAddr, resourcePath: targetResourcePath } = parseTsUri(target.uri);
+
+    const sourceFilename = source.path.split('/').pop();
+    let title = `moving ${sourceFilename}`;
 
     if (sourceAddr !== targetAddr) {
-      // move across nodes
-      const contents = await vscode.workspace.fs.readFile(source);
-      const fileName = path.basename(source.toString());
-      const targetDir = target.getDirectory(fileName);
-
-      await this.fsProvider.writeFile(targetDir, contents, {
-        create: true,
-        overwrite: false,
-      });
-
-      this.refreshAll();
-    } else {
-      // move within the same node
-      const sourceFilename = source.path.split('/').pop();
-      const fileTarget = target.getDirectory(sourceFilename);
-
-      await this.fsProvider.rename(source, fileTarget, { overwrite: true });
+      title += ` from ${sourceAddr} to ${targetAddr}`;
     }
 
-    return;
+    return vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Window,
+        cancellable: false,
+        title,
+      },
+      async (progress) => {
+        progress.report({ increment: 0 });
+
+        try {
+          if (sourceAddr !== targetAddr) {
+            // move across nodes
+            const contents = await vscode.workspace.fs.readFile(source);
+            const fileName = path.basename(source.toString());
+            const targetFile = target.getDirectory(fileName);
+
+            const sourceStat = await this.fsProvider.stat(source);
+            console.log('source', sourceStat);
+
+            await this.fsProvider.writeFile(targetFile, contents, {
+              create: true,
+              overwrite: false,
+            });
+
+            // confirm that the file was written successfully before deleting
+            // the source file.
+            const targetStat = await this.fsProvider.stat(targetFile);
+
+            if (sourceStat.size === targetStat.size) {
+              await this.fsProvider.delete(source, { recursive: false });
+            } else {
+              this.fsProvider.delete(targetFile, { recursive: false });
+
+              const message = `target removed due to the size differing after upload (${sourceStat.size} and ${targetStat.size})`;
+              throw new Error(message);
+            }
+          } else {
+            // move within the same node
+            const sourceFilename = source.path.split('/').pop();
+            const fileTarget = target.getDirectory(sourceFilename);
+
+            await this.fsProvider.rename(source, fileTarget, { overwrite: true });
+          }
+        } catch (e) {
+          vscode.window.showErrorMessage(`Error moving file, check logs for more information`);
+          Logger.error(`error moving file: ${e}`);
+        }
+
+        // refresh all, as we don't have the target element in the tree until we index by uri
+        this.refresh();
+
+        progress.report({ increment: 100 });
+      }
+    );
   }
 
   /**
@@ -310,11 +370,7 @@ export class NodeExplorerProvider
           const fileTarget = target.getDirectory(sourceFilename);
           await this.fsProvider.upload(source, fileTarget);
 
-          if (target.type === vscode.FileType.Directory) {
-            this._onDidChangeTreeData.fire([target]);
-          } else {
-            this.refreshAll();
-          }
+          this.refresh(target);
         } catch (e) {
           vscode.window.showErrorMessage(`Error writing file, check logs for more information`);
           Logger.error(`error writing file: ${e}`);
