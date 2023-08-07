@@ -33,119 +33,6 @@ export class NodeExplorerProvider
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
-  refreshAll() {
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  public async handleDrop(
-    target: FileExplorer | undefined,
-    sources: vscode.DataTransfer,
-    _: vscode.CancellationToken
-  ): Promise<void> {
-    if (!target) {
-      return;
-    }
-
-    let transferItem = sources.get('application/vnd.code.tree.tsFileEntry');
-    if (transferItem && transferItem.value) {
-      const source: FileExplorer = transferItem.value[0];
-      return this.renameFile(source.uri, target);
-    }
-
-    transferItem = sources.get('text/uri-list');
-    if (transferItem && transferItem.value) {
-      transferItem.value.split('\r\n').forEach((uri: string) => {
-        return this.transferFile(vscode.Uri.parse(uri), target);
-      });
-    }
-
-    sources.forEach(({ value }, mimeType) => {
-      console.log('mimeType', mimeType);
-
-      switch (mimeType) {
-        case 'application/vnd.code.tree.tsFileEntry':
-          return this.transferFile(value.uri, target);
-
-        // From the @types/vscode package: text/uri-list
-        //   A string with `toString()`ed Uris separated by `\r\n`.
-        case 'text/uri-list':
-          value.split('\r\n').forEach((uri: string) => {
-            return this.transferFile(vscode.Uri.parse(uri), target);
-          });
-          return;
-
-        default:
-          return;
-      }
-    });
-  }
-
-  async renameFile(source: vscode.Uri, target: FileExplorer) {
-    const { address: sourceAddr } = parseTsUri(source);
-    const { address: targetAddr } = parseTsUri(target.uri);
-
-    if (sourceAddr !== targetAddr) {
-      // move across nodes
-      return vscode.window
-        .showErrorMessage('Moving files across nodes is not yet supported.', 'Open issue')
-        .then(() => {
-          vscode.env.openExternal(
-            vscode.Uri.parse('https://github.com/tailscale-dev/vscode-tailscale/issues/178')
-          );
-        });
-    } else {
-      // move within the same node
-      const sourceFilename = source.path.split('/').pop();
-      const fileTarget = target.getDirectory(sourceFilename);
-
-      await this.fsProvider.rename(source, fileTarget, { overwrite: true });
-      this.refreshAll();
-    }
-
-    return;
-  }
-
-  async transferFile(source: vscode.Uri, target: FileExplorer) {
-    const { address, resourcePath } = parseTsUri(target.uri);
-    const sourceFilename = source.path.split('/').pop();
-
-    return vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Window,
-        cancellable: false,
-        title: `uploading ${sourceFilename} to ${address}${resourcePath}`,
-      },
-      async (progress) => {
-        progress.report({ increment: 0 });
-        try {
-          const fileTarget = target.getDirectory(sourceFilename);
-          await this.fsProvider.upload(source, fileTarget);
-
-          if (target.type === vscode.FileType.Directory) {
-            this._onDidChangeTreeData.fire([target]);
-          } else {
-            this.refreshAll();
-          }
-        } catch (e) {
-          vscode.window.showErrorMessage(`Error writing file, check logs for more information`);
-          Logger.error(`error writing file: ${e}`);
-        }
-        progress.report({ increment: 100 });
-      }
-    );
-  }
-
-  public async handleDrag(
-    source: FileExplorer[],
-    treeDataTransfer: vscode.DataTransfer,
-    _: vscode.CancellationToken
-  ): Promise<void> {
-    treeDataTransfer.set(
-      'application/vnd.code.tree.tsFileEntry',
-      new vscode.DataTransferItem(source)
-    );
-  }
-
   constructor(
     private readonly ts: Tailscale,
     private readonly configManager: ConfigManager,
@@ -325,6 +212,127 @@ export class NodeExplorerProvider
 
       return groups;
     }
+  }
+
+  refreshAll() {
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  public async handleDrop(
+    target: FileExplorer | undefined,
+    sources: vscode.DataTransfer,
+    _: vscode.CancellationToken
+  ): Promise<void> {
+    if (!target) {
+      return;
+    }
+
+    let transferItem = sources.get('application/vnd.code.tree.tsFileEntry');
+    if (transferItem && transferItem.value) {
+      const source: FileExplorer = transferItem.value[0];
+      return this.moveFile(source.uri, target);
+    }
+
+    transferItem = sources.get('text/uri-list');
+    if (transferItem && transferItem.value) {
+      transferItem.value.split('\r\n').forEach((uri: string) => {
+        return this.transferFile(vscode.Uri.parse(uri), target);
+      });
+    }
+
+    sources.forEach(({ value }, mimeType) => {
+      console.log('mimeType', mimeType);
+
+      switch (mimeType) {
+        case 'application/vnd.code.tree.tsFileEntry':
+          return this.transferFile(value.uri, target);
+
+        // From the @types/vscode package: text/uri-list
+        //   A string with `toString()`ed Uris separated by `\r\n`.
+        case 'text/uri-list':
+          value.split('\r\n').forEach((uri: string) => {
+            return this.transferFile(vscode.Uri.parse(uri), target);
+          });
+          return;
+
+        default:
+          return;
+      }
+    });
+  }
+
+  /**
+   * Move a file from within a node or across nodes.
+   */
+  async moveFile(source: vscode.Uri, target: FileExplorer) {
+    const { address: sourceAddr } = parseTsUri(source);
+    const { address: targetAddr } = parseTsUri(target.uri);
+
+    if (sourceAddr !== targetAddr) {
+      // move across nodes
+      const contents = await vscode.workspace.fs.readFile(source);
+      const fileName = path.basename(source.toString());
+      const targetDir = target.getDirectory(fileName);
+
+      await this.fsProvider.writeFile(targetDir, contents, {
+        create: true,
+        overwrite: false,
+      });
+
+      this.refreshAll();
+    } else {
+      // move within the same node
+      const sourceFilename = source.path.split('/').pop();
+      const fileTarget = target.getDirectory(sourceFilename);
+
+      await this.fsProvider.rename(source, fileTarget, { overwrite: true });
+    }
+
+    return;
+  }
+
+  /**
+   * Transfer a file from the local filesystem to a node.
+   */
+  async transferFile(source: vscode.Uri, target: FileExplorer) {
+    const { address, resourcePath } = parseTsUri(target.uri);
+    const sourceFilename = source.path.split('/').pop();
+
+    return vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Window,
+        cancellable: false,
+        title: `uploading ${sourceFilename} to ${address}${resourcePath}`,
+      },
+      async (progress) => {
+        progress.report({ increment: 0 });
+        try {
+          const fileTarget = target.getDirectory(sourceFilename);
+          await this.fsProvider.upload(source, fileTarget);
+
+          if (target.type === vscode.FileType.Directory) {
+            this._onDidChangeTreeData.fire([target]);
+          } else {
+            this.refreshAll();
+          }
+        } catch (e) {
+          vscode.window.showErrorMessage(`Error writing file, check logs for more information`);
+          Logger.error(`error writing file: ${e}`);
+        }
+        progress.report({ increment: 100 });
+      }
+    );
+  }
+
+  public async handleDrag(
+    source: FileExplorer[],
+    treeDataTransfer: vscode.DataTransfer,
+    _: vscode.CancellationToken
+  ): Promise<void> {
+    treeDataTransfer.set(
+      'application/vnd.code.tree.tsFileEntry',
+      new vscode.DataTransferItem(source)
+    );
   }
 
   registerDownloadCommand() {
