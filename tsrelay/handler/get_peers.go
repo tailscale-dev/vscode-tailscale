@@ -120,7 +120,7 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 			addr = p.TailscaleIPs[0].String()
 		}
 		peer := &peerStatus{
-			DNSName:      p.DNSName,
+			DNSName:      dnsNameNoRootLabel,
 			ServerName:   serverName,
 			Online:       p.Online,
 			ID:           p.ID,
