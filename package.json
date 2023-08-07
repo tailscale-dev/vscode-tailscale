@@ -135,6 +135,11 @@
       ],
       "view/item/context": [
         {
+          "command": "tailscale.node.downloadRemoteFile",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-file/",
+          "group": "inline"
+        },
+        {
           "command": "tailscale.node.openTerminal",
           "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
           "group": "inline"
@@ -278,6 +283,11 @@
         "command": "tailscale.node.openRemoteCode",
         "title": "Attach VS Code",
         "icon": "$(remote-explorer)"
+      },
+      {
+        "command": "tailscale.node.downloadRemoteFile",
+        "title": "Download to your workspace",
+        "icon": "$(cloud-download)"
       },
       {
         "command": "tailscale.node.openDetailsLink",
