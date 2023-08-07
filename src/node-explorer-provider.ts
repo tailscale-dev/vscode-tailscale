@@ -49,33 +49,78 @@ export class NodeExplorerProvider
     let transferItem = sources.get('application/vnd.code.tree.tsFileEntry');
     if (transferItem && transferItem.value) {
       const source: FileExplorer = transferItem.value[0];
-      return this.transferFile(source.uri, target);
+      return this.renameFile(source.uri, target);
     }
 
     transferItem = sources.get('text/uri-list');
     if (transferItem && transferItem.value) {
-      return this.transferFile(vscode.Uri.parse(transferItem.value), target);
+      transferItem.value.split('\r\n').forEach((uri: string) => {
+        return this.transferFile(vscode.Uri.parse(uri), target);
+      });
     }
+
+    sources.forEach(({ value }, mimeType) => {
+      console.log('mimeType', mimeType);
+
+      switch (mimeType) {
+        case 'application/vnd.code.tree.tsFileEntry':
+          return this.transferFile(value.uri, target);
+
+        // From the @types/vscode package: text/uri-list
+        //   A string with `toString()`ed Uris separated by `\r\n`.
+        case 'text/uri-list':
+          value.split('\r\n').forEach((uri: string) => {
+            return this.transferFile(vscode.Uri.parse(uri), target);
+          });
+          return;
+
+        default:
+          return;
+      }
+    });
   }
 
-  async transferFile(uri: vscode.Uri, target: FileExplorer) {
+  async renameFile(source: vscode.Uri, target: FileExplorer) {
+    const { address: sourceAddr } = parseTsUri(source);
+    const { address: targetAddr } = parseTsUri(target.uri);
+
+    if (sourceAddr !== targetAddr) {
+      // move across nodes
+      return vscode.window
+        .showErrorMessage('Moving files across nodes is not yet supported.', 'Open issue')
+        .then(() => {
+          vscode.env.openExternal(
+            vscode.Uri.parse('https://github.com/tailscale-dev/vscode-tailscale/issues/178')
+          );
+        });
+    } else {
+      // move within the same node
+      const sourceFilename = source.path.split('/').pop();
+      const fileTarget = target.getDirectory(sourceFilename);
+
+      await this.fsProvider.rename(source, fileTarget, { overwrite: true });
+      this.refreshAll();
+    }
+
+    return;
+  }
+
+  async transferFile(source: vscode.Uri, target: FileExplorer) {
+    const { address, resourcePath } = parseTsUri(target.uri);
+    const sourceFilename = source.path.split('/').pop();
+
     return vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Window,
         cancellable: false,
-        title: 'Tailscale is sending your file...',
+        title: `uploading ${sourceFilename} to ${address}${resourcePath}`,
       },
       async (progress) => {
         progress.report({ increment: 0 });
         try {
-          const contents = await vscode.workspace.fs.readFile(uri);
-          const fileName = path.basename(uri.toString());
-          const targetDir = target.getDirectory(fileName);
-          Logger.info(`writing to: ${targetDir.toString()}`);
-          await this.fsProvider.writeFile(targetDir, contents, {
-            create: true,
-            overwrite: false,
-          });
+          const fileTarget = target.getDirectory(sourceFilename);
+          await this.fsProvider.upload(source, fileTarget);
+
           if (target.type === vscode.FileType.Directory) {
             this._onDidChangeTreeData.fire([target]);
           } else {

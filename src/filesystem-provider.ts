@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 // implementations grab the home directory differently
 export interface FileSystemProvider extends vscode.FileSystemProvider {
   getHomeDirectory(hostname: string): Promise<string>;
+  upload(source: vscode.Uri, target: vscode.Uri): Promise<void>;
 }
 
 // fileSorter mimicks the Node Explorer file structure in that directories
