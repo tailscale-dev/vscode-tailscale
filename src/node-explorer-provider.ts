@@ -301,8 +301,7 @@ export class NodeExplorerProvider
               }
               const fileContent = await vscode.workspace.fs.readFile(file.uri);
               const fileName = path.basename(file.uri.toString());
-              const targetPath =
-                vscode.workspace.workspaceFolders?.at(0)?.uri.path + '/' + fileName;
+              const targetPath = workspacePath + '/' + fileName;
               const localPath = vscode.Uri.file(targetPath);
               await vscode.workspace.fs.writeFile(localPath, fileContent);
             } catch (e) {
