@@ -77,6 +77,12 @@ export class Sftp {
     return util.promisify(sftp.rmdir).call(sftp, path);
   }
 
+  async uploadFile(localPath: string, remotePath: string): Promise<void> {
+    console.log('uploadFile', localPath, remotePath);
+    const sftp = await this.getSftp();
+    return util.promisify(sftp.fastPut).call(sftp, localPath, remotePath);
+  }
+
   convertFileType(stats: ssh2.Stats): vscode.FileType {
     if (stats.isDirectory()) {
       return vscode.FileType.Directory;
