@@ -168,7 +168,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         configManager.setForHost(address, 'rootDir', dir);
-        nodeExplorerProvider.refreshAll();
+        nodeExplorerProvider.refresh();
       }
     )
   );
