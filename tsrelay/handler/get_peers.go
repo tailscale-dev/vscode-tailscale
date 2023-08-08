@@ -71,9 +71,9 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 
 	s := getPeersResponse{
 		PeerGroups: []*peerGroup{
-			{Name: "My nodes"},
-			{Name: "All nodes"},
-			{Name: "Offline nodes"},
+			{Name: "Managed by you"},
+			{Name: "All machines"},
+			{Name: "Offline machines"},
 		},
 	}
 
