@@ -73,6 +73,7 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		PeerGroups: []*peerGroup{
 			{Name: "My nodes"},
 			{Name: "All nodes"},
+			{Name: "Offline nodes"},
 		},
 	}
 
@@ -130,7 +131,10 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 			SSHEnabled:   len(p.SSH_HostKeys) > 0,
 			Address:      addr,
 		}
-		if p.UserID == st.Self.UserID {
+
+		if !p.Online {
+			s.PeerGroups[2].Peers = append(s.PeerGroups[2].Peers, peer)
+		} else if p.UserID == st.Self.UserID {
 			s.PeerGroups[0].Peers = append(s.PeerGroups[0].Peers, peer)
 		} else {
 			s.PeerGroups[1].Peers = append(s.PeerGroups[1].Peers, peer)
@@ -150,12 +154,6 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 	for _, pg := range s.PeerGroups {
 		peers := pg.Peers
 		sort.Slice(peers, func(i, j int) bool {
-			if peers[i].Online && !peers[j].Online {
-				return true
-			}
-			if peers[j].Online && !peers[i].Online {
-				return false
-			}
 			return peers[i].HostName < peers[j].HostName
 		})
 	}
