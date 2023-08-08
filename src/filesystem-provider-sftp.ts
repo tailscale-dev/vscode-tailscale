@@ -97,6 +97,15 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
     return await sftp.rename(sourcePath, targetPath);
   });
 
+  upload = withFileSystemErrorHandling('upload', async (source: vscode.Uri, target: vscode.Uri) => {
+    const sourcePath = source.path;
+    const { resourcePath: targetPath, sftp } = await this.getParsedUriAndSftp(target);
+
+    Logger.info(`Uploading ${sourcePath} to ${targetPath}`, 'tsFs-sftp');
+
+    return await sftp.uploadFile(sourcePath, targetPath);
+  });
+
   async getHomeDirectory(address: string): Promise<string> {
     const sftp = await this.manager.getSftp(address);
     if (!sftp) throw new Error('Failed to establish SFTP connection');
