@@ -427,7 +427,7 @@
     "concurrently": "^8.2.0",
     "css-loader": "^6.8.1",
     "eslint": "^8.45.0",
-    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-unicorn": "^48.0.0",
     "glob": "^10.3.3",
