@@ -11,15 +11,15 @@ A vsix build can be produced by running `./tool/yarn vsce package --allow-star-a
 
 ## Development tools
 
-Following the [Tailscale OSS](https://github.com/tailscale/tailscale) repository, we use a `./tool` directory to manage tool dependencies. Versions are pinned via `*.rev` files in the projects' root and installed via `./tool/redo.sh` using the `*.cmd.do` files also in the project's root.
+Following the [Tailscale OSS](https://github.com/tailscale/tailscale) repository, we use a `./tool` directory to manage tool dependencies. Versions are pinned via `*.rev` files in the projects' root and installed on demand.
 
 Flakes are provided for Nix users, with `nix develop` for the environment.
 
 The following tools are available:
 
-- `./tool/node` - [Node](https://nodejs.org/) for future JavaScript tooling
+- `./tool/Go` - [Go](https://go.dev/) for tsrelay backend
+- `./tool/node` - [Node](https://nodejs.org/) for JavaScript tooling
 - `./tool/yarn` - [Yarn](https://yarnpkg.com/) package manager
-- `./tool/redo.sh` - [Redo](https://github.com/apenwarr/redo) build/automation tool (for deps)
 
 If available, [direnv](https://direnv.net/) will place these tools in your PATH per our `.envrc` config. Installation instructions for direnv are available [here](https://direnv.net/docs/installation.html).
 
