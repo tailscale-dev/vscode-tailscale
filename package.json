@@ -27,7 +27,8 @@
     "*"
   ],
   "extensionKind": [
-    "ui"
+    "ui",
+    "workspace"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -134,6 +135,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "tailscale.node.downloadRemoteFile",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-file/",
+          "group": "inline"
+        },
         {
           "command": "tailscale.node.openTerminal",
           "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
@@ -280,6 +286,11 @@
         "icon": "$(remote-explorer)"
       },
       {
+        "command": "tailscale.node.downloadRemoteFile",
+        "title": "Download to your workspace",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "tailscale.node.openDetailsLink",
         "title": "Open machine details..."
       },
@@ -419,14 +430,14 @@
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
     "@vscode/codicons": "^0.0.33",
-    "@vscode/vsce": "^2.20.0",
+    "@vscode/vsce": "^2.20.1",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "backport": "^8.9.8",
     "bufferutil": "^4.0.7",
     "concurrently": "^8.2.0",
     "css-loader": "^6.8.1",
     "eslint": "^8.45.0",
-    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-unicorn": "^48.0.0",
     "glob": "^10.3.3",

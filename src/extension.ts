@@ -91,8 +91,8 @@ export async function activate(context: vscode.ExtensionContext) {
     updateNodeExplorerDisplayName
   );
 
-  nodeExplorerView = createNodeExplorerView();
   vscode.window.registerTreeDataProvider('node-explorer-view', nodeExplorerProvider);
+  nodeExplorerView = createNodeExplorerView();
   context.subscriptions.push(nodeExplorerView);
 
   context.subscriptions.push(
@@ -168,7 +168,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         configManager.setForHost(address, 'rootDir', dir);
-        nodeExplorerProvider.refreshAll();
+        nodeExplorerProvider.refresh();
       }
     )
   );

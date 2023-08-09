@@ -13,7 +13,7 @@ export class SSH {
     options?: { stdin?: string; sudoPassword?: string }
   ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const sshArgs = [];
+      const sshArgs: string[] = [];
 
       if (options?.sudoPassword) {
         sshArgs.push('sudo', '-S', command, ...args);

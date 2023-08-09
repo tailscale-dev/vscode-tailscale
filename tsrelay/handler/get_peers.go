@@ -69,12 +69,11 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		return nil, err
 	}
 
-	s := getPeersResponse{
-		PeerGroups: []*peerGroup{
-			{Name: "Managed by you"},
-			{Name: "All machines"},
-			{Name: "Offline machines"},
-		},
+	s := getPeersResponse{PeerGroups: []*peerGroup{}}
+	peerGroups := [...]*peerGroup{
+		{Name: "Managed by you"},
+		{Name: "All machines"},
+		{Name: "Offline machines"},
 	}
 
 	if st.BackendState == "NeedsLogin" || (st.Self != nil && !st.Self.Online) {
@@ -133,28 +132,24 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		}
 
 		if !p.Online {
-			s.PeerGroups[2].Peers = append(s.PeerGroups[2].Peers, peer)
+			peerGroups[2].Peers = append(peerGroups[2].Peers, peer)
 		} else if p.UserID == st.Self.UserID {
-			s.PeerGroups[0].Peers = append(s.PeerGroups[0].Peers, peer)
+			peerGroups[0].Peers = append(peerGroups[0].Peers, peer)
 		} else {
-			s.PeerGroups[1].Peers = append(s.PeerGroups[1].Peers, peer)
+			peerGroups[1].Peers = append(peerGroups[1].Peers, peer)
 		}
 	}
 
-	myNodes := len(s.PeerGroups[0].Peers)
-	allNodes := len(s.PeerGroups[1].Peers)
-	if myNodes == 0 && allNodes > 0 {
-		s.PeerGroups = s.PeerGroups[1:]
-	} else if allNodes == 0 && myNodes > 0 {
-		s.PeerGroups = s.PeerGroups[0:1]
-	} else if myNodes == 0 && allNodes == 0 {
-		s.PeerGroups = nil
+	for _, pg := range peerGroups {
+		if len(pg.Peers) > 0 {
+			s.PeerGroups = append(s.PeerGroups, pg)
+		}
 	}
 
 	for _, pg := range s.PeerGroups {
 		peers := pg.Peers
 		sort.Slice(peers, func(i, j int) bool {
-			return peers[i].HostName < peers[j].HostName
+			return peers[i].ServerName < peers[j].ServerName
 		})
 	}
 

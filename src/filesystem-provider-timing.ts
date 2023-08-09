@@ -75,12 +75,20 @@ export class WithFSTiming implements FileSystemProvider {
   async rename(
     oldUri: vscode.Uri,
     newUri: vscode.Uri,
-    options: { readonly overwrite: boolean }
+    options: { readonly overwrite: boolean } = { overwrite: false }
   ): Promise<void> {
     const startTime = new Date().getTime();
     const res = await this.fsp.rename(oldUri, newUri, options);
     const endTime = new Date().getTime();
     Logger.info(`${endTime - startTime}ms for rename`, `tsFs-timing`);
+    return res;
+  }
+
+  async upload(source: vscode.Uri, target: vscode.Uri): Promise<void> {
+    const startTime = new Date().getTime();
+    const res = await this.fsp.upload(source, target);
+    const endTime = new Date().getTime();
+    Logger.info(`${endTime - startTime}ms for upload`, `tsFs-timing`);
     return res;
   }
 
