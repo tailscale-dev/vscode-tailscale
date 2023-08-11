@@ -78,7 +78,7 @@ To backport a PR, add the `auto-backport` label to a PR and a corresponding vers
 From the `main` branch:
 
 ```
-$ git checkout -b release-branch/0.4
+$ git checkout -b release-branch/v0.4
 ```
 
 #### To make a new patch for an existing release (e.g., `0.2.0` ⇒ `0.2.1`)
