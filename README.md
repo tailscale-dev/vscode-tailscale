@@ -16,6 +16,20 @@ The Tailscale extension for VS Code brings no-hassle, secure networking alongsid
 
 ## Features
 
+### Explore remote machines
+
+View and interact with machines on your tailnet within VS Code. Powered by [Tailscale SSH](https://tailscale.com/tailscale-ssh/), you can remotely manage files, open terminal sessions, or attach remote VS Code sessions.
+
+![VS Code with the Tailscale Machine Explorer expanded, showing a tailnet with a variety of services](resources/readme/machine-explorer.png)
+
+#### Connect to a machine in your tailnet
+
+You can start a new terminal session or attach VS Code to a machine for remote development in one click. Hover over the machine you'd like to connect to, and click the <img alt="VS Code Terminal Icon" style="display: inline-block; max-height: 1.25em; position: relative; vertical-align: text-top;" src="resources/readme/terminal.svg"> icon to start a terminal session, or the <img alt="VS Code Remote Explorer Icon" style="display: inline-block; max-height: 1.25em; position: relative; vertical-align: text-top;" src="resources/readme/remote-explorer.svg"> icon to attach the VS Code window to the machine.
+
+#### Edit files on a machine in your tailnet
+
+To view and edit files on a machine in your tailnet, expand the machine and click the **File explorer** item. You must have [enabled Tailscale SSH](https://tailscale.com/kb/1193/tailscale-ssh/#configure-tailscale-ssh) on the machine in order to use the file explorer.
+
 ### Expose a port over the internet
 
 Route traffic from the internet to a node in your tailnet to publicly share it with anyone, even if they aren’t using Taiscale.
