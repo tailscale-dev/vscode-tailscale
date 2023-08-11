@@ -24,7 +24,7 @@ View and interact with machines on your tailnet within VS Code. Powered by [Tail
 
 #### Connect to a machine in your tailnet
 
-You can start a new terminal session or attach VS Code to a machine for remote development in one click. Hover over the machine you'd like to connect to, and click the <img alt="VS Code Terminal Icon" style="display: inline-block; max-height: 1.25em; position: relative; vertical-align: text-top;" src="resources/readme/terminal.svg"> icon to start a terminal session, or the <img alt="VS Code Remote Explorer Icon" style="display: inline-block; max-height: 1.25em; position: relative; vertical-align: text-top;" src="resources/readme/remote-explorer.svg"> icon to attach the VS Code window to the machine.
+You can start a new terminal session or attach VS Code to a machine for remote development in one click. Hover over the machine you'd like to connect to, and click the <img alt="VS Code Terminal Icon" style="display: inline-block; max-height: 1.25em; position: relative; vertical-align: text-top;" src="https://raw.githubusercontent.com/tailscale-dev/vscode-tailscale/main/resources/readme/terminal.png"> icon to start a terminal session, or the <img alt="VS Code Remote Explorer Icon" style="display: inline-block; max-height: 1.25em; position: relative; vertical-align: text-top;" src="https://raw.githubusercontent.com/tailscale-dev/vscode-tailscale/main/resources/readme/remote-explorer.png"> icon to attach the VS Code window to the machine.
 
 #### Edit files on a machine in your tailnet
 
