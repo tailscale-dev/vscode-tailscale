@@ -129,6 +129,11 @@
           "when": "view == serve-view || view == node-explorer-view"
         },
         {
+          "command": "tailscale.openVSCodeDocs",
+          "group": "overflow",
+          "when": "view == serve-view || view == node-explorer-view"
+        },
+        {
           "command": "tailscale.nodeExplorer.refresh",
           "group": "navigation",
           "when": "view == node-explorer-view"
@@ -231,6 +236,11 @@
       {
         "command": "tailscale.openAdminConsole",
         "title": "Admin console",
+        "category": "Tailscale"
+      },
+      {
+        "command": "tailscale.openVSCodeDocs",
+        "title": "Documentation",
         "category": "Tailscale"
       },
       {
