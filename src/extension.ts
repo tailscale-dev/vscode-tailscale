@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { ServePanelProvider } from './serve-panel-provider';
-import { ADMIN_CONSOLE } from './utils/url';
+import { ADMIN_CONSOLE, KB_DOCS_URL as KB_DOCS_URL } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
@@ -121,6 +121,12 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openAdminConsole', () => {
       vscode.env.openExternal(vscode.Uri.parse(ADMIN_CONSOLE));
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.openVSCodeDocs', () => {
+      vscode.env.openExternal(vscode.Uri.parse(KB_DOCS_URL));
     })
   );
 
