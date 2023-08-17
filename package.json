@@ -148,7 +148,17 @@
         {
           "command": "tailscale.node.openTerminal",
           "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
-          "group": "inline"
+          "group": "inline@1"
+        },
+        {
+          "command": "tailscale.node.openRemoteCode",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
+          "group": "inline@2"
+        },
+        {
+          "command": "tailscale.nodeExplorer.refresh",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
+          "group": "inline@3"
         },
         {
           "command": "tailscale.node.openTerminal",
@@ -157,33 +167,23 @@
         },
         {
           "command": "tailscale.node.openRemoteCode",
-          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
-          "group": "inline"
-        },
-        {
-          "command": "tailscale.node.openRemoteCode",
           "group": "1_action@2",
           "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)"
         },
         {
           "command": "tailscale.node.setUsername",
-          "when": "view == node-explorer-view && viewItem == peer-root",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
           "group": "2_settings@3"
         },
         {
           "command": "tailscale.node.setRootDir",
-          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem =~ /^peer-file-explorer-root/)",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
           "group": "2_settings@3"
         },
         {
           "command": "tailscale.node.copyIPv4",
           "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "3_copy@1"
-        },
-        {
-          "command": "tailscale.nodeExplorer.refresh",
-          "group": "inline",
-          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-root/"
         },
         {
           "command": "tailscale.node.copyIPv6",
