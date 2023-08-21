@@ -1343,17 +1343,17 @@ azure-devops-node-api@^11.0.1:
     tunnel "0.0.6"
     typed-rest-client "^1.8.4"
 
-backport@^8.9.8:
-  version "8.9.8"
-  resolved "https://registry.yarnpkg.com/backport/-/backport-8.9.8.tgz#020a242370c8617b09a5ac57c1f027d4b7b9eb28"
-  integrity sha512-CjAf6BTEZCHddxngC7nZSQCE8U3aioyrCCWyT2CjLlAmrQZwnRk1/qb4bA01c6AjIxmYMq0lh4nHfry/adXSNA==
+backport@^8.9.9:
+  version "8.9.9"
+  resolved "https://registry.yarnpkg.com/backport/-/backport-8.9.9.tgz#367fbe526df3949a8a7aef05be59443165e8486b"
+  integrity sha512-YBrY66q+B2eRxrTT9P2ek+BZtZ/l7x+axC7CTygj4smuMhyfOf7AXFaayk0PPpmyJtD/hXI3HrOrCaa/8dgHxg==
   dependencies:
     "@octokit/rest" "^19.0.7"
     axios "^1.3.4"
     dedent "^0.7.0"
     del "^6.1.1"
     dotenv "^16.0.3"
-    elastic-apm-node "3.46.0"
+    elastic-apm-node "^3.47.0"
     find-up "^5.0.0"
     graphql "^16.6.0"
     graphql-tag "^2.12.6"
@@ -1671,6 +1671,11 @@ ci-info@^3.8.0:
   version "3.8.0"
   resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-3.8.0.tgz#81408265a5380c929f0bc665d62256628ce9ef91"
   integrity sha512-eXTggHWSooYhq49F2opQhuHWgzucfF2YgODK4e1566GQs5BIfP30B0oenwBJHfWxAs2fyPB1s7Mg949zLf61Yw==
+
+cjs-module-lexer@^1.2.2:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-1.2.3.tgz#6c370ab19f8a3394e318fe682686ec0ac684d107"
+  integrity sha512-0TNiGstbQmCFwt4akjjBg5pLRTSyj/PkWQ1ZoO2zntmg9yLqSRxwEa4iCfQLGjqhiqBfOJa7W/E8wfGrTDmlZQ==
 
 clean-regexp@^1.0.0:
   version "1.0.0"
@@ -2186,43 +2191,31 @@ ee-first@1.1.1:
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
   integrity sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==
 
-elastic-apm-http-client@11.4.0:
-  version "11.4.0"
-  resolved "https://registry.npmjs.org/elastic-apm-http-client/-/elastic-apm-http-client-11.4.0.tgz"
-  integrity sha512-DxPy8MFrcL04qxMG4sxmI5yIKrFCIhJc2xx0eupE3qjCIIPHeLJaUrjFbQbsAnnuhC9sljWsEebtFweHj+Vmug==
-  dependencies:
-    agentkeepalive "^4.2.1"
-    breadth-filter "^2.0.0"
-    end-of-stream "^1.4.4"
-    fast-safe-stringify "^2.0.7"
-    fast-stream-to-buffer "^1.0.0"
-    object-filter-sequence "^1.0.0"
-    readable-stream "^3.4.0"
-    semver "^6.3.0"
-    stream-chopper "^3.0.1"
-
-elastic-apm-node@3.46.0:
-  version "3.46.0"
-  resolved "https://registry.yarnpkg.com/elastic-apm-node/-/elastic-apm-node-3.46.0.tgz#38a8cf8ee1da73d10d62eca59a770643171d16b2"
-  integrity sha512-MuM7Xe+5K7AkfFqrKWrvBJVFcS+hPcTKGj7yR/0/WHR5/r/ZjkBEX/t2bUMjgyHHG4lu5LH/RN86ScGdw1GG2w==
+elastic-apm-node@^3.47.0:
+  version "3.49.1"
+  resolved "https://registry.yarnpkg.com/elastic-apm-node/-/elastic-apm-node-3.49.1.tgz#c000936a1b7f062e4dd502cd3617ebe97d4d9786"
+  integrity sha512-k1kQ/exFqodZOoZSRJ3Csbdo7dtRs/uORBlRTyV2takYa1OIN7o9dvZwd8+eEPOUz4qaeRyVY8X9X2krk9GO/g==
   dependencies:
     "@elastic/ecs-pino-format" "^1.2.0"
     "@opentelemetry/api" "^1.4.1"
     "@opentelemetry/core" "^1.11.0"
     "@opentelemetry/sdk-metrics" "^1.12.0"
     after-all-results "^2.0.0"
+    agentkeepalive "^4.2.1"
     async-cache "^1.1.0"
     async-value-promise "^1.1.1"
     basic-auth "^2.0.1"
+    breadth-filter "^2.0.0"
     cookie "^0.5.0"
     core-util-is "^1.0.2"
-    elastic-apm-http-client "11.4.0"
     end-of-stream "^1.4.4"
     error-callsites "^2.0.4"
     error-stack-parser "^2.0.6"
     escape-string-regexp "^4.0.0"
     fast-safe-stringify "^2.0.7"
+    fast-stream-to-buffer "^1.0.0"
     http-headers "^3.0.2"
+    import-in-the-middle "1.4.2"
     is-native "^1.0.1"
     lru-cache "^6.0.0"
     measured-reporting "^1.51.1"
@@ -2232,13 +2225,14 @@ elastic-apm-node@3.46.0:
     object-identity-map "^1.0.2"
     original-url "^1.2.3"
     pino "^6.11.2"
+    readable-stream "^3.4.0"
     relative-microtime "^2.0.0"
-    require-in-the-middle "^7.0.1"
-    semver "^6.3.0"
+    require-in-the-middle "^7.1.1"
+    semver "^6.3.1"
     shallow-clone-shim "^2.0.0"
     source-map "^0.8.0-beta.0"
     sql-summary "^1.0.1"
-    traverse "^0.6.6"
+    stream-chopper "^3.0.1"
     unicode-byte-truncate "^1.0.0"
 
 electron-to-chromium@^1.4.411:
@@ -3287,6 +3281,16 @@ import-fresh@^3.2.1:
   dependencies:
     parent-module "^1.0.0"
     resolve-from "^4.0.0"
+
+import-in-the-middle@1.4.2:
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/import-in-the-middle/-/import-in-the-middle-1.4.2.tgz#2a266676e3495e72c04bbaa5ec14756ba168391b"
+  integrity sha512-9WOz1Yh/cvO/p69sxRmhyQwrIGGSp7EIdcb+fFNVi7CzQGQB8U1/1XrKVSbEd/GNOAeM0peJtmi7+qphe7NvAw==
+  dependencies:
+    acorn "^8.8.2"
+    acorn-import-assertions "^1.9.0"
+    cjs-module-lexer "^1.2.2"
+    module-details-from-path "^1.0.3"
 
 import-local@^3.0.2:
   version "3.1.0"
@@ -5013,10 +5017,10 @@ require-from-string@^2.0.2:
   resolved "https://registry.yarnpkg.com/require-from-string/-/require-from-string-2.0.2.tgz#89a7fdd938261267318eafe14f9c32e598c36909"
   integrity sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==
 
-require-in-the-middle@^7.0.1:
-  version "7.1.1"
-  resolved "https://registry.npmjs.org/require-in-the-middle/-/require-in-the-middle-7.1.1.tgz"
-  integrity sha512-OScOjQjrrjhAdFpQmnkE/qbIBGCRFhQB/YaJhcC3CPOlmhe7llnW46Ac1J5+EjcNXOTnDdpF96Erw/yedsGksQ==
+require-in-the-middle@^7.1.1:
+  version "7.2.0"
+  resolved "https://registry.yarnpkg.com/require-in-the-middle/-/require-in-the-middle-7.2.0.tgz#b539de8f00955444dc8aed95e17c69b0a4f10fcf"
+  integrity sha512-3TLx5TGyAY6AOqLBoXmHkNql0HIf2RGbuMgCDT2WO/uGVAPJs6h7Kl+bN6TIZGd9bWhWPwnDnTHGtW8Iu77sdw==
   dependencies:
     debug "^4.1.1"
     module-details-from-path "^1.0.3"
@@ -5200,10 +5204,15 @@ selfsigned@^2.1.1:
   resolved "https://registry.npmjs.org/semver/-/semver-5.7.1.tgz"
   integrity sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==
 
-semver@^6.0.0, semver@^6.3.0:
+semver@^6.0.0:
   version "6.3.0"
   resolved "https://registry.npmjs.org/semver/-/semver-6.3.0.tgz"
   integrity sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==
+
+semver@^6.3.1:
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.1.tgz#556d2ef8689146e46dcea4bfdd095f3434dffcb4"
+  integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
 semver@^7.3.4, semver@^7.3.8:
   version "7.5.1"
@@ -5912,11 +5921,6 @@ tr46@~0.0.3:
   version "0.0.3"
   resolved "https://registry.npmjs.org/tr46/-/tr46-0.0.3.tgz"
   integrity sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==
-
-traverse@^0.6.6:
-  version "0.6.7"
-  resolved "https://registry.npmjs.org/traverse/-/traverse-0.6.7.tgz"
-  integrity sha512-/y956gpUo9ZNCb99YjxG7OaslxZWHfCHAUUfshwqOXmxUIvqLjVO581BT+gM59+QV9tFe6/CGG53tsA1Y7RSdg==
 
 tree-kill@^1.2.2:
   version "1.2.2"

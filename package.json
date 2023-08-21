@@ -442,7 +442,7 @@
     "@vscode/codicons": "^0.0.33",
     "@vscode/vsce": "^2.20.1",
     "@vscode/webview-ui-toolkit": "^1.2.2",
-    "backport": "^8.9.8",
+    "backport": "^8.9.9",
     "bufferutil": "^4.0.7",
     "concurrently": "^8.2.0",
     "css-loader": "^6.8.1",
