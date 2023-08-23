@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to an [Odd-Even Versioning](https://en.wikipedia.org/wiki/Software_versioning#Odd-numbered_versions_for_development_releases) scheme. Odd-numbered versions are used for development and pre-release updates, while even-numbered versions are used for stable or public releases.
 
+## v0.6.2 - August 23, 2023
+
+- Allow for opening and editing of symlinks
+- Provide context menu to change SSH user or home directory on the File Explorer node
+
 ## v0.6.0 - August 11, 2023
 
 New: View and interact with machines on your tailnet. Powered by [Tailscale SSH](https://tailscale.com/tailscale-ssh/), you can remotely manage files, open terminal sessions, or attach remote VS Code sessions.
