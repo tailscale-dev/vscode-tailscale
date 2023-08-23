@@ -683,7 +683,7 @@ export class FileExplorer extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
 
-    if (type === vscode.FileType.File) {
+    if (type === vscode.FileType.File || vscode.FileType.SymbolicLink) {
       this.command = {
         command: 'vscode.open',
         title: 'Open File',
