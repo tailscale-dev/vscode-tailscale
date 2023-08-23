@@ -12,7 +12,7 @@
 
 # Tailscale for Visual Studio Code
 
-The Tailscale extension for VS Code brings no-hassle, secure networking alongside your code. With Tailscale Funnel you can share anything from a device or node in your Tailscale network (tailnet) with anyone on the Internet.
+The Tailscale extension for VS Code brings no-hassle, secure networking alongside your code. With Tailscale Funnel you can share anything from a device or node in your Tailscale network (tailnet) with anyone on the internet.
 
 ## Features
 
