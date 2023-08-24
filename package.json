@@ -2,7 +2,7 @@
   "name": "vscode-tailscale",
   "publisher": "Tailscale",
   "displayName": "Tailscale",
-  "description": "Share a port over the internet with Tailscale Funnel",
+  "description": "Securely connect to, and access the file systems of remote machines and share your local server on the internet",
   "repository": {
     "type": "git",
     "url": "https://github.com/tailscale-dev/vscode-tailscale.git"
