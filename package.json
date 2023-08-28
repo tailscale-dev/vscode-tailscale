@@ -411,6 +411,15 @@
             "default": 30000,
             "markdownDescription": "The connection timeout for SSH connections in milliseconds.",
             "scope": "window"
+          },
+          "tailscale.fileExplorer.showDotFiles": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show files and directories with names that start with a period.",
+            "scope": "window",
+            "examples": [
+              false
+            ]
           }
         }
       }
