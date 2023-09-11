@@ -1,16 +1,18 @@
 import * as vscode from 'vscode';
+import * as util from 'util';
+
 import { Logger } from './logger';
 import { ConfigManager } from './config-manager';
 import { parseTsUri } from './utils/uri';
-import { SshConnectionManager } from './ssh-connection-manager';
+import { SFTPConnectionManager } from './sftp-connection-manager';
 import { fileSorter } from './filesystem-provider';
 import { getErrorMessage } from './utils/error';
 
 export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
-  public manager: SshConnectionManager;
+  public manager: SFTPConnectionManager;
 
   constructor(configManager: ConfigManager) {
-    this.manager = new SshConnectionManager(configManager);
+    this.manager = SFTPConnectionManager.getInstance(configManager);
   }
 
   // Implementation of the `onDidChangeFile` event
@@ -107,7 +109,7 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
   });
 
   async getHomeDirectory(address: string): Promise<string> {
-    const sftp = await this.manager.getSftp(address);
+    const sftp = await this.manager.getConnection(address);
     if (!sftp) throw new Error('Failed to establish SFTP connection');
 
     return await sftp.getHomeDirectory();
@@ -115,7 +117,7 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
 
   async getParsedUriAndSftp(uri: vscode.Uri) {
     const { address, resourcePath } = parseTsUri(uri);
-    const sftp = await this.manager.getSftp(address);
+    const sftp = await this.manager.getConnection(address);
 
     if (!sftp) {
       throw new Error('Unable to establish SFTP connection');
