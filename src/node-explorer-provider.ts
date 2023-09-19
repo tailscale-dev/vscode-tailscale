@@ -10,6 +10,7 @@ import { createTsUri, parseTsUri } from './utils/uri';
 import { getUsername } from './utils/host';
 import { FileSystemProvider } from './filesystem-provider';
 import { trimSuffix } from './utils';
+import { EXTENSION_NS } from './constants';
 
 /**
  * Anatomy of the TreeView
@@ -28,7 +29,7 @@ export class NodeExplorerProvider
   private _onDidChangeTreeData: vscode.EventEmitter<
     (PeerBaseTreeItem | FileExplorer | undefined)[] | undefined
   > = new vscode.EventEmitter<PeerBaseTreeItem[] | undefined>();
-
+  private showDotFiles: boolean | undefined;
   // We want to use an array as the event type, but the API for this is currently being finalized. Until it's finalized, use any.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
@@ -39,6 +40,9 @@ export class NodeExplorerProvider
     private fsProvider: FileSystemProvider,
     private updateNodeExplorerDisplayName: (title: string) => void
   ) {
+    this.showDotFiles = vscode.workspace
+      .getConfiguration(EXTENSION_NS)
+      .get<boolean>('fileExplorer.showDotFiles');
     this.registerCopyDNSNameCommand();
     this.registerCopyIPv4Command();
     this.registerCopyIPv6Command();
@@ -72,10 +76,15 @@ export class NodeExplorerProvider
     // File Explorer
     if (element instanceof FileExplorer) {
       const dirents = await vscode.workspace.fs.readDirectory(element.uri);
-      return dirents.map(([name, type]) => {
+      const filtered = dirents.reduce<FileExplorer[]>((acc, [name, type]) => {
+        if (this.showDotFiles == false && name.startsWith('.')) {
+          return acc;
+        }
         const childUri = element.uri.with({ path: `${element.uri.path}/${name}` });
-        return new FileExplorer(name, childUri, type);
-      });
+        acc.push(new FileExplorer(name, childUri, type));
+        return acc;
+      }, []);
+      return filtered;
     }
 
     // Node root
