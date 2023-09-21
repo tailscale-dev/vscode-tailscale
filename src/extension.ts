@@ -168,7 +168,7 @@ export async function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        if (!path.isAbsolute(dir) && dir !== '~') {
+        if (!path.isAbsolute(dir) && dir !== '~' && !dir.startsWith('~/')) {
           vscode.window.showErrorMessage(`${dir} is an invalid absolute path`);
           return;
         }
