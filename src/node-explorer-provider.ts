@@ -105,6 +105,9 @@ export class NodeExplorerProvider
         const homeDir = await this.fsProvider.getHomeDirectory(element.Address);
 
         if (rootDir && rootDir !== '~') {
+          if (rootDir.startsWith('~/')) {
+            rootDir = `${homeDir}/${rootDir.slice(2)}`;
+          }
           dirDesc = trimPathPrefix(rootDir, homeDir);
         } else {
           rootDir = homeDir;
