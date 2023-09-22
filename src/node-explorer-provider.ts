@@ -11,6 +11,7 @@ import { getUsername } from './utils/host';
 import { FileSystemProvider } from './filesystem-provider';
 import { trimSuffix } from './utils';
 import { EXTENSION_NS } from './constants';
+import { addToSSHConfig, syncSSHConfig } from './utils/sshconfig';
 
 /**
  * Anatomy of the TreeView
@@ -52,6 +53,7 @@ export class NodeExplorerProvider
     this.registerRenameCommand();
     this.registerOpenNodeDetailsCommand();
     this.registerOpenRemoteCodeCommand();
+    this.registerAddToSSHConfigCommand();
     this.registerOpenTerminalCommand();
     this.registerRefresh();
     this.registerOpenDocsLink();
@@ -620,6 +622,10 @@ export class NodeExplorerProvider
       async (node: PeerRoot | FileExplorer) => {
         const { addr, path } = extractAddrAndPath(node);
 
+        if (addr && this.configManager.config.hosts?.[addr].savedInSSHConfig !== false) {
+          syncSSHConfig(addr, this.configManager);
+        }
+
         if (node instanceof PeerRoot && addr) {
           vscode.commands.executeCommand('vscode.newWindow', {
             remoteAuthority: `ssh-remote+${addr}`,
@@ -638,6 +644,16 @@ export class NodeExplorerProvider
         }
       }
     );
+  }
+
+  registerAddToSSHConfigCommand() {
+    vscode.commands.registerCommand('tailscale.node.addToSSHConfig', async (node: PeerRoot) => {
+      addToSSHConfig(
+        this.configManager,
+        node.Address,
+        getUsername(this.configManager, node.Address)
+      );
+    });
   }
 
   registerOpenNodeDetailsCommand() {

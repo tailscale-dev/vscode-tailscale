@@ -180,6 +180,11 @@
           "group": "2_settings@3"
         },
         {
+          "command": "tailscale.node.addToSSHConfig",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
+          "group": "2_settings@3"
+        },
+        {
           "command": "tailscale.node.copyIPv4",
           "when": "view == node-explorer-view && viewItem == peer-root",
           "group": "3_copy@1"
@@ -330,6 +335,10 @@
       {
         "command": "tailscale.node.setRootDir",
         "title": "Change root directory"
+      },
+      {
+        "command": "tailscale.node.addToSSHConfig",
+        "title": "Add to SSH config file"
       },
       {
         "command": "tailscale.openExternal",
@@ -491,5 +500,8 @@
     "*.{json,md,yml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "ssh-config": "^4.4.0"
   }
 }
