@@ -623,7 +623,7 @@ export class NodeExplorerProvider
         const { addr, path } = extractAddrAndPath(node);
 
         if (addr && this.configManager.config.hosts?.[addr].persistToSSHConfig !== false) {
-          syncSSHConfig(addr, this.configManager);
+          await syncSSHConfig(addr, this.configManager);
         }
 
         if (node instanceof PeerRoot && addr) {
