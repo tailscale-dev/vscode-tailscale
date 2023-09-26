@@ -5501,6 +5501,11 @@ sql-summary@^1.0.1:
   resolved "https://registry.npmjs.org/sql-summary/-/sql-summary-1.0.1.tgz"
   integrity sha512-IpCr2tpnNkP3Jera4ncexsZUp0enJBLr+pHCyTweMUBrbJsTgQeLWx1FXLhoBj/MvcnUQpkgOn2EY8FKOkUzww==
 
+ssh-config@^4.4.0:
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-4.4.0.tgz#5fcc595d941661101f0fda8113149e72fc4a4c5d"
+  integrity sha512-W+AAUSsBirHyXqYBUtZ4l0FBAPH/jnklA0KPBfBuBiJVD8LT4LoQST4MCGPziZJYTVvzFmrgrr7j2JWyl/rPIg==
+
 ssh2@^1.14.0:
   version "1.14.0"
   resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.14.0.tgz#8f68440e1b768b66942c9e4e4620b2725b3555bb"
