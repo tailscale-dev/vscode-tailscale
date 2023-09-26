@@ -5,6 +5,8 @@ import * as path from 'path';
 interface Host {
   user: string;
   rootDir: string;
+  persistToSSHConfig?: boolean;
+  differentUserFromSSHConfig?: boolean;
 }
 
 interface Config {
