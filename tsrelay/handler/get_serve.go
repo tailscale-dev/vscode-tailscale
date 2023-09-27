@@ -144,14 +144,13 @@ func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, e
 			TailscaleIPs: st.Self.TailscaleIPs,
 		}
 
-		capabilities := st.Self.Capabilities
-		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoInvite) ||
-			!slices.Contains(capabilities, tailcfg.NodeAttrFunnel) {
+		if st.Self.HasCap(tailcfg.CapabilityWarnFunnelNoInvite) ||
+			!st.Self.HasCap(tailcfg.NodeAttrFunnel) {
 			s.Errors = append(s.Errors, Error{
 				Type: FunnelOff,
 			})
 		}
-		if slices.Contains(capabilities, tailcfg.CapabilityWarnFunnelNoHTTPS) {
+		if st.Self.HasCap(tailcfg.CapabilityWarnFunnelNoHTTPS) {
 			s.Errors = append(s.Errors, Error{
 				Type: HTTPSOff,
 			})
@@ -163,16 +162,30 @@ func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, e
 		}
 	}
 
-	idx := slices.IndexFunc(st.Self.Capabilities, func(s string) bool {
-		return strings.HasPrefix(s, "https://tailscale.com/cap/funnel-ports")
+	var u *url.URL
+
+	idx := slices.IndexFunc(st.Self.Capabilities, func(s tailcfg.NodeCapability) bool {
+		return strings.HasPrefix(string(s), string(tailcfg.CapabilityFunnelPorts))
 	})
 
 	if idx >= 0 {
-		u, err := url.Parse(st.Self.Capabilities[idx])
+		u, err = url.Parse(string(st.Self.Capabilities[idx]))
 		if err != nil {
 			return nil, err
 		}
+	} else if st.Self.CapMap != nil {
+		for c := range st.Self.CapMap {
+			if strings.HasPrefix(string(c), string(tailcfg.CapabilityFunnelPorts)) {
+				u, err = url.Parse(string(c))
+				if err != nil {
+					return nil, err
+				}
+				break
+			}
+		}
+	}
 
+	if u != nil {
 		ports := strings.Split(strings.TrimSpace(u.Query().Get("ports")), ",")
 
 		for _, ps := range ports {
