@@ -4,7 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to an [Odd-Even Versioning](https://en.wikipedia.org/wiki/Software_versioning#Odd-numbered_versions_for_development_releases) scheme. Odd-numbered versions are used for development and pre-release updates, while even-numbered versions are used for stable or public releases.
 
-## [0.4.4] - 2023-06-29
+## v0.6.2 - August 23, 2023
+
+- Allow for opening and editing of symlinks
+- Provide context menu to change SSH user or home directory on the File Explorer node
+
+## v0.6.0 - August 11, 2023
+
+New: View and interact with machines on your tailnet. Powered by [Tailscale SSH](https://tailscale.com/tailscale-ssh/), you can remotely manage files, open terminal sessions, or attach remote VS Code sessions.
+
+## v0.4.4 - June 29, 2023
 
 An update providing a fix for users running on Flatpak while reducing the required VS Code version to 1.74.0.
 
@@ -20,7 +29,7 @@ An update providing a fix for users running on Flatpak while reducing the requir
 - Run flatpak-spawn when pkexec is needed (#86)
 - Only add menu items to serve view (#77)
 
-## [0.4.3] - 2023-06-21
+## v0.4.3 - June 21, 2023
 
 ### Fixed
 
@@ -33,13 +42,13 @@ An update providing a fix for users running on Flatpak while reducing the requir
 
 - Upgrade dependencies: react, typescript, webpack, eslint, prettier, postcss, tailwindcss, lint-staged (#38, #39, #40, #41, #43, #44, #46, #47, #50, #53)
 
-## [0.4.2] - 2023-06-13
+## v0.4.2 - June 13, 2023
 
 ### Added
 
 - serve/simple: Notice for Linux users (#62)
 
-## [0.4.1] - 2023-06-13
+## v0.4.1 - June 13, 2023
 
 ### Added
 
@@ -54,7 +63,7 @@ An update providing a fix for users running on Flatpak while reducing the requir
 
 Initial public release
 
-## [0.4.0] - 2023-05-31
+## v0.4.0 - May 31, 2023
 
 ### Added
 

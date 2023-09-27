@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"context"
@@ -13,10 +13,10 @@ import (
 )
 
 // static check for local client interface implementation
-var _ localClient = (*tailscale.LocalClient)(nil)
+var _ LocalClient = (*tailscale.LocalClient)(nil)
 
-// localClient is an abstraction of tailscale.LocalClient
-type localClient interface {
+// LocalClient is an abstraction of tailscale.LocalClient
+type LocalClient interface {
 	Status(ctx context.Context) (*ipnstate.Status, error)
 	GetServeConfig(ctx context.Context) (*ipn.ServeConfig, error)
 	StatusWithoutPeers(ctx context.Context) (*ipnstate.Status, error)
@@ -34,7 +34,7 @@ type profile struct {
 // based on the given json file. The format of the file
 // is described in the profile struct. Note that SET
 // operations update the given input in memory.
-func NewMockClient(file string) (localClient, error) {
+func NewMockClient(file string) (LocalClient, error) {
 	bts, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err

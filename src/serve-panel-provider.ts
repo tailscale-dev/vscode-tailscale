@@ -7,7 +7,10 @@ import { Logger } from './logger';
 export class ServePanelProvider implements vscode.WebviewViewProvider {
   _view?: vscode.WebviewView;
 
-  constructor(private readonly _extensionUri: vscode.Uri, private readonly ts: Tailscale) {}
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    private readonly ts: Tailscale
+  ) {}
 
   postMessage(message: WebviewData) {
     if (!this._view) {

@@ -1,10 +1,23 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { ServePanelProvider } from './serve-panel-provider';
-import { ADMIN_CONSOLE } from './utils/url';
+import { ADMIN_CONSOLE, KB_DOCS_URL as KB_DOCS_URL } from './utils/url';
 import { Tailscale } from './tailscale';
 import { Logger } from './logger';
 import { errorForType } from './tailscale/error';
+import {
+  FileExplorer,
+  NodeExplorerProvider,
+  PeerRoot,
+  PeerErrorItem,
+} from './node-explorer-provider';
+
+import { FileSystemProviderSFTP } from './filesystem-provider-sftp';
+import { ConfigManager } from './config-manager';
+import { parseTsUri } from './utils/uri';
+import { WithFSTiming } from './filesystem-provider-timing';
+import { FileSystemProvider } from './filesystem-provider';
 
 let tailscaleInstance: Tailscale;
 
@@ -12,6 +25,8 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.commands.executeCommand('setContext', 'tailscale.env', process.env.NODE_ENV);
 
   tailscaleInstance = await Tailscale.withInit(vscode);
+
+  const configManager = ConfigManager.withGlobalStorageUri(context.globalStorageUri);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
@@ -45,6 +60,41 @@ export async function activate(context: vscode.ExtensionContext) {
     tailscaleInstance
   );
 
+  let fileSystemProvider: FileSystemProvider = new FileSystemProviderSFTP(configManager);
+  fileSystemProvider = new WithFSTiming(fileSystemProvider);
+
+  context.subscriptions.push(
+    vscode.workspace.registerFileSystemProvider('ts', fileSystemProvider, {
+      isCaseSensitive: true,
+    })
+  );
+
+  // eslint-disable-next-line prefer-const
+  let nodeExplorerView: vscode.TreeView<PeerRoot | FileExplorer | PeerErrorItem>;
+
+  function updateNodeExplorerDisplayName(name: string) {
+    nodeExplorerView.title = name;
+  }
+
+  const createNodeExplorerView = (): vscode.TreeView<PeerRoot | FileExplorer | PeerErrorItem> => {
+    return vscode.window.createTreeView('node-explorer-view', {
+      treeDataProvider: nodeExplorerProvider,
+      showCollapseAll: true,
+      dragAndDropController: nodeExplorerProvider,
+    });
+  };
+
+  const nodeExplorerProvider = new NodeExplorerProvider(
+    tailscaleInstance,
+    configManager,
+    fileSystemProvider,
+    updateNodeExplorerDisplayName
+  );
+
+  vscode.window.registerTreeDataProvider('node-explorer-view', nodeExplorerProvider);
+  nodeExplorerView = createNodeExplorerView();
+  context.subscriptions.push(nodeExplorerView);
+
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.refreshServe', () => {
       Logger.info('called tailscale.refreshServe', 'command');
@@ -64,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.openFunnelPanel', () => {
-      vscode.commands.executeCommand('tailscale-serve-view.focus');
+      vscode.commands.executeCommand('serve-view.focus');
     })
   );
 
@@ -74,7 +124,62 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  vscode.window.registerWebviewViewProvider('tailscale-serve-view', servePanelProvider);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.openVSCodeDocs', () => {
+      vscode.env.openExternal(vscode.Uri.parse(KB_DOCS_URL));
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('tailscale.node.setUsername', async (node: PeerRoot) => {
+      const username = await vscode.window.showInputBox({
+        prompt: `Enter the username to use for ${node.ServerName}`,
+        value: configManager.config?.hosts?.[node.Address]?.user,
+      });
+
+      if (!username) {
+        return;
+      }
+
+      configManager.setForHost(node.Address, 'user', username);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'tailscale.node.setRootDir',
+      async (node: PeerRoot | FileExplorer | PeerErrorItem) => {
+        let address: string;
+
+        if (node instanceof FileExplorer) {
+          address = parseTsUri(node.uri).address;
+        } else if (node instanceof PeerRoot) {
+          address = node.Address;
+        } else {
+          throw new Error(`invalid node type: ${typeof node}`);
+        }
+
+        const dir = await vscode.window.showInputBox({
+          prompt: `Enter the root directory to use for ${address}`,
+          value: configManager.config?.hosts?.[address]?.rootDir || '~',
+        });
+
+        if (!dir) {
+          return;
+        }
+
+        if (!path.isAbsolute(dir) && dir !== '~' && !dir.startsWith('~/')) {
+          vscode.window.showErrorMessage(`${dir} is an invalid absolute path`);
+          return;
+        }
+
+        configManager.setForHost(address, 'rootDir', dir);
+        nodeExplorerProvider.refresh();
+      }
+    )
+  );
+
+  vscode.window.registerWebviewViewProvider('serve-view', servePanelProvider);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.sharePortOverTunnel', async () => {
@@ -129,7 +234,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('tailscale.reloadServePanel', async () => {
       await vscode.commands.executeCommand('workbench.action.closePanel');
-      await vscode.commands.executeCommand('tailscale-serve-view.focus');
+      await vscode.commands.executeCommand('serve-view.focus');
       setTimeout(() => {
         vscode.commands.executeCommand('workbench.action.toggleDevTools');
       }, 500);

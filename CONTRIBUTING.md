@@ -11,15 +11,15 @@ A vsix build can be produced by running `./tool/yarn vsce package --allow-star-a
 
 ## Development tools
 
-Following the [Tailscale OSS](https://github.com/tailscale/tailscale) repository, we use a `./tool` directory to manage tool dependencies. Versions are pinned via `*.rev` files in the projects' root and installed via `./tool/redo.sh` using the `*.cmd.do` files also in the project's root.
+Following the [Tailscale OSS](https://github.com/tailscale/tailscale) repository, we use a `./tool` directory to manage tool dependencies. Versions are pinned via `*.rev` files in the projects' root and installed on demand.
 
 Flakes are provided for Nix users, with `nix develop` for the environment.
 
 The following tools are available:
 
-- `./tool/node` - [Node](https://nodejs.org/) for future JavaScript tooling
+- `./tool/Go` - [Go](https://go.dev/) for tsrelay backend
+- `./tool/node` - [Node](https://nodejs.org/) for JavaScript tooling
 - `./tool/yarn` - [Yarn](https://yarnpkg.com/) package manager
-- `./tool/redo.sh` - [Redo](https://github.com/apenwarr/redo) build/automation tool (for deps)
 
 If available, [direnv](https://direnv.net/) will place these tools in your PATH per our `.envrc` config. Installation instructions for direnv are available [here](https://direnv.net/docs/installation.html).
 
@@ -78,7 +78,7 @@ To backport a PR, add the `auto-backport` label to a PR and a corresponding vers
 From the `main` branch:
 
 ```
-$ git checkout -b release-branch/0.4
+$ git checkout -b release-branch/v0.4
 ```
 
 #### To make a new patch for an existing release (e.g., `0.2.0` ⇒ `0.2.1`)
@@ -106,7 +106,7 @@ Open a pull-request for the changes and cherry-pick into the release branch
 ```
 $ npm version --no-git-tag-version 0.2.1
 $ git add package.json && git commit -sm 'version: v0.2.1'
-$ git tag -am "Relase 0.2.1" "v0.2.1"
+$ git tag -am "Release 0.2.1" "v0.2.1"
 ```
 
 ### Create or update an existing release branch

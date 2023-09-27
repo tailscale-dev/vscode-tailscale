@@ -2,18 +2,17 @@
   "name": "vscode-tailscale",
   "publisher": "Tailscale",
   "displayName": "Tailscale",
-  "description": "Share a port over the internet with Tailscale Funnel",
+  "description": "Securely connect to, and access the file systems of remote machines and share your local server on the internet",
   "repository": {
     "type": "git",
     "url": "https://github.com/tailscale-dev/vscode-tailscale.git"
   },
-  "version": "0.5.0",
+  "version": "0.7.0",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Other",
-    "Testing"
+    "Other"
   ],
   "keywords": [
     "vpn",
@@ -27,7 +26,8 @@
     "*"
   ],
   "extensionKind": [
-    "ui"
+    "ui",
+    "workspace"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -115,17 +115,119 @@
         {
           "command": "tailscale.refreshServe",
           "group": "overflow",
-          "when": "view == tailscale-serve-view"
+          "when": "view == serve-view"
         },
         {
           "command": "tailscale.resetServe",
           "group": "overflow",
-          "when": "view == tailscale-serve-view"
+          "when": "view == serve-view"
         },
         {
           "command": "tailscale.openAdminConsole",
           "group": "overflow",
-          "when": "view == tailscale-serve-view"
+          "when": "view == serve-view || view == node-explorer-view"
+        },
+        {
+          "command": "tailscale.openVSCodeDocs",
+          "group": "overflow",
+          "when": "view == serve-view || view == node-explorer-view"
+        },
+        {
+          "command": "tailscale.nodeExplorer.refresh",
+          "group": "navigation",
+          "when": "view == node-explorer-view"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "tailscale.node.downloadRemoteFile",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-file/",
+          "group": "inline"
+        },
+        {
+          "command": "tailscale.node.openTerminal",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
+          "group": "inline@1"
+        },
+        {
+          "command": "tailscale.node.openRemoteCode",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
+          "group": "inline@2"
+        },
+        {
+          "command": "tailscale.nodeExplorer.refresh",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
+          "group": "inline@3"
+        },
+        {
+          "command": "tailscale.node.openTerminal",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)",
+          "group": "1_action@1"
+        },
+        {
+          "command": "tailscale.node.openRemoteCode",
+          "group": "1_action@2",
+          "when": "view == node-explorer-view && (viewItem =~ /^peer-file-explorer-dir/ || viewItem == peer-root)"
+        },
+        {
+          "command": "tailscale.node.setUsername",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
+          "group": "2_settings@3"
+        },
+        {
+          "command": "tailscale.node.setRootDir",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
+          "group": "2_settings@3"
+        },
+        {
+          "command": "tailscale.node.addToSSHConfig",
+          "when": "(view == node-explorer-view && viewItem == peer-root) || (view == node-explorer-view && viewItem == peer-file-explorer-dir-root)",
+          "group": "2_settings@3"
+        },
+        {
+          "command": "tailscale.node.copyIPv4",
+          "when": "view == node-explorer-view && viewItem == peer-root",
+          "group": "3_copy@1"
+        },
+        {
+          "command": "tailscale.node.copyIPv6",
+          "when": "view == node-explorer-view && viewItem == peer-root",
+          "group": "3_copy@1"
+        },
+        {
+          "command": "tailscale.node.copyDNSName",
+          "when": "view == node-explorer-view && viewItem == peer-root",
+          "group": "3_copy@1"
+        },
+        {
+          "command": "tailscale.node.openDetailsLink",
+          "group": "4_control@1",
+          "when": "view == node-explorer-view && viewItem == peer-root"
+        },
+        {
+          "command": "tailscale.node.fs.createDirectory",
+          "group": "3_dirAction@1",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-dir/"
+        },
+        {
+          "command": "tailscale.node.fs.createFile",
+          "group": "3_dirAction@2",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-dir/"
+        },
+        {
+          "command": "tailscale.node.fs.rename",
+          "group": "4_fileAction@1",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-(dir|file)/"
+        },
+        {
+          "command": "tailscale.node.fs.delete",
+          "group": "4_fileAction@2",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-file-explorer-(dir|file)/"
+        },
+        {
+          "command": "tailscale.node.openDocsLink",
+          "group": "inline",
+          "when": "view == node-explorer-view && viewItem =~ /^peer-error-link/"
         }
       ]
     },
@@ -137,7 +239,12 @@
       },
       {
         "command": "tailscale.openAdminConsole",
-        "title": "Admin Console",
+        "title": "Admin console",
+        "category": "Tailscale"
+      },
+      {
+        "command": "tailscale.openVSCodeDocs",
+        "title": "Documentation",
         "category": "Tailscale"
       },
       {
@@ -152,18 +259,95 @@
       },
       {
         "command": "tailscale.openFunnelPanel",
-        "title": "Open Funnel Panel",
+        "title": "Open Funnel panel",
         "category": "Tailscale"
       },
       {
         "command": "tailscale.reloadServePanel",
-        "category": "tsdev",
-        "title": "Reload Serve Panel"
+        "title": "Reload Serve Panel",
+        "category": "tsdev"
       },
       {
         "command": "tailscale.simpleServeView",
-        "title": "Simple View",
+        "title": "Simple iew",
         "category": "tsdev"
+      },
+      {
+        "command": "tailscale.node.copyIPv4",
+        "title": "Copy IPv4"
+      },
+      {
+        "command": "tailscale.node.copyIPv6",
+        "title": "Copy IPv6"
+      },
+      {
+        "command": "tailscale.node.copyDNSName",
+        "title": "Copy DNS name"
+      },
+      {
+        "command": "tailscale.node.openTerminal",
+        "title": "Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "tailscale.nodeExplorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "tailscale.node.openRemoteCode",
+        "title": "Attach VS Code",
+        "icon": "$(remote-explorer)"
+      },
+      {
+        "command": "tailscale.node.downloadRemoteFile",
+        "title": "Download to your workspace",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "tailscale.node.openDetailsLink",
+        "title": "Open machine details..."
+      },
+      {
+        "command": "tailscale.node.fs.delete",
+        "title": "Delete",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "tailscale.node.fs.rename",
+        "title": "Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "tailscale.node.fs.createFile",
+        "title": "New file",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "tailscale.node.fs.createDirectory",
+        "title": "New directory",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "tailscale.node.setUsername",
+        "title": "Change SSH username"
+      },
+      {
+        "command": "tailscale.node.setRootDir",
+        "title": "Change root directory"
+      },
+      {
+        "command": "tailscale.node.addToSSHConfig",
+        "title": "Add to SSH config file"
+      },
+      {
+        "command": "tailscale.openExternal",
+        "title": "Open External Link"
+      },
+      {
+        "command": "tailscale.node.openDocsLink",
+        "title": "Open Documentation",
+        "icon": "$(link-external)"
       }
     ],
     "viewsContainers": {
@@ -173,14 +357,27 @@
           "title": "Tailscale",
           "icon": "images/tailscale.svg"
         }
+      ],
+      "activitybar": [
+        {
+          "icon": "resources/images/mark.svg",
+          "id": "tailscale-nodes-explorer",
+          "title": "Tailscale"
+        }
       ]
     },
     "views": {
       "tailscale-serve-panel": [
         {
-          "id": "tailscale-serve-view",
+          "id": "serve-view",
           "name": "Funnel",
           "type": "webview"
+        }
+      ],
+      "tailscale-nodes-explorer": [
+        {
+          "id": "node-explorer-view",
+          "name": "Tailscale"
         }
       ]
     },
@@ -207,6 +404,30 @@
             "examples": [
               false
             ]
+          },
+          "tailscale.ssh.defaultUsername": {
+            "type": "string",
+            "default": null,
+            "markdownDescription": "Default username for SSH connections.",
+            "scope": "window",
+            "examples": [
+              "amelie"
+            ]
+          },
+          "tailscale.ssh.connectionTimeout": {
+            "type": "number",
+            "default": 30000,
+            "markdownDescription": "The connection timeout for SSH connections in milliseconds.",
+            "scope": "window"
+          },
+          "tailscale.fileExplorer.showDotFiles": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show files and directories with names that start with a period.",
+            "scope": "window",
+            "examples": [
+              false
+            ]
           }
         }
       }
@@ -221,51 +442,52 @@
     "package": "vsce package --allow-star-activation",
     "precommit": "lint-staged",
     "prepare": "husky install",
-    "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
-    "test": "tool/node ./out/test/run-test.js",
-    "vscode:prepublish": "(yarn run bundle-js & pid1=$!; yarn run bundle-go & pid2=$!; wait $pid1 || exit 1; wait $pid2 || exit 1)",
-    "watch-tests": "tsc -p . -w --outDir out",
+    "test": "vitest",
+    "vscode:prepublish": "concurrently --kill-others-on-fail \"yarn run bundle-js\" \"yarn run bundle-go\"",
     "watch": "webpack serve"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.1",
     "@types/node": "16.11.68",
-    "@types/react": "^18.2.14",
-    "@types/react-dom": "^18.2.6",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "@types/ssh2": "^1.11.13",
     "@types/vscode": "^1.74.0",
     "@types/vscode-webview": "^1.57.1",
-    "@typescript-eslint/eslint-plugin": "^5.60.1",
-    "@typescript-eslint/parser": "^5.60.1",
+    "@typescript-eslint/eslint-plugin": "^6.2.1",
+    "@typescript-eslint/parser": "^6.2.1",
     "@vscode/codicons": "^0.0.33",
-    "@vscode/test-electron": "^2.3.3",
-    "@vscode/vsce": "^2.19.0",
+    "@vscode/vsce": "^2.20.1",
     "@vscode/webview-ui-toolkit": "^1.2.2",
-    "backport": "^8.9.7",
+    "backport": "^8.9.8",
     "bufferutil": "^4.0.7",
+    "concurrently": "^8.2.0",
     "css-loader": "^6.8.1",
-    "eslint": "^8.43.0",
-    "eslint-config-prettier": "^8.8.0",
+    "eslint": "^8.49.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-unicorn": "^47.0.0",
-    "glob": "^10.3.1",
+    "eslint-plugin-unicorn": "^48.0.1",
+    "glob": "^10.3.3",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
-    "mocha": "^10.2.0",
-    "node-fetch": "^3.3.1",
-    "postcss": "^8.4.24",
+    "node-fetch": "^3.3.2",
+    "node-loader": "^2.0.0",
+    "postcss": "^8.4.27",
     "postcss-loader": "^7.3.3",
-    "prettier": "^2.8.8",
+    "prettier": "^3.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "ssh2": "^1.14.0",
     "style-loader": "^3.3.3",
-    "swr": "^2.2.0",
-    "tailwindcss": "^3.3.2",
+    "swr": "^2.2.2",
+    "tailwindcss": "^3.3.3",
     "ts-loader": "^9.4.4",
     "typescript": "^5.1.6",
     "utf-8-validate": "^6.0.3",
+    "vitest": "^.33.0",
     "vscode-jsonrpc": "^8.1.0",
-    "webpack": "^5.88.1",
+    "vscode-uri": "^3.0.7",
+    "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",
     "ws": "^8.13.0"
@@ -278,5 +500,8 @@
     "*.{json,md,yml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "ssh-config": "^4.4.0"
   }
 }

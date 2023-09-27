@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import * as WebSocket from 'ws';
-import type { ServeParams, ServeStatus, TSRelayDetails } from '../types';
+import type { ServeParams, ServeStatus, TSRelayDetails, PeersResponse } from '../types';
 import { Logger } from '../logger';
 import * as path from 'node:path';
 import { LogLevel } from 'vscode';
@@ -114,7 +114,7 @@ export class Tailscale {
 
           if (process.env.NODE_ENV === 'development') {
             Logger.info(
-              `curl "${this.url}/serve" -H "Authorization: Basic ${this.authkey}"`,
+              `curl -H "Authorization: Basic ${this.authkey}" "${this.url}/serve"`,
               LOG_COMPONENT
             );
           }
@@ -253,7 +253,25 @@ export class Tailscale {
       const status = (await resp.json()) as ServeStatus;
       return status;
     } catch (e) {
-      Logger.error(`error calling status: ${JSON.stringify(e, null, 2)}`);
+      Logger.error(`error calling serve: ${JSON.stringify(e, null, 2)}`);
+      throw e;
+    }
+  }
+
+  async getPeers(): Promise<PeersResponse> {
+    if (!this.url) {
+      throw new Error('uninitialized client');
+    }
+    try {
+      const resp = await fetch(`${this.url}/peers`, {
+        headers: {
+          Authorization: 'Basic ' + this.authkey,
+        },
+      });
+      const status = (await resp.json()) as PeersResponse;
+      return status;
+    } catch (e) {
+      Logger.error(`error calling serve: ${JSON.stringify(e, null, 2)}`);
       throw e;
     }
   }
@@ -445,6 +463,6 @@ export class Tailscale {
       this._vscode.env.clipboard.writeText(`https://${hostname}`);
     }
 
-    await this._vscode.commands.executeCommand('tailscale-serve-view.refresh');
+    await this._vscode.commands.executeCommand('serve-view.refresh');
   }
 }

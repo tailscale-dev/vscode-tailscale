@@ -19,6 +19,36 @@ export interface Handlers {
   Proxy: string;
 }
 
+export interface Peer {
+  ID: string;
+  ServerName: string;
+  HostName: string;
+  Active?: boolean;
+  IsExternal: boolean;
+  Online?: boolean;
+  TailscaleIPs: string[];
+  ShareeNode?: boolean;
+  DNSName: string;
+  SSHEnabled: boolean;
+  Address: string;
+}
+
+export interface CurrentTailnet {
+  Name: string;
+  MagicDNSEnabled: boolean;
+  MagicDNSSuffix?: string;
+}
+
+export interface PeersResponse extends WithErrors {
+  CurrentTailnet: CurrentTailnet;
+  PeerGroups: PeerGroup[];
+}
+
+export interface PeerGroup {
+  Name: string;
+  Peers: Peer[];
+}
+
 export interface ServeStatus extends WithErrors {
   ServeConfig?: ServeConfig;
   FunnelPorts?: number[];
@@ -26,6 +56,8 @@ export interface ServeStatus extends WithErrors {
     [port: number]: string;
   };
   BackendState: string;
+  // TODO: Self is optional in the API, which might not be
+  // correct. We need to settle on it being optional or always present.
   Self: PeerStatus;
 }
 
@@ -173,4 +205,10 @@ export interface TSRelayDetails {
   address: string;
   nonce: string;
   port: string;
+}
+
+export interface FileInfo {
+  name: string;
+  isDir: boolean;
+  path: string;
 }
