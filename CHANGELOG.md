@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Allow setting a sub-directory as a root using tilde (example: ~/foo)
 - Add "tailscale.fileExplorer.showDotFiles" to control if dot-files (example: .foo) are shown in the File Explorer.
 - Support for Tailscale client version 1.50.0
+- Auto-refresh Node Explorer periodically for updates to your tailnet. The polling period can be configured (and polling can be disabled) via "tailscale.nodeExplorer.refreshInterval".
 
 ## v0.6.2 - August 23, 2023
 
