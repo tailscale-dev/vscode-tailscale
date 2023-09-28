@@ -34,7 +34,7 @@ export class NodeExplorerProvider
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
   private previousStatus: PeersResponse | undefined = undefined;
-  private currrentStatus: PeersResponse | undefined = undefined;
+  private currentStatus: PeersResponse | undefined = undefined;
 
   constructor(
     private readonly ts: Tailscale,
@@ -66,43 +66,46 @@ export class NodeExplorerProvider
   }
 
   private async getPeers() {
-    this.previousStatus = this.currrentStatus;
-    this.currrentStatus = await this.ts.getPeers();
-    return this.currrentStatus;
+    this.previousStatus = this.currentStatus;
+    this.currentStatus = await this.ts.getPeers();
+    return this.currentStatus;
   }
 
   private async diffRelay() {
     const status = await this.getPeers();
     const prevStatus = this.previousStatus;
 
-    if (prevStatus) {
-      if (status.Errors) {
-        if (!prevStatus.Errors || !status.Errors.every((e, i) => e === prevStatus.Errors?.[i])) {
-          return true;
-        }
-      }
+    if (!prevStatus) {
+      return false;
+    }
 
-      if (status.CurrentTailnet.Name !== prevStatus.CurrentTailnet.Name) {
+    if (status.Errors) {
+      if (!prevStatus.Errors || !status.Errors.every((e, i) => e === prevStatus.Errors?.[i])) {
         return true;
       }
+    }
 
-      if (status.CurrentTailnet.MagicDNSEnabled !== prevStatus.CurrentTailnet.MagicDNSEnabled) {
+    if (status.CurrentTailnet.Name !== prevStatus.CurrentTailnet.Name) {
+      return true;
+    }
+
+    if (status.CurrentTailnet.MagicDNSEnabled !== prevStatus.CurrentTailnet.MagicDNSEnabled) {
+      return true;
+    }
+
+    if (status.CurrentTailnet.MagicDNSSuffix !== prevStatus.CurrentTailnet.MagicDNSSuffix) {
+      return true;
+    }
+
+    for (let i = 0; i < status.PeerGroups.length; ++i) {
+      if (status.PeerGroups[i].Name !== prevStatus.PeerGroups[i].Name) {
         return true;
       }
-
-      if (status.CurrentTailnet.MagicDNSSuffix !== prevStatus.CurrentTailnet.MagicDNSSuffix) {
+      if (
+        status.PeerGroups[i].Peers.length !== prevStatus.PeerGroups[i].Peers.length ||
+        !status.PeerGroups[i].Peers.every((p, j) => p.ID === prevStatus.PeerGroups[i].Peers[j].ID)
+      ) {
         return true;
-      }
-
-      for (let i = 0; i < status.PeerGroups.length; ++i) {
-        if (status.PeerGroups[i].Name !== prevStatus.PeerGroups[i].Name) {
-          return true;
-        }
-        if (
-          !status.PeerGroups[i].Peers.every((p, j) => p.ID === prevStatus.PeerGroups[i].Peers[j].ID)
-        ) {
-          return true;
-        }
       }
     }
 
