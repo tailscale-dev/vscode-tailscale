@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Peer, PeerGroup } from './types';
+import { Peer, PeerGroup, PeersResponse } from './types';
 import { Utils } from 'vscode-uri';
 import { Tailscale } from './tailscale/cli';
 import { ConfigManager } from './config-manager';
@@ -34,6 +34,8 @@ export class NodeExplorerProvider
   // We want to use an array as the event type, but the API for this is currently being finalized. Until it's finalized, use any.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
+  private previousStatus: PeersResponse | undefined = undefined;
+  private currentStatus: PeersResponse | undefined = undefined;
 
   constructor(
     private readonly ts: Tailscale,
@@ -58,10 +60,82 @@ export class NodeExplorerProvider
     this.registerRefresh();
     this.registerOpenDocsLink();
     this.registerDownloadCommand();
+    this.pollForUpdates();
   }
 
   getTreeItem(element: PeerBaseTreeItem): vscode.TreeItem {
     return element;
+  }
+
+  private async getPeers() {
+    this.previousStatus = this.currentStatus;
+    this.currentStatus = await this.ts.getPeers();
+    return this.currentStatus;
+  }
+
+  private async diffRelay() {
+    const status = await this.getPeers();
+    const prevStatus = this.previousStatus;
+
+    if (!prevStatus) {
+      return false;
+    }
+
+    if (status.Errors) {
+      if (!prevStatus.Errors || !status.Errors.every((e, i) => e === prevStatus.Errors?.[i])) {
+        return true;
+      }
+    }
+
+    if (status.CurrentTailnet.Name !== prevStatus.CurrentTailnet.Name) {
+      return true;
+    }
+
+    if (status.CurrentTailnet.MagicDNSEnabled !== prevStatus.CurrentTailnet.MagicDNSEnabled) {
+      return true;
+    }
+
+    if (status.CurrentTailnet.MagicDNSSuffix !== prevStatus.CurrentTailnet.MagicDNSSuffix) {
+      return true;
+    }
+
+    for (let i = 0; i < status.PeerGroups.length; ++i) {
+      if (status.PeerGroups[i].Name !== prevStatus.PeerGroups[i].Name) {
+        return true;
+      }
+      if (
+        status.PeerGroups[i].Peers.length !== prevStatus.PeerGroups[i].Peers.length ||
+        !status.PeerGroups[i].Peers.every((p, j) => p.ID === prevStatus.PeerGroups[i].Peers[j].ID)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  async pollForUpdates() {
+    const interval = vscode.workspace
+      .getConfiguration(EXTENSION_NS)
+      .get<number>('nodeExplorer.refreshInterval');
+    if (interval) {
+      try {
+        if (await this.diffRelay()) {
+          this.refresh();
+        }
+      } catch (e) {
+        // diffRelay might fail if the request to getPeers fails, eg.
+        // if someone called `tailscale switch` in the the middle of
+        // the request. If that happens, the setTimeout will cause us
+        // to try again, so we just log this for now.
+        Logger.error(`could not poll for updates: ${e}`);
+      }
+      // We set a timeout recursively instead of setting an interval
+      // to avoid the case where the await expressions above take longer
+      // than the provided interval, leading to new polls being sent out
+      // before old ones are finished.
+      setTimeout(() => this.pollForUpdates(), interval);
+    }
   }
 
   async getChildren(element?: PeerBaseTreeItem): Promise<PeerBaseTreeItem[]> {
@@ -144,7 +218,7 @@ export class NodeExplorerProvider
       const groups: PeerGroupItem[] = [];
       let hasErr = false;
       try {
-        const status = await this.ts.getPeers();
+        const status = await this.getPeers();
         if (status.Errors && status.Errors.length) {
           for (let index = 0; index < status.Errors.length; index++) {
             const err = status.Errors[index];
