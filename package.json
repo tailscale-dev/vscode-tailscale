@@ -428,6 +428,12 @@
             "examples": [
               false
             ]
+          },
+          "tailscale.nodeExplorer.refreshInterval": {
+            "type": "number",
+            "default": 5000,
+            "markdownDescription": "Time in milliseconds between automatic refreshes of the node explorer. A value of 0 disables automatic refreshing.",
+            "scope": "window"
           }
         }
       }
