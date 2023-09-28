@@ -24,9 +24,9 @@ let tailscaleInstance: Tailscale;
 export async function activate(context: vscode.ExtensionContext) {
   vscode.commands.executeCommand('setContext', 'tailscale.env', process.env.NODE_ENV);
 
-  tailscaleInstance = await Tailscale.withInit(vscode);
-
   const configManager = ConfigManager.withGlobalStorageUri(context.globalStorageUri);
+
+  tailscaleInstance = await Tailscale.withInit(vscode, configManager);
 
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {

@@ -12,6 +12,7 @@ interface Host {
 interface Config {
   defaultHost?: Host;
   hosts?: Record<string, Host>;
+  portDiscoSnoozeUntil?: number;
 }
 
 export class ConfigManager {

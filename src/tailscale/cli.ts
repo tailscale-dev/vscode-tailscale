@@ -8,6 +8,7 @@ import * as path from 'node:path';
 import { LogLevel } from 'vscode';
 import { trimSuffix } from '../utils';
 import { EXTENSION_NS } from '../constants';
+import { ConfigManager } from '../config-manager';
 
 const LOG_COMPONENT = 'tsrelay';
 
@@ -35,14 +36,15 @@ export class Tailscale {
   private notifyExit?: () => void;
   private socket?: string;
   private ws?: WebSocket;
-  private snoozing?: boolean;
+  private configManager: ConfigManager;
 
-  constructor(vscode: vscodeModule) {
+  constructor(vscode: vscodeModule, configManager: ConfigManager) {
     this._vscode = vscode;
+    this.configManager = configManager;
   }
 
-  static async withInit(vscode: vscodeModule): Promise<Tailscale> {
-    const ts = new Tailscale(vscode);
+  static async withInit(vscode: vscodeModule, configManager: ConfigManager): Promise<Tailscale> {
+    const ts = new Tailscale(vscode, configManager);
     await ts.init();
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration('tailscale.portDiscovery.enabled')) {
@@ -382,7 +384,8 @@ export class Tailscale {
       if (msg.type != 'newPort') {
         return;
       }
-      if (this.snoozing) {
+      const snoozeUntil = this.configManager.config.portDiscoSnoozeUntil;
+      if (snoozeUntil && snoozeUntil <= Date.now()) {
         return;
       }
       const shouldServe = await this._vscode.window.showInformationMessage(
@@ -394,9 +397,11 @@ export class Tailscale {
       if (shouldServe === 'Serve') {
         await this.runFunnel(msg.port);
       } else if (shouldServe === 'Snooze Notifications') {
-        this.snooze();
+        // one hour
+        const snoozeDuration = 60 * 60 * 1000;
+        this.configManager.set('portDiscoSnoozeUntil', Date.now() + snoozeDuration);
         const openSettings = await this._vscode.window.showInformationMessage(
-          'Snoozed for 15 minutes. You can fully turn off port discovery in the settings',
+          'Snoozed for 1 hour. You can fully turn off port discovery in the settings',
           { modal: false },
           'Open Settings'
         );
@@ -435,13 +440,6 @@ export class Tailscale {
         })
       );
     });
-  }
-
-  async snooze() {
-    this.snoozing = true;
-    setTimeout(() => {
-      this.snoozing = false;
-    }, 900000); // fifteen minutes
   }
 
   async runFunnel(port: number) {
