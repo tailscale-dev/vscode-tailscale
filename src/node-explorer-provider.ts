@@ -312,14 +312,14 @@ export class NodeExplorerProvider
    */
   refresh(target?: FileExplorer | FileExplorer[]) {
     if (Array.isArray(target)) {
-      if (target.every((item) => item.type === vscode.FileType.Directory)) {
+      if (target.every((item) => item.type & vscode.FileType.Directory)) {
         for (const item of target) {
           this._onDidChangeTreeData.fire([item]);
         }
       } else {
         this._onDidChangeTreeData.fire(undefined);
       }
-    } else if (target && target.type === vscode.FileType.Directory) {
+    } else if (target && target.type & vscode.FileType.Directory) {
       // If 'target' is a single object
       this._onDidChangeTreeData.fire([target]);
     } else {
@@ -514,9 +514,13 @@ export class NodeExplorerProvider
   registerDeleteCommand() {
     vscode.commands.registerCommand('tailscale.node.fs.delete', async (file: FileExplorer) => {
       try {
-        const msg = `Are you sure you want to delete ${
-          file.type === vscode.FileType.Directory ? 'this directory' : 'this file'
-        }? This action cannot be undone.`;
+        const fileType =
+          file.type & vscode.FileType.SymbolicLink
+            ? 'symbolic link'
+            : file.type & vscode.FileType.Directory
+            ? 'directory'
+            : 'file';
+        const msg = `Are you sure you want to delete this ${fileType}? This action cannot be undone.`;
 
         const answer = await vscode.window.showInformationMessage(msg, { modal: true }, 'Yes');
 
@@ -552,7 +556,7 @@ export class NodeExplorerProvider
         return;
       }
 
-      if (node.type !== vscode.FileType.Directory) {
+      if (!(node.type & vscode.FileType.Directory)) {
         targetPath = path.dirname(resourcePath);
       }
 
@@ -565,7 +569,7 @@ export class NodeExplorerProvider
       try {
         await vscode.workspace.fs.writeFile(newUri, new Uint8Array());
         this._onDidChangeTreeData.fire([
-          node.type !== vscode.FileType.Directory ? undefined : node,
+          !(node.type & vscode.FileType.Directory) ? undefined : node,
         ]);
       } catch (e) {
         vscode.window.showErrorMessage(`Could not create directory: ${e}`);
@@ -618,7 +622,7 @@ export class NodeExplorerProvider
           return;
         }
 
-        if (node.type !== vscode.FileType.Directory) {
+        if (!(node.type & vscode.FileType.Directory)) {
           const lastSlashIndex = resourcePath.lastIndexOf('/');
           targetPath = resourcePath.substring(0, lastSlashIndex);
         }
@@ -632,7 +636,7 @@ export class NodeExplorerProvider
         try {
           await vscode.workspace.fs.createDirectory(newUri);
           this._onDidChangeTreeData.fire([
-            node.type !== vscode.FileType.Directory ? undefined : node,
+            !(node.type & vscode.FileType.Directory) ? undefined : node,
           ]);
         } catch (e) {
           vscode.window.showErrorMessage(`Could not create directory: ${e}`);
@@ -777,7 +781,7 @@ export class FileExplorer extends vscode.TreeItem {
     public readonly uri: vscode.Uri,
     public readonly type: vscode.FileType,
     public readonly context?: string,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState = type ===
+    public readonly collapsibleState: vscode.TreeItemCollapsibleState = type &
     vscode.FileType.Directory
       ? vscode.TreeItemCollapsibleState.Collapsed
       : vscode.TreeItemCollapsibleState.None,
@@ -785,7 +789,7 @@ export class FileExplorer extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
 
-    if (type === vscode.FileType.File || vscode.FileType.SymbolicLink) {
+    if (type & vscode.FileType.File) {
       this.command = {
         command: 'vscode.open',
         title: 'Open File',
@@ -793,13 +797,13 @@ export class FileExplorer extends vscode.TreeItem {
       };
     }
 
-    const typeDesc = type === vscode.FileType.File ? 'file' : 'dir';
+    const typeDesc = type & vscode.FileType.File ? 'file' : 'dir';
     this.contextValue = `peer-file-explorer-${typeDesc}${context ? `-${context}` : ''}`;
   }
 
   getDirectory(fileName?: string): vscode.Uri {
     let resourcePath = this.uri.toString();
-    if (this.type !== vscode.FileType.Directory) {
+    if (!(this.type & vscode.FileType.Directory)) {
       const lastSlashIndex = resourcePath.lastIndexOf('/');
       resourcePath = resourcePath.substring(0, lastSlashIndex);
     }

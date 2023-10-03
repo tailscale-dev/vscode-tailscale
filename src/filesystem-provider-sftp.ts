@@ -66,8 +66,9 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
     const deleteRecursively = async (path: string) => {
       const st = await sftp.stat(path);
 
-      // short circuit for files
-      if (st.type === vscode.FileType.File) {
+      // short circuit for files and symlinks
+      // (don't recursively delete through symlinks that point to directories)
+      if (st.type & vscode.FileType.File || st.type & vscode.FileType.SymbolicLink) {
         await sftp.delete(path);
         return;
       }
@@ -77,7 +78,7 @@ export class FileSystemProviderSFTP implements vscode.FileSystemProvider {
       for (const [file, fileType] of files) {
         const filePath = `${path}/${file}`;
 
-        if (fileType === vscode.FileType.Directory) {
+        if (fileType & vscode.FileType.Directory) {
           await deleteRecursively(filePath);
         } else {
           await sftp.delete(filePath);
