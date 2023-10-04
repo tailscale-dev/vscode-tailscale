@@ -19,9 +19,9 @@ export class Sftp {
     let result = await util.promisify(sftp.readlink).call(sftp, linkPath);
 
     // if link is relative, not absolute
-    // TODO(naman): how does path.join behave with Windows? Do absolute URIs start with /?
     if (!result.startsWith('/')) {
-      result = path.join(path.dirname(linkPath), result);
+      // note: this needs to be / even on Windows, so don't use path.join()
+      result = `${path.dirname(linkPath)}/${result}`;
     }
 
     return result;
