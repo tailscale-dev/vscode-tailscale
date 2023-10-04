@@ -1,3 +1,4 @@
+import path = require('path');
 import * as ssh2 from 'ssh2';
 import * as util from 'util';
 import * as vscode from 'vscode';
@@ -13,15 +14,14 @@ export class Sftp {
     return this.sftpPromise;
   }
 
-  async readSymbolicLink(path: string): Promise<string> {
+  async readSymbolicLink(linkPath: string): Promise<string> {
     const sftp = await this.getSftp();
-    let result = await util.promisify(sftp.readlink).call(sftp, path);
+    let result = await util.promisify(sftp.readlink).call(sftp, linkPath);
 
     // if link is relative, not absolute
+    // TODO(naman): how does path.join behave with Windows? Do absolute URIs start with /?
     if (!result.startsWith('/')) {
-      // split path by separator, slice away the last bit to get the parent directory,
-      // append the relative path, and join it back together
-      result = [...path.split('/').slice(0, -1), result].join('/');
+      result = path.join(path.dirname(linkPath), result);
     }
 
     return result;

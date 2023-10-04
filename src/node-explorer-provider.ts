@@ -514,13 +514,13 @@ export class NodeExplorerProvider
   registerDeleteCommand() {
     vscode.commands.registerCommand('tailscale.node.fs.delete', async (file: FileExplorer) => {
       try {
-        const fileType =
-          file.type & vscode.FileType.SymbolicLink
-            ? 'symbolic link'
-            : file.type & vscode.FileType.Directory
-            ? 'directory'
-            : 'file';
-        const msg = `Are you sure you want to delete this ${fileType}? This action cannot be undone.`;
+        let fileDescription = 'file';
+        if (file.type & vscode.FileType.SymbolicLink) {
+          fileDescription = 'symbolic link';
+        } else if (file.type & vscode.FileType.Directory) {
+          fileDescription = 'directory';
+        }
+        const msg = `Are you sure you want to delete this ${fileDescription}? This action cannot be undone.`;
 
         const answer = await vscode.window.showInformationMessage(msg, { modal: true }, 'Yes');
 
