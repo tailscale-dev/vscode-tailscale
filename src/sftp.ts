@@ -1,4 +1,4 @@
-import path = require('path');
+import * as path from 'path';
 import * as ssh2 from 'ssh2';
 import * as util from 'util';
 import * as vscode from 'vscode';
