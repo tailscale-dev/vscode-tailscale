@@ -10,10 +10,10 @@ export interface FileSystemProvider extends vscode.FileSystemProvider {
 // fileSorter mimicks the Node Explorer file structure in that directories
 // are displayed first in alphabetical followed by files in the same fashion.
 export function fileSorter(a: [string, vscode.FileType], b: [string, vscode.FileType]): number {
-  if (a[1] === vscode.FileType.Directory && b[1] !== vscode.FileType.Directory) {
+  if (a[1] & vscode.FileType.Directory && !(b[1] & vscode.FileType.Directory)) {
     return -1;
   }
-  if (a[1] !== vscode.FileType.Directory && b[1] === vscode.FileType.Directory) {
+  if (!(a[1] & vscode.FileType.Directory) && b[1] & vscode.FileType.Directory) {
     return 1;
   }
 
