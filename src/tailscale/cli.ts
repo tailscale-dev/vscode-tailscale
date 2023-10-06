@@ -391,12 +391,13 @@ export class Tailscale {
       const shouldServe = await this._vscode.window.showInformationMessage(
         msg.message,
         { modal: false },
-        'Serve',
-        'Snooze Notifications'
+        'Expose',
+        'Not now',
+        'Learn more'
       );
-      if (shouldServe === 'Serve') {
+      if (shouldServe === 'Expose') {
         await this.runFunnel(msg.port);
-      } else if (shouldServe === 'Snooze Notifications') {
+      } else if (shouldServe === 'Not now') {
         // one hour
         const snoozeDuration = 60 * 60 * 1000;
         this.configManager.set('portDiscoSnoozeUntil', Date.now() + snoozeDuration);
@@ -411,6 +412,10 @@ export class Tailscale {
             'tailscale.portDiscovery.enabled'
           );
         }
+      } else if (shouldServe === 'Learn more') {
+        vscode.env.openExternal(
+          vscode.Uri.parse('https://tailscale.com/kb/1223/tailscale-funnel/')
+        );
       }
     });
     this._vscode.window.onDidOpenTerminal(async (e: vscode.Terminal) => {
