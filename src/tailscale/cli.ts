@@ -385,7 +385,7 @@ export class Tailscale {
         return;
       }
       const snoozeUntil = this.configManager.config.portDiscoSnoozeUntil;
-      if (snoozeUntil && snoozeUntil <= Date.now()) {
+      if (snoozeUntil && snoozeUntil >= Date.now()) {
         return;
       }
       const shouldServe = await this._vscode.window.showInformationMessage(
