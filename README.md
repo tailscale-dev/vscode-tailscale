@@ -80,7 +80,7 @@ For more information, visit the full documentation on [Tailscale Funnel](https:/
 ## Setup
 
 1. [Install Tailscale](https://tailscale.com/download) and login or create a new account.
-2. [Install this extension](vscode:extension/Tailscale.vscode-tailscale) in VS Code.
+2. Install this extension in VS Code from the [Visual Studio Marketplace](vscode:extension/Tailscale.vscode-tailscale), or on open-source alternatives from the [Open VSX Registry](https://open-vsx.org/extension/tailscale/vscode-tailscale).
 
 > ⚠️ Important: You'll need to make sure that HTTPS certificates and Funnel are enabled in the Tailscale admin console. Refer to our [documentation](https://tailscale.com/kb/1223/tailscale-funnel/#setup) for more instructions.
 
@@ -98,6 +98,7 @@ If the extension isn't working, we recommend following these steps to troublesho
 2. Ensure that your Tailnet access controls (ACLs) are [configured to allow Tailscale Funnel](https://tailscale.com/kb/1223/tailscale-funnel/#setup) on your device.
 3. Ensure that [magicDNS and HTTPS Certificates are enabled](https://tailscale.com/kb/1153/enabling-https/) on your tailnet.
 4. If you are running `tailscaled` in a non-default path, you can set its path via the `tailscale.socketPath` setting in VS Code.
+5. If you are using VSCodium or another open-source Visual Studio Code alternative, ensure that the `Open Remote - SSH` addon is installed.
 
 ## Contribute
 
