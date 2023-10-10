@@ -98,7 +98,7 @@ If the extension isn't working, we recommend following these steps to troublesho
 2. Ensure that your Tailnet access controls (ACLs) are [configured to allow Tailscale Funnel](https://tailscale.com/kb/1223/tailscale-funnel/#setup) on your device.
 3. Ensure that [magicDNS and HTTPS Certificates are enabled](https://tailscale.com/kb/1153/enabling-https/) on your tailnet.
 4. If you are running `tailscaled` in a non-default path, you can set its path via the `tailscale.socketPath` setting in VS Code.
- (Make port discovery optional via settings)
+
 ## Contribute
 
 We appreciate your help! For information on contributing to this extension, refer to the [CONTRIBUTING](CONTRIBUTING.md) document.
