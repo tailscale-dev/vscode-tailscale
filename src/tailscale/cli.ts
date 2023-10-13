@@ -78,18 +78,20 @@ export class Tailscale {
   async init() {
     return new Promise<null>((resolve) => {
       this.socket = vscode.workspace.getConfiguration(EXTENSION_NS).get<string>('socketPath');
-      let binPath = this.tsrelayPath();
-      let args = this.defaultArgs();
-      let cwd = __dirname;
+      const binPath = this.tsrelayPath();
+      const args = this.defaultArgs();
       if (process.env.NODE_ENV === 'development') {
-        binPath = '../tool/go';
-        args = ['run', '.', ...args];
-        cwd = path.join(cwd, '../tsrelay');
+        const build = cp.spawnSync('./tool/yarn', ['run', 'bundle-go'], {
+          cwd: path.join(__dirname, '../'),
+        });
+        if (build.error) {
+          throw build.error;
+        }
       }
       Logger.debug(`path: ${binPath}`, LOG_COMPONENT);
       Logger.debug(`args: ${args.join(' ')}`, LOG_COMPONENT);
 
-      this.childProcess = cp.spawn(binPath, args, { cwd: cwd });
+      this.childProcess = cp.spawn(binPath, args);
 
       this.childProcess.on('exit', (code) => {
         Logger.warn(`child process exited with code ${code}`, LOG_COMPONENT);
