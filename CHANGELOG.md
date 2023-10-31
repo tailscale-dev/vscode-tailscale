@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## v0.8.0 - October 31, 2023
 
-- Extension is out of beta and now generally available
+- The Tailscale extension for VS Code is generally available (GA)
 - Symlink support in File explorer
 - Fixed issue with port discovery not working on Linux
 
