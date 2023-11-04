@@ -467,7 +467,7 @@
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "backport": "^8.9.8",
     "bufferutil": "^4.0.7",
-    "concurrently": "^8.2.1",
+    "concurrently": "^8.2.2",
     "css-loader": "^6.8.1",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",
