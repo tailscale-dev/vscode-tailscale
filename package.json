@@ -485,7 +485,7 @@
     "react-dom": "^18.2.0",
     "ssh2": "^1.14.0",
     "style-loader": "^3.3.3",
-    "swr": "^2.2.2",
+    "swr": "^2.2.4",
     "tailwindcss": "^3.3.5",
     "ts-loader": "^9.5.0",
     "typescript": "^5.1.6",
