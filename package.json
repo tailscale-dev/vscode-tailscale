@@ -492,7 +492,7 @@
     "utf-8-validate": "^6.0.3",
     "vitest": "^.33.0",
     "vscode-jsonrpc": "^8.2.0",
-    "vscode-uri": "^3.0.7",
+    "vscode-uri": "^3.0.8",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",
