@@ -67,10 +67,6 @@ To debug webviews in our VS Code extension, you can access the Developer Tools b
 
 We make use of [Webview UI Toolkit for Visual Studio Code](https://www.npmjs.com/package/@vscode/webview-ui-toolkit), specifically for its [React Components](https://github.com/microsoft/vscode-webview-ui-toolkit/tree/main/src/react)](https://github.com/microsoft/vscode-webview-ui-toolkit/tree/main/src/react) which are wrappers around the components. These components follow the design language of VS Code to maintain a consistent look and feel.
 
-### Backporting
-
-To backport a PR, add the `auto-backport` label to a PR and a corresponding version label (example: `v0.4`). Once the PR is merged, a corresponding backport PR will be created against the release branch.
-
 ## Release Process
 
 #### To make a new minor release. (e.g., `0.2` ⇒ `0.4`)
