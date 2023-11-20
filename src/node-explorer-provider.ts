@@ -703,7 +703,7 @@ export class NodeExplorerProvider
       async (node: PeerRoot | FileExplorer) => {
         const { addr, path } = extractAddrAndPath(node);
 
-        if (addr && this.configManager.config.hosts?.[addr].persistToSSHConfig !== false) {
+        if (addr && this.configManager.config.hosts?.[addr]?.persistToSSHConfig !== false) {
           await syncSSHConfig(addr, this.configManager);
         }
 
