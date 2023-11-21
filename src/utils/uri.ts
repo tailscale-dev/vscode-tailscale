@@ -1,5 +1,4 @@
 import { Uri } from 'vscode';
-import { escapeSpace } from './string';
 
 export interface TsUri {
   address: string;
@@ -34,7 +33,7 @@ export function parseTsUri(uri: Uri): TsUri {
       let resourcePath = decodeURIComponent(pathSegments.join('/'));
 
       if (!resourcePath.startsWith('.')) {
-        resourcePath = `/${escapeSpace(resourcePath)}`;
+        resourcePath = `/${resourcePath}`;
       }
 
       return { address, tailnet: uri.authority, resourcePath };
