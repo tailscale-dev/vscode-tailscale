@@ -3,7 +3,6 @@ import { exec } from 'child_process';
 import { Logger } from './logger';
 import { SSH } from './ssh';
 import { ConfigManager } from './config-manager';
-import { escapeSpace } from './utils/string';
 import { parseTsUri } from './utils/uri';
 import { fileSorter } from './filesystem-provider';
 
