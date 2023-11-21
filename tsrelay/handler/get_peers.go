@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+
+	"tailscale.com/ipn/ipnstate"
 )
 
 // getPeersResponse is a subset of ipnstate.Status
@@ -91,53 +93,10 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		}
 	}
 
+	appendPeer(st.Self, peerGroups[:], st)
+
 	for _, p := range st.Peer {
-		// ShareeNode indicates this node exists in the netmap because
-		// it's owned by a shared-to user and that node might connect
-		// to us. These nodes are hidden by "tailscale status", but present
-		// in JSON output so we should filter out.
-		if p.ShareeNode {
-			continue
-		}
-
-		serverName := p.HostName
-		if p.DNSName != "" {
-			parts := strings.SplitN(p.DNSName, ".", 2)
-			if len(parts) > 0 {
-				serverName = parts[0]
-			}
-		}
-
-		// removes the root label/trailing period from the DNSName
-		// before: "amalie.foo.ts.net.", after: "amalie.foo.ts.net"
-		dnsNameNoRootLabel := strings.TrimSuffix(p.DNSName, ".")
-
-		// if the DNSName does not end with the magic DNS suffix, it is an external peer
-		isExternal := !strings.HasSuffix(dnsNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
-
-		addr := dnsNameNoRootLabel
-		if addr == "" && len(p.TailscaleIPs) > 0 {
-			addr = p.TailscaleIPs[0].String()
-		}
-		peer := &peerStatus{
-			DNSName:      dnsNameNoRootLabel,
-			ServerName:   serverName,
-			Online:       p.Online,
-			ID:           p.ID,
-			HostName:     p.HostName,
-			TailscaleIPs: p.TailscaleIPs,
-			IsExternal:   isExternal,
-			SSHEnabled:   len(p.SSH_HostKeys) > 0,
-			Address:      addr,
-		}
-
-		if !p.Online {
-			peerGroups[2].Peers = append(peerGroups[2].Peers, peer)
-		} else if p.UserID == st.Self.UserID {
-			peerGroups[0].Peers = append(peerGroups[0].Peers, peer)
-		} else {
-			peerGroups[1].Peers = append(peerGroups[1].Peers, peer)
-		}
+		appendPeer(p, peerGroups[:], st)
 	}
 
 	for _, pg := range peerGroups {
@@ -149,9 +108,67 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 	for _, pg := range s.PeerGroups {
 		peers := pg.Peers
 		sort.Slice(peers, func(i, j int) bool {
+			// the comparison function always returns the current node (st.Self)
+			// to be the smallest one, so return true (self < anything) if self
+			// is on LHS, and false (anything !< self) if self is on RHS
+			if peers[i].ID == st.Self.ID {
+				return true
+			}
+			if peers[j].ID == st.Self.ID {
+				return false
+			}
 			return peers[i].ServerName < peers[j].ServerName
 		})
 	}
 
 	return &s, nil
+}
+
+func appendPeer(p *ipnstate.PeerStatus, peerGroups []*peerGroup, st *ipnstate.Status) {
+	// ShareeNode indicates this node exists in the netmap because
+	// it's owned by a shared-to user and that node might connect
+	// to us. These nodes are hidden by "tailscale status", but present
+	// in JSON output so we should filter out.
+	if p.ShareeNode {
+		return
+	}
+
+	serverName := p.HostName
+	if p.DNSName != "" {
+		parts := strings.SplitN(p.DNSName, ".", 2)
+		if len(parts) > 0 {
+			serverName = parts[0]
+		}
+	}
+
+	// removes the root label/trailing period from the DNSName
+	// before: "amalie.foo.ts.net.", after: "amalie.foo.ts.net"
+	dnsNameNoRootLabel := strings.TrimSuffix(p.DNSName, ".")
+
+	// if the DNSName does not end with the magic DNS suffix, it is an external peer
+	isExternal := !strings.HasSuffix(dnsNameNoRootLabel, st.CurrentTailnet.MagicDNSSuffix)
+
+	addr := dnsNameNoRootLabel
+	if addr == "" && len(p.TailscaleIPs) > 0 {
+		addr = p.TailscaleIPs[0].String()
+	}
+	peer := &peerStatus{
+		DNSName:      dnsNameNoRootLabel,
+		ServerName:   serverName,
+		Online:       p.Online,
+		ID:           p.ID,
+		HostName:     p.HostName,
+		TailscaleIPs: p.TailscaleIPs,
+		IsExternal:   isExternal,
+		SSHEnabled:   len(p.SSH_HostKeys) > 0,
+		Address:      addr,
+	}
+
+	if !p.Online {
+		peerGroups[2].Peers = append(peerGroups[2].Peers, peer)
+	} else if p.UserID == st.Self.UserID {
+		peerGroups[0].Peers = append(peerGroups[0].Peers, peer)
+	} else {
+		peerGroups[1].Peers = append(peerGroups[1].Peers, peer)
+	}
 }
