@@ -471,7 +471,7 @@
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-unicorn": "^49.0.0",
+    "eslint-plugin-unicorn": "^51.0.1",
     "glob": "^10.3.10",
     "husky": "^8.0.3",
     "lint-staged": "^15.0.2",
