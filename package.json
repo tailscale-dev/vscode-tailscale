@@ -478,7 +478,7 @@
     "node-fetch": "^3.3.2",
     "node-loader": "^2.0.0",
     "postcss": "^8.4.31",
-    "postcss-loader": "^7.3.3",
+    "postcss-loader": "^8.1.1",
     "prettier": "^3.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -494,7 +494,7 @@
     "vscode-uri": "^3.0.7",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1",
+    "webpack-dev-server": "^5.0.4",
     "ws": "^8.14.2"
   },
   "lint-staged": {
