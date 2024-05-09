@@ -507,6 +507,6 @@
     ]
   },
   "dependencies": {
-    "ssh-config": "^4.4.0"
+    "ssh-config": "^4.4.4"
   }
 }
