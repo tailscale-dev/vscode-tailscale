@@ -26,7 +26,7 @@ export function errorForType(type: string): TailscaleError {
       return {
         title: 'Funnel is disabled',
         message:
-          'Enable Funnel by adding a new `funnel` attribute under `noteAttrs` in your tailet policy file.',
+          'Enable Funnel by adding a new `funnel` attribute under `noteAttrs` in your tailnet policy file.',
         links: [
           { url: 'https://tailscale.com/kb/1223/tailscale-funnel/#setup', title: 'Enable Funnel' },
         ],
