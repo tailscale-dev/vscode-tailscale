@@ -4327,10 +4327,10 @@ spdy@^4.0.2:
     select-hose "^2.0.0"
     spdy-transport "^3.0.0"
 
-ssh-config@^4.4.0:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-4.4.0.tgz#5fcc595d941661101f0fda8113149e72fc4a4c5d"
-  integrity sha512-W+AAUSsBirHyXqYBUtZ4l0FBAPH/jnklA0KPBfBuBiJVD8LT4LoQST4MCGPziZJYTVvzFmrgrr7j2JWyl/rPIg==
+ssh-config@^4.4.4:
+  version "4.4.4"
+  resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-4.4.4.tgz#ab0a693d39f1e6a7ad6c48641668104213898bf4"
+  integrity sha512-75rXsNB+gmPa/ueqzpDRmVa+Z7ReDgzvmpsEM+sxi3DLBQERdmp3awkZ4WW4TVpnZLpFVsHEiMrojGVp/jJ3kA==
 
 ssh2@^1.14.0:
   version "1.14.0"
