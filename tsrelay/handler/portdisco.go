@@ -138,7 +138,7 @@ func (h *handler) handlePortUpdates(c *websocket.Conn, up []portlist.Port) error
 		err = c.WriteJSON(&wsMessage{
 			Type:    "newPort",
 			Port:    int(p.Port),
-			Message: fmt.Sprintf("Port %d was started by %q, would you like to share it over the internet with Tailscale Funnel?", p.Port, p.Process),
+			Message: fmt.Sprintf("%q started using port %d. Would you like to expose this port to the internet using Tailscale Funnel?", p.Process, p.Port),
 		})
 		if err != nil {
 			h.Unlock()
