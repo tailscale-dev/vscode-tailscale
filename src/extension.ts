@@ -28,6 +28,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const configManager = ConfigManager.withGlobalStorageUri(context.globalStorageUri);
 
+  // Detect if the extension is running in a remote context
+  const isRemote = !!vscode.env.remoteName;
+  vscode.commands.executeCommand('setContext', 'tailscale.isRemote', isRemote);
+
   // walkthrough completion
   tailscaleInstance.serveStatus().then((status) => {
     // assume if we have any BackendState we are installed
@@ -240,6 +244,55 @@ export async function activate(context: vscode.ExtensionContext) {
       }, 500);
     })
   );
+
+  // Update commands and UI elements to handle remote-specific scenarios
+  if (isRemote) {
+    context.subscriptions.push(
+      vscode.commands.registerCommand('tailscale.node.openTerminal', async (node: PeerRoot | FileExplorer) => {
+        const { addr, path } = extractAddrAndPath(node);
+
+        if (!addr) {
+          return;
+        }
+
+        const t = vscode.window.createTerminal(addr);
+        t.sendText(`ssh ${getUsername(configManager, addr)}@${addr}`);
+
+        if (path) {
+          t.sendText(`cd ${path}`);
+        }
+
+        t.show();
+      })
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('tailscale.node.openRemoteCode', async (node: PeerRoot | FileExplorer) => {
+        const { addr, path } = extractAddrAndPath(node);
+
+        if (addr && configManager.config.hosts?.[addr]?.persistToSSHConfig !== false) {
+          await syncSSHConfig(addr, configManager);
+        }
+
+        if (node instanceof PeerRoot && addr) {
+          vscode.commands.executeCommand('vscode.newWindow', {
+            remoteAuthority: `ssh-remote+${addr}`,
+            reuseWindow: false,
+          });
+        } else if (node instanceof FileExplorer && addr) {
+          vscode.commands.executeCommand(
+            'vscode.openFolder',
+            vscode.Uri.from({
+              scheme: 'vscode-remote',
+              authority: `ssh-remote+${addr}`,
+              path,
+            }),
+            { forceNewWindow: true }
+          );
+        }
+      })
+    );
+  }
 }
 
 export function deactivate() {

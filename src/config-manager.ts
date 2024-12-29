@@ -7,6 +7,9 @@ interface Host {
   rootDir: string;
   persistToSSHConfig?: boolean;
   differentUserFromSSHConfig?: boolean;
+  remoteHost?: string;
+  remotePort?: number;
+  remoteUser?: string;
 }
 
 interface Config {
@@ -33,7 +36,15 @@ export class ConfigManager {
       fs.mkdirSync(globalStoragePath);
     }
 
-    return new ConfigManager(path.join(globalStoragePath, 'config.json'));
+    const configManager = new ConfigManager(path.join(globalStoragePath, 'config.json'));
+
+    // Detect if the extension is running in a remote context
+    const isRemote = !!vscode.env.remoteName;
+    if (isRemote) {
+      configManager.set('remoteHost', vscode.env.remoteName);
+    }
+
+    return configManager;
   }
 
   set<K extends keyof Config>(key: K, value: Config[K]) {
