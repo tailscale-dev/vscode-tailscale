@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/tailscale-dev/vscode-tailscale.git"
   },
-  "version": "0.9.0",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -444,7 +444,7 @@
     "compile": "webpack",
     "lint": "eslint src --ext ts",
     "bundle-js": "webpack --mode production --devtool hidden-source-map",
-    "bundle-go": "go install github.com/goreleaser/goreleaser@6b46a1a && goreleaser build --snapshot --clean",
+    "bundle-go": "go run github.com/goreleaser/goreleaser/v2@f88a205 build --snapshot --clean",
     "package": "vsce package --allow-star-activation",
     "precommit": "lint-staged",
     "prepare": "husky install",
@@ -454,7 +454,7 @@
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
-    "@types/node": "16.11.68",
+    "@types/node": "22",
     "@types/react": "^18.2.34",
     "@types/react-dom": "^18.2.14",
     "@types/ssh2": "^1.11.13",
@@ -479,7 +479,7 @@
     "node-loader": "^2.0.0",
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",
-    "prettier": "^3.0.3",
+    "prettier": "^3.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "ssh2": "^1.14.0",
@@ -489,12 +489,12 @@
     "ts-loader": "^9.5.0",
     "typescript": "^5.2.2",
     "utf-8-validate": "^6.0.3",
-    "vitest": "^.33.0",
+    "vitest": "^3.2.4",
     "vscode-jsonrpc": "^8.2.0",
     "vscode-uri": "^3.0.7",
-    "webpack": "^5.88.2",
+    "webpack": "^5.101.3",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1",
+    "webpack-dev-server": "^5.2.2",
     "ws": "^8.14.2"
   },
   "lint-staged": {

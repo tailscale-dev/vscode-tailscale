@@ -58,7 +58,7 @@ export async function addToSSHConfig(configManager: ConfigManager, HostName: str
   }
   await vscode.workspace.fs.writeFile(
     sshConfigFilePath(),
-    Buffer.from(SSHConfig.stringify(config))
+    new Uint8Array(Buffer.from(SSHConfig.stringify(config)))
   );
   configManager.setForHost(HostName, 'persistToSSHConfig', true);
   configManager.setForHost(HostName, 'differentUserFromSSHConfig', false);
@@ -107,7 +107,7 @@ export async function syncSSHConfig(addr: string, configManager: ConfigManager) 
             }
             await vscode.workspace.fs.writeFile(
               sshConfigFilePath(),
-              Buffer.from(SSHConfig.stringify(config))
+              new Uint8Array(Buffer.from(SSHConfig.stringify(config)))
             );
             configManager.setForHost(addr, 'differentUserFromSSHConfig', false);
           }

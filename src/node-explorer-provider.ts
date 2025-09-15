@@ -12,6 +12,7 @@ import { FileSystemProvider } from './filesystem-provider';
 import { trimSuffix } from './utils';
 import { EXTENSION_NS } from './constants';
 import { addToSSHConfig, syncSSHConfig } from './utils/sshconfig';
+import { Uri } from 'vscode';
 
 /**
  * Anatomy of the TreeView
@@ -844,21 +845,25 @@ export class PeerRoot extends PeerBaseTreeItem {
     }
 
     this.iconPath = {
-      light: path.join(
-        __filename,
-        '..',
-        '..',
-        'resources',
-        'light',
-        p.Online === true ? 'online.svg' : 'offline.svg'
+      light: Uri.file(
+        path.join(
+          __filename,
+          '..',
+          '..',
+          'resources',
+          'light',
+          p.Online === true ? 'online.svg' : 'offline.svg'
+        )
       ),
-      dark: path.join(
-        __filename,
-        '..',
-        '..',
-        'resources',
-        'dark',
-        p.Online === true ? 'online.svg' : 'offline.svg'
+      dark: Uri.file(
+        path.join(
+          __filename,
+          '..',
+          '..',
+          'resources',
+          'dark',
+          p.Online === true ? 'online.svg' : 'offline.svg'
+        )
       ),
     };
 
