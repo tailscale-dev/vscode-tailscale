@@ -100,6 +100,10 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 			continue
 		}
 
+		if strings.Contains(p.DNSName, "mullvad.ts.net") {
+			continue
+		}
+
 		serverName := p.HostName
 		if p.DNSName != "" {
 			parts := strings.SplitN(p.DNSName, ".", 2)
