@@ -811,7 +811,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/ssh2@^1.11.13":
+"@types/ssh2@^1.15.5":
   version "1.15.5"
   resolved "https://registry.yarnpkg.com/@types/ssh2/-/ssh2-1.15.5.tgz#6d8f45db2f39519b8d9377268fa71ed77d969686"
   integrity sha512-N1ASjp/nXH3ovBHddRJpli4ozpk6UdDYIX4RJWFa9L1YKnzdhTlVmiGHm4DZnj/jLbqZpes4aeR30EFGQtvhQQ==
@@ -4850,7 +4850,7 @@ ssh-config@^4.4.0:
   resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-4.4.4.tgz#ab0a693d39f1e6a7ad6c48641668104213898bf4"
   integrity sha512-75rXsNB+gmPa/ueqzpDRmVa+Z7ReDgzvmpsEM+sxi3DLBQERdmp3awkZ4WW4TVpnZLpFVsHEiMrojGVp/jJ3kA==
 
-ssh2@^1.14.0:
+ssh2@^1.17.0:
   version "1.17.0"
   resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.17.0.tgz#dc686e8e3abdbd4ad95d46fa139615903c12258c"
   integrity sha512-wPldCk3asibAjQ/kziWQQt1Wh3PgDFpC0XpwclzKcdT1vql6KeYxf5LIt4nlFkUeR8WuphYMKqUA56X4rjbfgQ==
