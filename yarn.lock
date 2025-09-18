@@ -818,7 +818,7 @@
   dependencies:
     "@types/node" "^18.11.18"
 
-"@types/vscode-webview@^1.57.2":
+"@types/vscode-webview@^1.57.5":
   version "1.57.5"
   resolved "https://registry.yarnpkg.com/@types/vscode-webview/-/vscode-webview-1.57.5.tgz#5b910525386c02305eb1d0772e0181c5f19c579b"
   integrity sha512-iBAUYNYkz+uk1kdsq05fEcoh8gJmwT3lqqFPN7MGyjQ3HVloViMdo7ZJ8DFIP8WOK74PjOEilosqAyxV2iUFUw==
