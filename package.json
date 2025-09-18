@@ -463,7 +463,7 @@
     "@typescript-eslint/eslint-plugin": "^6.9.1",
     "@typescript-eslint/parser": "^6.9.1",
     "@vscode/codicons": "^0.0.33",
-    "@vscode/vsce": "^2.21.0",
+    "@vscode/vsce": "^3.6.0",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "bufferutil": "^4.0.7",
     "concurrently": "^8.2.2",
