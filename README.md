@@ -32,7 +32,7 @@ To view and edit files on a machine in your tailnet, expand the machine and clic
 
 ### Expose a port over the internet
 
-Route traffic from the internet to a node in your tailnet to publicly share it with anyone, even if they aren’t using Taiscale.
+Route traffic from the internet to a node in your tailnet to publicly share it with anyone, even if they aren’t using Tailscale.
 
 > _When you want something local to be available everywhere_
 
