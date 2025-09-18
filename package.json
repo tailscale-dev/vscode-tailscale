@@ -473,7 +473,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-unicorn": "^49.0.0",
     "glob": "^10.3.10",
-    "husky": "^8.0.3",
+    "husky": "^9.1.7",
     "lint-staged": "^15.0.2",
     "node-fetch": "^3.3.2",
     "node-loader": "^2.0.0",
