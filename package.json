@@ -27,7 +27,8 @@
   ],
   "extensionKind": [
     "ui",
-    "workspace"
+    "workspace",
+    "remote"
   ],
   "main": "./dist/extension.js",
   "contributes": {
