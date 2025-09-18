@@ -218,12 +218,15 @@ export class Tailscale {
   }
 
   tsrelayPath(): string {
-    let arch = process.arch;
+    let arch = process.arch.toString();
     let platform: string = process.platform;
     // See:
     // https://goreleaser.com/customization/builds/#why-is-there-a-_v1-suffix-on-amd64-builds
     if (process.arch === 'x64') {
       arch = 'amd64_v1';
+    }
+    if (process.arch === 'arm64') {
+      arch = 'arm64_v8.0';
     }
     if (platform === 'win32') {
       platform = 'windows';

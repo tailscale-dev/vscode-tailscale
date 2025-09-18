@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"tailscale.com/client/local"
 	"tailscale.com/client/tailscale"
 	"tailscale.com/ipn"
 	"tailscale.com/ipn/ipnstate"
@@ -59,7 +60,7 @@ func (m *mockClient) GetServeConfig(ctx context.Context) (*ipn.ServeConfig, erro
 // SetServeConfig implements localClient.
 func (m *mockClient) SetServeConfig(ctx context.Context, config *ipn.ServeConfig) error {
 	if m.p.MockAccessDenied {
-		return &tailscale.AccessDeniedError{}
+		return &local.AccessDeniedError{}
 	}
 	m.Lock()
 	defer m.Unlock()
