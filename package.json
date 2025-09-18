@@ -474,7 +474,7 @@
     "eslint-plugin-unicorn": "^49.0.0",
     "glob": "^10.3.10",
     "husky": "^8.0.3",
-    "lint-staged": "^15.0.2",
+    "lint-staged": "^16.1.6",
     "node-fetch": "^3.3.2",
     "node-loader": "^2.0.0",
     "postcss": "^8.4.31",
