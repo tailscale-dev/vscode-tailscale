@@ -465,7 +465,7 @@
     "@vscode/codicons": "^0.0.33",
     "@vscode/vsce": "^2.21.0",
     "@vscode/webview-ui-toolkit": "^1.2.2",
-    "bufferutil": "^4.0.7",
+    "bufferutil": "^4.0.9",
     "concurrently": "^8.2.2",
     "css-loader": "^6.8.1",
     "eslint": "^8.53.0",
