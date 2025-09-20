@@ -34,3 +34,22 @@ jobs:
         run: tool/yarn tsc --noEmit
       - name: Prettier
         run: tool/yarn prettier --check .
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Test in SSH environment
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'cd /path/to/extension && tool/yarn test'
+      - name: Set up Dev Container
+        uses: devcontainers/ci@v0
+        with:
+          image: mcr.microsoft.com/vscode/devcontainers/base:0-focal
+      - name: Test in Dev Container
+        run: |
+          docker exec -w /path/to/extension devcontainer tool/yarn test
+      - name: Set up GitHub Codespaces
+        uses: actions/checkout@v3
+      - name: Test in GitHub Codespaces
+        run: |
+          codespaces exec -w /path/to/extension tool/yarn test
