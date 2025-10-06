@@ -757,15 +757,15 @@
   resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.7.tgz#50ae4353eaaddc04044279812f52c8c65857dbcb"
   integrity sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==
 
-"@types/react-dom@^18.2.14":
+"@types/react-dom@^18.3.7":
   version "18.3.7"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.3.7.tgz#b89ddf2cd83b4feafcc4e2ea41afdfb95a0d194f"
   integrity sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==
 
-"@types/react@^18.2.34":
-  version "18.3.24"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-18.3.24.tgz#f6a5a4c613242dfe3af0dcee2b4ec47b92d9b6bd"
-  integrity sha512-0dLEBsA1kI3OezMBF8nSsb7Nk19ZnsyE1LLhB8r27KbgU5H4pvuqZLdtE+aUkJVoXgTVuA+iLIwmZ0TuK4tx6A==
+"@types/react@^18.3.26":
+  version "18.3.26"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-18.3.26.tgz#4c5970878d30db3d2a0bca1e4eb5f258e391bbeb"
+  integrity sha512-RFA/bURkcKzx/X9oumPG9Vp3D3JUgus/d0b67KB0t5S/raciymilkOa66olh78MUI92QLbEJevO7rvqU/kjwKA==
   dependencies:
     "@types/prop-types" "*"
     csstype "^3.0.2"
@@ -4315,7 +4315,7 @@ rc@^1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-dom@^18.2.0:
+react-dom@^18.3.1:
   version "18.3.1"
   resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.3.1.tgz#c2265d79511b57d479b3dd3fdfa51536494c5cb4"
   integrity sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==
@@ -4323,7 +4323,7 @@ react-dom@^18.2.0:
     loose-envify "^1.1.0"
     scheduler "^0.23.2"
 
-react@^18.2.0:
+react@^18.3.1:
   version "18.3.1"
   resolved "https://registry.yarnpkg.com/react/-/react-18.3.1.tgz#49ab892009c53933625bd16b2533fc754cab2891"
   integrity sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==
