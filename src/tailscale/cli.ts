@@ -8,6 +8,7 @@ import * as path from 'node:path';
 import { LogLevel } from 'vscode';
 import { trimSuffix } from '../utils';
 import { EXTENSION_NS } from '../constants';
+import { ConfigManager } from '../config-manager';
 
 const LOG_COMPONENT = 'tsrelay';
 
@@ -35,13 +36,15 @@ export class Tailscale {
   private notifyExit?: () => void;
   private socket?: string;
   private ws?: WebSocket;
+  private configManager: ConfigManager;
 
-  constructor(vscode: vscodeModule) {
+  constructor(vscode: vscodeModule, configManager: ConfigManager) {
     this._vscode = vscode;
+    this.configManager = configManager;
   }
 
-  static async withInit(vscode: vscodeModule): Promise<Tailscale> {
-    const ts = new Tailscale(vscode);
+  static async withInit(vscode: vscodeModule, configManager: ConfigManager): Promise<Tailscale> {
+    const ts = new Tailscale(vscode, configManager);
     await ts.init();
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration('tailscale.portDiscovery.enabled')) {
@@ -384,13 +387,38 @@ export class Tailscale {
       if (msg.type != 'newPort') {
         return;
       }
+      const snoozeUntil = this.configManager.config.portDiscoSnoozeUntil;
+      if (snoozeUntil && snoozeUntil >= Date.now()) {
+        return;
+      }
       const shouldServe = await this._vscode.window.showInformationMessage(
         msg.message,
         { modal: false },
-        'Serve'
+        'Expose',
+        'Not now',
+        'Learn more'
       );
-      if (shouldServe) {
+      if (shouldServe === 'Expose') {
         await this.runFunnel(msg.port);
+      } else if (shouldServe === 'Not now') {
+        // one hour
+        const snoozeDuration = 60 * 60 * 1000;
+        this.configManager.set('portDiscoSnoozeUntil', Date.now() + snoozeDuration);
+        const openSettings = await this._vscode.window.showInformationMessage(
+          'Snoozed for 1 hour. You can fully turn off port discovery in the settings',
+          { modal: false },
+          'Open Settings'
+        );
+        if (openSettings) {
+          this._vscode.commands.executeCommand(
+            'workbench.action.openSettings',
+            'tailscale.portDiscovery.enabled'
+          );
+        }
+      } else if (shouldServe === 'Learn more') {
+        vscode.env.openExternal(
+          vscode.Uri.parse('https://tailscale.com/kb/1223/tailscale-funnel/')
+        );
       }
     });
     this._vscode.window.onDidOpenTerminal(async (e: vscode.Terminal) => {
