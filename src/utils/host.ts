@@ -7,7 +7,7 @@ export function getUsername(configManager: ConfigManager, hostname: string) {
   const userForHost = hosts?.[hostname]?.user?.trim();
   const defaultUser = vscode.workspace
     .getConfiguration('tailscale')
-    .get<string>('ssh.defaultUser')
+    .get<string>('ssh.defaultUsername')
     ?.trim();
 
   return userForHost || defaultUser || userInfo().username;
