@@ -60,7 +60,7 @@ export class Tailscale {
 
   defaultArgs() {
     const args = [];
-    if (this._vscode.env.logLevel === LogLevel.Debug) {
+    if (this._vscode.env.logLevel >= LogLevel.Debug) {
       args.push('-v');
     }
     if (this.port) {
@@ -365,7 +365,7 @@ export class Tailscale {
         if (!pid) {
           return;
         }
-        Logger.debug(`adding initial termianl process: ${pid}`);
+        Logger.debug(`adding initial terminal process: ${pid}`);
         this.ws?.send(
           JSON.stringify({
             type: 'addPID',
