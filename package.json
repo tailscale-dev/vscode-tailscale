@@ -489,7 +489,7 @@
     "ts-loader": "^9.5.0",
     "typescript": "^5.2.2",
     "utf-8-validate": "^6.0.3",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.7",
     "vscode-jsonrpc": "^8.2.0",
     "vscode-uri": "^3.0.7",
     "webpack": "^5.101.3",
