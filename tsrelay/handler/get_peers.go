@@ -82,13 +82,21 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 		})
 	}
 
-	// CurrentTailnet can be offline when you are logged out
-	if st.CurrentTailnet != nil {
-		s.CurrentTailnet = &currentTailnet{
-			Name:            st.CurrentTailnet.Name,
-			MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
-			MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
+	// CurrentTailnet is nil when you are logged out, and has also been
+	// observed nil while peers are still listed. The peer list isn't
+	// meaningful without it and the extension expects it to be set, so
+	// report the offline error if there is one, and otherwise fail the
+	// request so the extension keeps its last good state and retries.
+	if st.CurrentTailnet == nil {
+		if len(s.Errors) > 0 {
+			return &s, nil
 		}
+		return nil, errors.New("tailscale status has no current tailnet")
+	}
+	s.CurrentTailnet = &currentTailnet{
+		Name:            st.CurrentTailnet.Name,
+		MagicDNSSuffix:  st.CurrentTailnet.MagicDNSSuffix,
+		MagicDNSEnabled: st.CurrentTailnet.MagicDNSEnabled,
 	}
 
 	for _, p := range st.Peer {
@@ -137,7 +145,7 @@ func (h *handler) getPeers(ctx context.Context, body io.Reader) (*getPeersRespon
 
 		if !p.Online {
 			peerGroups[2].Peers = append(peerGroups[2].Peers, peer)
-		} else if p.UserID == st.Self.UserID {
+		} else if st.Self != nil && p.UserID == st.Self.UserID {
 			peerGroups[0].Peers = append(peerGroups[0].Peers, peer)
 		} else {
 			peerGroups[1].Peers = append(peerGroups[1].Peers, peer)
