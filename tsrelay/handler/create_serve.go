@@ -90,6 +90,9 @@ func (h *handler) serveConfigDNS(ctx context.Context) (*ipn.ServeConfig, string,
 	if err != nil {
 		return nil, "", fmt.Errorf("error getting configs: %w", err)
 	}
+	if st.Self == nil {
+		return nil, "", errors.New("tailscale status has no self node")
+	}
 	if sc == nil {
 		sc = &ipn.ServeConfig{}
 	}

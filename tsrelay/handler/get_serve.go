@@ -164,16 +164,19 @@ func (h *handler) getServe(ctx context.Context, body io.Reader) (*serveStatus, e
 
 	var u *url.URL
 
-	idx := slices.IndexFunc(st.Self.Capabilities, func(s tailcfg.NodeCapability) bool {
-		return strings.HasPrefix(string(s), string(tailcfg.CapabilityFunnelPorts))
-	})
+	idx := -1
+	if st.Self != nil {
+		idx = slices.IndexFunc(st.Self.Capabilities, func(s tailcfg.NodeCapability) bool {
+			return strings.HasPrefix(string(s), string(tailcfg.CapabilityFunnelPorts))
+		})
+	}
 
 	if idx >= 0 {
 		u, err = url.Parse(string(st.Self.Capabilities[idx]))
 		if err != nil {
 			return nil, err
 		}
-	} else if st.Self.CapMap != nil {
+	} else if st.Self != nil && st.Self.CapMap != nil {
 		for c := range st.Self.CapMap {
 			if strings.HasPrefix(string(c), string(tailcfg.CapabilityFunnelPorts)) {
 				u, err = url.Parse(string(c))
