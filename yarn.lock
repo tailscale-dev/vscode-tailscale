@@ -1543,10 +1543,10 @@ buffer@^5.5.0:
     base64-js "^1.3.1"
     ieee754 "^1.1.13"
 
-bufferutil@^4.0.7:
-  version "4.0.9"
-  resolved "https://registry.yarnpkg.com/bufferutil/-/bufferutil-4.0.9.tgz#6e81739ad48a95cad45a279588e13e95e24a800a"
-  integrity sha512-WDtdLmJvAuNNPzByAYpRo2rF1Mmradw6gvWsQKf63476DDXmomT9zUiGypLcG4ibIM67vhAj8jJRdbmEws2Aqw==
+bufferutil@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/bufferutil/-/bufferutil-4.2.0.tgz#1abe5ba474e096c7e3b00c2513ba631dc8a17010"
+  integrity sha512-gyy58jET9kst2IGyBKb96a4Y2bPGTHXGyCd0/1eqIV3hr1Sz3VxtA8n7bXh8fLIuE2K6Z0Upax5a5Msx+HU1IQ==
   dependencies:
     node-gyp-build "^4.3.0"
 
