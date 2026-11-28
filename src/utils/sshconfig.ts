@@ -12,9 +12,15 @@ function sshConfigFilePath() {
 }
 
 async function readSSHConfig() {
-  const configStr = await vscode.workspace.fs
-    .readFile(sshConfigFilePath())
-    .then((a) => Buffer.from(a).toString('utf-8'));
+  let configStr = '';
+  try {
+    const contents = await vscode.workspace.fs.readFile(sshConfigFilePath());
+    configStr = Buffer.from(contents).toString('utf-8');
+  } catch (error) {
+    if (!(error instanceof vscode.FileSystemError) || error.code !== 'FileNotFound') {
+      throw error;
+    }
+  }
 
   const config = SSHConfig.parse(configStr);
 
@@ -56,8 +62,10 @@ export async function addToSSHConfig(configManager: ConfigManager, HostName: str
       }
     }
   }
+  const configPath = sshConfigFilePath();
+  await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(configPath, '..'));
   await vscode.workspace.fs.writeFile(
-    sshConfigFilePath(),
+    configPath,
     new Uint8Array(Buffer.from(SSHConfig.stringify(config)))
   );
   configManager.setForHost(HostName, 'persistToSSHConfig', true);
